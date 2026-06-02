@@ -1,0 +1,69 @@
+{
+  "tested_models": 9,
+  "answered": 0,
+  "records": [
+    {
+      "model": "gemini-3.5-flash",
+      "answered": false,
+      "latency_s": 61.99,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemini-3-flash",
+      "answered": false,
+      "latency_s": 31.385,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemini-2.5-flash",
+      "answered": false,
+      "latency_s": 62.105,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemini-2-flash",
+      "answered": false,
+      "latency_s": 31.558,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "answered": false,
+      "latency_s": 61.666,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemini-2.5-flash-lite",
+      "answered": false,
+      "latency_s": 61.652,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemini-2-flash-lite",
+      "answered": false,
+      "latency_s": 31.526,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemma-4-31b-it",
+      "answered": false,
+      "latency_s": 61.967,
+      "answer_preview": "[]",
+      "cost": 0.005
+    },
+    {
+      "model": "gemma-4-26b-it",
+      "answered": false,
+      "latency_s": 31.465,
+      "answer_preview": "[]",
+      "cost": 0.005
+    }
+  ]
+}

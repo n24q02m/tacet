@@ -1,0 +1,26 @@
+{
+  "dataset": "WN18RR",
+  "stats": {
+    "entities": 40943,
+    "relations": 11,
+    "train": 86835,
+    "valid": 3034,
+    "test": 3134
+  },
+  "kge": {
+    "backend": "torch",
+    "device": "cuda",
+    "dim": 96,
+    "epochs": 300,
+    "negatives": 4,
+    "batch_size": 2048,
+    "lr": 0.05
+  },
+  "train_time_s": 238.49,
+  "eval_time_s": 77.54,
+  "final_loss": 0.0843,
+  "MRR": 0.2045,
+  "Hits@1": 0.1556,
+  "Hits@3": 0.2189,
+  "Hits@10": 0.3006
+}

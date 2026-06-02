@@ -1,0 +1,125 @@
+{
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "sweep": [
+    {
+      "gamma": 0.5,
+      "installed_mean": 17.2,
+      "installed_per_seed": [
+        20,
+        14,
+        15,
+        19,
+        18
+      ],
+      "mean_world_precision": 0.9230184787637669,
+      "precision_per_seed": [
+        0.8818354784832728,
+        0.9642857142857143,
+        0.9666666666666667,
+        0.9283961476918842,
+        0.8739083866912963
+      ]
+    },
+    {
+      "gamma": 0.7,
+      "installed_mean": 15.6,
+      "installed_per_seed": [
+        18,
+        13,
+        14,
+        18,
+        15
+      ],
+      "mean_world_precision": 0.9699519983027691,
+      "precision_per_seed": [
+        0.9315685321120104,
+        1.0,
+        1.0,
+        0.9521959336747666,
+        0.9659955257270693
+      ]
+    },
+    {
+      "gamma": 0.8,
+      "installed_mean": 14.8,
+      "installed_per_seed": [
+        16,
+        13,
+        14,
+        18,
+        13
+      ],
+      "mean_world_precision": 0.9851273337328829,
+      "precision_per_seed": [
+        0.973440734989648,
+        1.0,
+        1.0,
+        0.9521959336747666,
+        1.0
+      ]
+    },
+    {
+      "gamma": 0.9,
+      "installed_mean": 14.2,
+      "installed_per_seed": [
+        16,
+        13,
+        14,
+        15,
+        13
+      ],
+      "mean_world_precision": 0.9923693064182194,
+      "precision_per_seed": [
+        0.973440734989648,
+        1.0,
+        1.0,
+        0.9884057971014493,
+        1.0
+      ]
+    },
+    {
+      "gamma": 0.95,
+      "installed_mean": 14.2,
+      "installed_per_seed": [
+        16,
+        13,
+        14,
+        15,
+        13
+      ],
+      "mean_world_precision": 0.9923693064182194,
+      "precision_per_seed": [
+        0.973440734989648,
+        1.0,
+        1.0,
+        0.9884057971014493,
+        1.0
+      ]
+    },
+    {
+      "gamma": 0.99,
+      "installed_mean": 14.2,
+      "installed_per_seed": [
+        16,
+        13,
+        14,
+        15,
+        13
+      ],
+      "mean_world_precision": 0.9923693064182194,
+      "precision_per_seed": [
+        0.973440734989648,
+        1.0,
+        1.0,
+        0.9884057971014493,
+        1.0
+      ]
+    }
+  ]
+}

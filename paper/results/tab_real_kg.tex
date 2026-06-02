@@ -1,0 +1,54 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Real-LLM cost-at-matched-accuracy on a real-entity KG, \textbf{3 seeds}
+(controlled design). A 300-query Zipfian-repeat stream over MetaQA (133{,}582
+triples, 43{,}234 entities) is served by a real \textbf{Grok~4.3} Tier-3 teacher
+(xAI pricing \$1.25/\$2.50 per 1M input/output tokens, reasoning tokens billed;
+source \texttt{openrouter.ai/x-ai} + \texttt{docs.x.ai}, 2026-06-03). To make the
+cross-arm comparison fair we (i)~\emph{disable Tier-2} (the streamed setting
+offers no held-out split to calibrate the link predictor) and (ii)~draw a
+\emph{single teacher answer per distinct (head,\,relation) and share it across all
+arms}, so the arms differ only in routing and accuracy is matched
+\emph{by construction}. Cost is total measured USD over the stream
+(mean$\pm$s.d.\ over seeds~0--2); accuracy is the gold-subset match. The
+amortisation row reports the \emph{pooled} ratio cost(LLM-only)$/$cost(cascade)
+of the mean costs above, with the three per-seed cost ratios in parentheses;
+their mean (1-hop $3.9\times$, 2-hop $5.2\times$) exceeds the pooled figure on
+1-hop because one seed is much cheaper. \textbf{Full distillation
+ties the cache on every seed}: under the noisy real Grok teacher the miner
+installs no generalising rule (\texttt{rules}$=\varnothing$), so distillation
+reduces to caching --- the teacher-quality-gated boundary the oracle run below
+crosses. Per-seed variance is large on 1-hop because the cascade caches only
+\emph{non-empty} teacher answers, so the saving tracks the teacher's (seed-dependent)
+answer rate.}
+\label{tab:real_kg}
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{MetaQA 1-hop} & \multicolumn{2}{c}{MetaQA 2-hop} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+System & Cost (USD) & Acc. & Cost (USD) & Acc. \\
+\midrule
+LLM-only           & $0.403\pm0.069$ & $0.70\pm0.18$ & $0.640\pm0.059$ & $0.34\pm0.17$ \\
+Cache cascade      & $0.146\pm0.114$ & $0.70\pm0.18$ & $0.125\pm0.014$ & $0.34\pm0.17$ \\
+Full distillation  & $0.146\pm0.114$ & $0.70\pm0.18$ & $0.125\pm0.014$ & $0.34\pm0.17$ \\
+\midrule
+\multicolumn{1}{l}{\emph{Amortisation} (pooled; per-seed)}
+  & \multicolumn{2}{c}{$\mathbf{2.8\times}$ (per-seed 3.8/1.5/6.3)}
+  & \multicolumn{2}{c}{$\mathbf{5.1\times}$ (per-seed 6.3/4.2/5.0)} \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.4em}
+\noindent\emph{Oracle 2-hop mechanism isolation (same stream, 78 distinct
+heads).} With an oracle Tier-3 teacher the miner recovers the genuine
+composition rule
+$q2(x,y)\!\leftarrow\!\mathit{starred\_actors}^{-1}(x,z)\wedge\mathit{directed\_by}(z,y)$,
+so full distillation answers 2-hop questions for \emph{unseen} heads at
+Tier~1: \textbf{10} teacher calls vs the cache's \textbf{78}
+(\textbf{87\% fewer}), both at accuracy $1.0$. Under the real Grok teacher
+($\sim$22--54\% accurate on the 2-hop stream across seeds) the miner instead
+recovers \emph{no} installable rule, so distillation matches the cache exactly.
+This is the distillation-over-caching effect, isolated: it materialises only
+when the teacher is accurate enough for the miner to recover a generalising rule.
+\end{table}

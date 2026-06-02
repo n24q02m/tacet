@@ -1,0 +1,90 @@
+{
+  "dataset": "MetaQA-2hop-test",
+  "hop": 2,
+  "design": "controlled: Tier-2 disabled + shared deterministic teacher answers across arms",
+  "tier2_disabled": true,
+  "shared_teacher_answers": true,
+  "kg_stats": {
+    "kg_triples": 133582,
+    "kg_entities": 43234,
+    "kg_relations": 9,
+    "questions": 9947
+  },
+  "real_llm": true,
+  "teacher_model_called": "grok-4.3",
+  "priced_as_model": "grok-4.3",
+  "composed_relation": "q2_directors_of_movies_acted_in_by",
+  "workload_cap": 300,
+  "zipf_a": 1.5,
+  "seed": 0,
+  "stream_len": 300,
+  "distinct_queries": 53,
+  "real_teacher_calls": 53,
+  "truncated_by_budget": false,
+  "total_measured_spend_usd": 0.108079,
+  "arms": [
+    {
+      "arm": "llm_only",
+      "n": 300,
+      "total_cost_usd": 0.693208,
+      "teacher_calls": 300,
+      "accuracy": 0.5367,
+      "tier_pct": {
+        "3": 100.0
+      },
+      "wallclock_s": 254.2
+    },
+    {
+      "arm": "cache_cascade",
+      "n": 300,
+      "total_cost_usd": 0.110215,
+      "teacher_calls": 55,
+      "accuracy": 0.5367,
+      "tier_counts": {
+        "1": 245,
+        "2": 0,
+        "3": 55
+      },
+      "tier_pct": {
+        "1": 81.7,
+        "2": 0.0,
+        "3": 18.3
+      },
+      "synthesised_rules": [],
+      "wallclock_s": 0.0
+    },
+    {
+      "arm": "full_distillation",
+      "n": 300,
+      "total_cost_usd": 0.110215,
+      "teacher_calls": 55,
+      "accuracy": 0.5367,
+      "tier_counts": {
+        "1": 245,
+        "2": 0,
+        "3": 55
+      },
+      "tier_pct": {
+        "1": 81.7,
+        "2": 0.0,
+        "3": 18.3
+      },
+      "synthesised_rules": [],
+      "wallclock_s": 46.6
+    }
+  ],
+  "verdict": {
+    "llm_cost_usd": 0.693208,
+    "cache_cost_usd": 0.110215,
+    "full_cost_usd": 0.110215,
+    "amortisation_full_vs_llm": 6.29,
+    "amortisation_cache_vs_llm": 6.29,
+    "accuracy_llm": 0.5367,
+    "accuracy_cache": 0.5367,
+    "accuracy_full": 0.5367,
+    "accuracy_matched_full_vs_llm": true,
+    "full_teacher_calls": 55,
+    "cache_teacher_calls": 55,
+    "synthesised_rules": []
+  }
+}

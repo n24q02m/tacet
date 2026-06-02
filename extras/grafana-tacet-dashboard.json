@@ -1,0 +1,155 @@
+{
+  "title": "TACET cascade — production observability",
+  "description": "Tier hit rate, latency distribution, blended cost, LLM rotation health. Scraped from /metrics on the FastAPI service.",
+  "tags": ["tacet", "kgqa", "rag", "cost-tracking"],
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {"refresh_intervals": ["30s", "1m", "5m", "15m", "1h"]},
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {"text": "Prometheus", "value": "Prometheus"},
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Queries / sec (last 5 min)",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "expr": "sum(rate(tacet_query_total[5m]))",
+          "legendFormat": "qps",
+          "refId": "A"
+        }
+      ],
+      "options": {"colorMode": "value", "graphMode": "area"}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Blended USD / hour",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "expr": "sum(rate(tacet_query_cost_usd_total[5m])) * 3600",
+          "legendFormat": "$/hr",
+          "refId": "A"
+        }
+      ],
+      "options": {"colorMode": "value", "graphMode": "area", "decimals": 4}
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Tier 3 hit ratio",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "expr": "sum(rate(tacet_query_total{tier=\"3\"}[5m])) / sum(rate(tacet_query_total[5m]))",
+          "legendFormat": "Tier 3",
+          "refId": "A"
+        }
+      ],
+      "options": {"colorMode": "value", "decimals": 3}
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Episodes in store",
+      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "targets": [
+        {
+          "expr": "tacet_episodes_total",
+          "legendFormat": "episodes",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Tier hit rate per tier (qps)",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (tier) (rate(tacet_query_total[1m]))",
+          "legendFormat": "tier {{tier}}",
+          "refId": "A"
+        }
+      ],
+      "options": {"legend": {"showLegend": true}}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "p50 / p95 / p99 latency per tier",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (tier, le) (rate(tacet_query_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50 tier {{tier}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (tier, le) (rate(tacet_query_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 tier {{tier}}",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (tier, le) (rate(tacet_query_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99 tier {{tier}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Blended USD cost per tier (cumulative)",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "tacet_query_cost_usd_total",
+          "legendFormat": "tier {{tier}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "LLM rotation health (0/1 per model)",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "tacet_llm_rotation_health",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1}}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Distillation feedback verdicts (rate)",
+      "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (verdict) (rate(tacet_distill_total[5m]))",
+          "legendFormat": "{{verdict}}",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "seed": 0,
+  "workload_size": 200,
+  "graph_stats": {
+    "nodes": 176,
+    "edges": 1453,
+    "types": 8,
+    "relations": 10
+  },
+  "primary_teacher": "grok",
+  "primary_model": "grok-4.3",
+  "rotating_models": [],
+  "runs": {
+    "oracle_cascade": {
+      "cost": 2.778,
+      "accuracy": 0.95,
+      "tier_counts": {
+        "0": 0,
+        "1": 130,
+        "2": 15,
+        "3": 55
+      },
+      "accuracy_by_class": {
+        "DED_GIVEN": 1.0,
+        "DED_DISCOVER": 1.0,
+        "INDUCTIVE": 0.696969696969697,
+        "STATED": 1.0,
+        "NOVEL": 1.0
+      }
+    },
+    "llm_only": {
+      "cost": 10.0,
+      "accuracy": 0.0,
+      "wallclock_s": 539.8
+    },
+    "grok_cascade": {
+      "cost": 4.8756,
+      "accuracy": 0.5,
+      "tier_counts": {
+        "0": 0,
+        "1": 86,
+        "2": 17,
+        "3": 97
+      },
+      "accuracy_by_class": {
+        "DED_GIVEN": 1.0,
+        "DED_DISCOVER": 0.0,
+        "INDUCTIVE": 0.42424242424242425,
+        "STATED": 1.0,
+        "NOVEL": 0.0
+      },
+      "wallclock_s": 483.7,
+      "per_query": {
+        "n": 200,
+        "cost": {
+          "p50": 0.001,
+          "p95": 0.05,
+          "p99": 0.05,
+          "mean": 0.024378
+        },
+        "latency_s": {
+          "p50": 0.015,
+          "p95": 0.9,
+          "p99": 0.9,
+          "mean": 0.439065
+        },
+        "accuracy_overall": 0.5
+      }
+    }
+  },
+  "cost_reduction_primary_x": 2.0510296168676674
+}

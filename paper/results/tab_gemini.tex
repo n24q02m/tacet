@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\small
+\caption{End-to-end run with a real Gemini~2.5~Flash Tier-3 teacher
+on a 12-query subset of the synthetic-org
+benchmark (seed 0).}
+\label{tab:gemini}
+\begin{tabular}{lrr}
+\toprule
+System & Cost (USD) & Accuracy \\
+\midrule
+Oracle cascade & 0.102 & 1.000 \\
+\textbf{Gemini cascade} & 0.102 & 0.667 \\
+Gemini LLM-only & 0.600 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

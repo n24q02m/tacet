@@ -1,0 +1,51 @@
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Release type"
+        required: true
+        type: choice
+        options:
+          - beta
+          - stable
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # GITHUB_TOKEN is sufficient for a public research repo with no main
+          # branch ruleset. If a ruleset requiring PRs/reviews is later applied,
+          # PSR can no longer push the version bump + tag directly:
+          # requires GH_PAT secret to push past branch ruleset; configure if
+          # release automation desired.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: python-semantic-release/python-semantic-release@v10
+        id: release
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: ${{ inputs.release_type == 'beta' }}
+          prerelease_token: beta
+
+      - uses: python-semantic-release/publish-action@v10
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}

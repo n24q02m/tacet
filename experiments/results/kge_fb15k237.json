@@ -1,0 +1,30 @@
+{
+  "dataset": "FB15k-237",
+  "stats": {
+    "entities": 14541,
+    "relations": 237,
+    "train": 272115,
+    "valid": 17535,
+    "test": 20466
+  },
+  "kge": {
+    "backend": "torch",
+    "device": "cuda",
+    "model": "complex_n3",
+    "dim": 256,
+    "epochs": 300,
+    "negatives": 8,
+    "batch_size": 4096,
+    "lr": 0.005,
+    "n3_lambda": 0.01,
+    "margin": 12.0,
+    "alpha": 1.0
+  },
+  "train_time_s": 905.24,
+  "eval_time_s": 1992.45,
+  "final_loss": 1.0025,
+  "MRR": 0.2696,
+  "Hits@1": 0.1846,
+  "Hits@3": 0.3005,
+  "Hits@10": 0.4389
+}

@@ -1,0 +1,27 @@
+{
+  "dataset": "MetaQA-1hop-dev",
+  "kg_stats": {
+    "kg_triples": 133582,
+    "kg_entities": 43234,
+    "kg_relations": 9,
+    "questions": 9992
+  },
+  "questions_run": 100,
+  "questions_skipped": 0,
+  "wallclock_s": 1203.0,
+  "cascade": {
+    "total_cost": 5.0,
+    "accuracy": 0.01,
+    "tier_counts": {
+      "1": 0,
+      "2": 0,
+      "3": 100
+    },
+    "synthesised_rules": []
+  },
+  "llm_only": {
+    "total_cost": 5.0,
+    "accuracy": 0.01
+  },
+  "cost_reduction_x": 1.0
+}

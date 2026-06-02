@@ -1,0 +1,73 @@
+{
+  "dataset": {
+    "root": "/data/ICEWS14",
+    "split": "train",
+    "limit_days": 365,
+    "trajectory_steps": 365,
+    "unique_triples": 42690,
+    "n_entities": 6869,
+    "n_relations": 230,
+    "n_event_types": 742
+  },
+  "kge": {
+    "dim": 256,
+    "epochs": 50,
+    "device": "cuda",
+    "train_time_s": 49.86
+  },
+  "layer4": {
+    "z_categories": 32,
+    "z_per_state": 32,
+    "h_dim": 256,
+    "hidden": 256,
+    "epochs": 50,
+    "lr": 0.0005,
+    "kl_weight": 1.0,
+    "neg_per_pos": 4,
+    "train_time_s": 835.49,
+    "loss_first": 0.3117,
+    "loss_last": 0.077
+  },
+  "p1a_mrr": {
+    "MRR": 0.4505,
+    "Hits@1": 0.3175,
+    "Hits@3": 0.5164,
+    "Hits@10": 0.7108,
+    "n": 42690
+  },
+  "p1a_mrr_no_latent": {
+    "MRR": 0.395,
+    "Hits@1": 0.2596,
+    "Hits@3": 0.4506,
+    "Hits@10": 0.6755,
+    "n": 42690
+  },
+  "p1a_mrr_full_ranking": {
+    "MRR": 0.0925,
+    "Hits@1": 0.0424,
+    "Hits@3": 0.095,
+    "Hits@10": 0.1852,
+    "n": 85380
+  },
+  "p2_rollout_hits10": {
+    "1": 0.6341,
+    "3": 0.6949,
+    "5": 0.7105,
+    "10": 0.7
+  },
+  "event_encoder": "action-node",
+  "bptt_window": 8,
+  "consistency_weight": 0.1,
+  "p1b_coherence": {
+    "3": 0.6667,
+    "5": 0.8,
+    "10": 0.9
+  },
+  "p1c_latency": {
+    "layer4_ms": 0.2375,
+    "tier2_ms": null,
+    "ratio": null,
+    "n_queries": 100
+  },
+  "total_time_s": 1384.53
+}

@@ -1,0 +1,896 @@
+{
+ "name": "world-geography",
+ "nodes": [
+  {
+   "id": "Europe",
+   "type": "Continent",
+   "props": {}
+  },
+  {
+   "id": "Western_Europe",
+   "type": "Subregion",
+   "props": {}
+  },
+  {
+   "id": "Southern_Europe",
+   "type": "Subregion",
+   "props": {}
+  },
+  {
+   "id": "Eastern_Europe",
+   "type": "Subregion",
+   "props": {}
+  },
+  {
+   "id": "Northern_Europe",
+   "type": "Subregion",
+   "props": {}
+  },
+  {
+   "id": "France",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Paris",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "French",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Euro",
+   "type": "Currency",
+   "props": {}
+  },
+  {
+   "id": "Germany",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Berlin",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "German",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Spain",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Madrid",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Spanish",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Italy",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Rome",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Italian",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Portugal",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Lisbon",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Portuguese",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Belgium",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Brussels",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Dutch",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Netherlands",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Amsterdam",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Switzerland",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Bern",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Swiss_Franc",
+   "type": "Currency",
+   "props": {}
+  },
+  {
+   "id": "Austria",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Vienna",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Poland",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Warsaw",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Polish",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Zloty",
+   "type": "Currency",
+   "props": {}
+  },
+  {
+   "id": "Czechia",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Prague",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Czech",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Koruna",
+   "type": "Currency",
+   "props": {}
+  },
+  {
+   "id": "Denmark",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Copenhagen",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Danish",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Krone",
+   "type": "Currency",
+   "props": {}
+  },
+  {
+   "id": "Sweden",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Stockholm",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Swedish",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Krona",
+   "type": "Currency",
+   "props": {}
+  },
+  {
+   "id": "Norway",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Oslo",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Norwegian",
+   "type": "Language",
+   "props": {}
+  },
+  {
+   "id": "Greece",
+   "type": "Country",
+   "props": {}
+  },
+  {
+   "id": "Athens",
+   "type": "City",
+   "props": {}
+  },
+  {
+   "id": "Greek",
+   "type": "Language",
+   "props": {}
+  }
+ ],
+ "edges": [
+  {
+   "source": "Western_Europe",
+   "relation": "located_in",
+   "target": "Europe",
+   "props": {}
+  },
+  {
+   "source": "Southern_Europe",
+   "relation": "located_in",
+   "target": "Europe",
+   "props": {}
+  },
+  {
+   "source": "Eastern_Europe",
+   "relation": "located_in",
+   "target": "Europe",
+   "props": {}
+  },
+  {
+   "source": "Northern_Europe",
+   "relation": "located_in",
+   "target": "Europe",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "has_capital",
+   "target": "Paris",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "located_in",
+   "target": "Western_Europe",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "official_language",
+   "target": "French",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "borders",
+   "target": "Belgium",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "borders",
+   "target": "Spain",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "borders",
+   "target": "Italy",
+   "props": {}
+  },
+  {
+   "source": "France",
+   "relation": "borders",
+   "target": "Switzerland",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "has_capital",
+   "target": "Berlin",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "located_in",
+   "target": "Western_Europe",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "official_language",
+   "target": "German",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "France",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Belgium",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Netherlands",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Denmark",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Poland",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Czechia",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Austria",
+   "props": {}
+  },
+  {
+   "source": "Germany",
+   "relation": "borders",
+   "target": "Switzerland",
+   "props": {}
+  },
+  {
+   "source": "Spain",
+   "relation": "has_capital",
+   "target": "Madrid",
+   "props": {}
+  },
+  {
+   "source": "Spain",
+   "relation": "located_in",
+   "target": "Southern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Spain",
+   "relation": "official_language",
+   "target": "Spanish",
+   "props": {}
+  },
+  {
+   "source": "Spain",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Spain",
+   "relation": "borders",
+   "target": "France",
+   "props": {}
+  },
+  {
+   "source": "Spain",
+   "relation": "borders",
+   "target": "Portugal",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "has_capital",
+   "target": "Rome",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "located_in",
+   "target": "Southern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "official_language",
+   "target": "Italian",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "borders",
+   "target": "France",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "borders",
+   "target": "Switzerland",
+   "props": {}
+  },
+  {
+   "source": "Italy",
+   "relation": "borders",
+   "target": "Austria",
+   "props": {}
+  },
+  {
+   "source": "Portugal",
+   "relation": "has_capital",
+   "target": "Lisbon",
+   "props": {}
+  },
+  {
+   "source": "Portugal",
+   "relation": "located_in",
+   "target": "Southern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Portugal",
+   "relation": "official_language",
+   "target": "Portuguese",
+   "props": {}
+  },
+  {
+   "source": "Portugal",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Portugal",
+   "relation": "borders",
+   "target": "Spain",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "has_capital",
+   "target": "Brussels",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "located_in",
+   "target": "Western_Europe",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "official_language",
+   "target": "Dutch",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "borders",
+   "target": "France",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Belgium",
+   "relation": "borders",
+   "target": "Netherlands",
+   "props": {}
+  },
+  {
+   "source": "Netherlands",
+   "relation": "has_capital",
+   "target": "Amsterdam",
+   "props": {}
+  },
+  {
+   "source": "Netherlands",
+   "relation": "located_in",
+   "target": "Western_Europe",
+   "props": {}
+  },
+  {
+   "source": "Netherlands",
+   "relation": "official_language",
+   "target": "Dutch",
+   "props": {}
+  },
+  {
+   "source": "Netherlands",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Netherlands",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Netherlands",
+   "relation": "borders",
+   "target": "Belgium",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "has_capital",
+   "target": "Bern",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "located_in",
+   "target": "Western_Europe",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "official_language",
+   "target": "German",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "uses_currency",
+   "target": "Swiss_Franc",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "borders",
+   "target": "France",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "borders",
+   "target": "Italy",
+   "props": {}
+  },
+  {
+   "source": "Switzerland",
+   "relation": "borders",
+   "target": "Austria",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "has_capital",
+   "target": "Vienna",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "located_in",
+   "target": "Western_Europe",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "official_language",
+   "target": "German",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "borders",
+   "target": "Italy",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "borders",
+   "target": "Switzerland",
+   "props": {}
+  },
+  {
+   "source": "Austria",
+   "relation": "borders",
+   "target": "Czechia",
+   "props": {}
+  },
+  {
+   "source": "Poland",
+   "relation": "has_capital",
+   "target": "Warsaw",
+   "props": {}
+  },
+  {
+   "source": "Poland",
+   "relation": "located_in",
+   "target": "Eastern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Poland",
+   "relation": "official_language",
+   "target": "Polish",
+   "props": {}
+  },
+  {
+   "source": "Poland",
+   "relation": "uses_currency",
+   "target": "Zloty",
+   "props": {}
+  },
+  {
+   "source": "Poland",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Poland",
+   "relation": "borders",
+   "target": "Czechia",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "has_capital",
+   "target": "Prague",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "located_in",
+   "target": "Eastern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "official_language",
+   "target": "Czech",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "uses_currency",
+   "target": "Koruna",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "borders",
+   "target": "Austria",
+   "props": {}
+  },
+  {
+   "source": "Czechia",
+   "relation": "borders",
+   "target": "Poland",
+   "props": {}
+  },
+  {
+   "source": "Denmark",
+   "relation": "has_capital",
+   "target": "Copenhagen",
+   "props": {}
+  },
+  {
+   "source": "Denmark",
+   "relation": "located_in",
+   "target": "Northern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Denmark",
+   "relation": "official_language",
+   "target": "Danish",
+   "props": {}
+  },
+  {
+   "source": "Denmark",
+   "relation": "uses_currency",
+   "target": "Krone",
+   "props": {}
+  },
+  {
+   "source": "Denmark",
+   "relation": "borders",
+   "target": "Germany",
+   "props": {}
+  },
+  {
+   "source": "Sweden",
+   "relation": "has_capital",
+   "target": "Stockholm",
+   "props": {}
+  },
+  {
+   "source": "Sweden",
+   "relation": "located_in",
+   "target": "Northern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Sweden",
+   "relation": "official_language",
+   "target": "Swedish",
+   "props": {}
+  },
+  {
+   "source": "Sweden",
+   "relation": "uses_currency",
+   "target": "Krona",
+   "props": {}
+  },
+  {
+   "source": "Sweden",
+   "relation": "borders",
+   "target": "Norway",
+   "props": {}
+  },
+  {
+   "source": "Norway",
+   "relation": "has_capital",
+   "target": "Oslo",
+   "props": {}
+  },
+  {
+   "source": "Norway",
+   "relation": "located_in",
+   "target": "Northern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Norway",
+   "relation": "official_language",
+   "target": "Norwegian",
+   "props": {}
+  },
+  {
+   "source": "Norway",
+   "relation": "uses_currency",
+   "target": "Krone",
+   "props": {}
+  },
+  {
+   "source": "Norway",
+   "relation": "borders",
+   "target": "Sweden",
+   "props": {}
+  },
+  {
+   "source": "Greece",
+   "relation": "has_capital",
+   "target": "Athens",
+   "props": {}
+  },
+  {
+   "source": "Greece",
+   "relation": "located_in",
+   "target": "Southern_Europe",
+   "props": {}
+  },
+  {
+   "source": "Greece",
+   "relation": "official_language",
+   "target": "Greek",
+   "props": {}
+  },
+  {
+   "source": "Greece",
+   "relation": "uses_currency",
+   "target": "Euro",
+   "props": {}
+  }
+ ]
+}

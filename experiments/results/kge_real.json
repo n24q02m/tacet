@@ -1,0 +1,23 @@
+{
+  "dataset": "synthetic-org",
+  "stats": {
+    "entities": 176,
+    "relations": 10,
+    "train": 1162,
+    "valid": 145,
+    "test": 146
+  },
+  "kge": {
+    "dim": 64,
+    "epochs": 200,
+    "negatives": 8,
+    "lr": 0.05
+  },
+  "train_time_s": 37.5,
+  "eval_time_s": 0.04,
+  "final_loss": 0.1083,
+  "MRR": 0.3878,
+  "Hits@1": 0.274,
+  "Hits@3": 0.4521,
+  "Hits@10": 0.5822
+}

@@ -1,0 +1,25 @@
+# Benchmark datasets are downloaded/extracted locally, never committed.
+data/
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+*.egg-info
+
+# Paper build artifacts — only the source under paper/ is committed.
+paper/build/
+paper/*.pdf
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+
+# Secrets / credentials — never commit (defense-in-depth).
+.env
+*.key
+*.pem
+experiments/results/raw.json
+experiments/results/*_pilot.json

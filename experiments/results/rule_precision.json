@@ -1,0 +1,261 @@
+{
+  "synthetic": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "n_seeds": 5,
+    "workload_size": 300,
+    "synth_relations": [
+      "colleague_of",
+      "primary_language",
+      "superior_of"
+    ],
+    "proposed_mean": 241.0,
+    "proposed_std": 34.1818665376834,
+    "installed_mean": 14.2,
+    "installed_std": 1.1661903789690602,
+    "world_correct_mean": 13.6,
+    "world_correct_std": 0.4898979485566356,
+    "mean_precision_mean": 0.99236,
+    "mean_precision_std": 0.010490681579382712,
+    "per_seed": [
+      {
+        "seed": 0,
+        "workload_size": 300,
+        "synth_relations": [
+          "colleague_of",
+          "primary_language",
+          "superior_of"
+        ],
+        "installed_rule_names": [
+          "syn:colleague_of<=works_at.~works_at",
+          "syn:colleague_of<=colleague_of.friend_of",
+          "syn:colleague_of<=colleague_of.~friend_of",
+          "syn:colleague_of<=colleague_of.manages",
+          "syn:colleague_of<=friend_of.friend_of",
+          "syn:colleague_of<=friend_of.~friend_of",
+          "syn:colleague_of<=~friend_of.friend_of",
+          "syn:colleague_of<=~friend_of.~friend_of",
+          "syn:primary_language<=~manages.primary_language",
+          "syn:primary_language<=manages.primary_language",
+          "syn:superior_of<=superior_of.manages",
+          "syn:superior_of<=superior_of.~manages",
+          "syn:superior_of<=manages",
+          "syn:superior_of<=manages.manages",
+          "syn:superior_of<=superior_of.superior_of",
+          "syn:superior_of<=manages.superior_of"
+        ],
+        "per_rule_precision": {
+          "syn:colleague_of<=works_at.~works_at": 1.0,
+          "syn:colleague_of<=colleague_of.friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.~friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.manages": 1.0,
+          "syn:colleague_of<=friend_of.friend_of": 1.0,
+          "syn:colleague_of<=friend_of.~friend_of": 1.0,
+          "syn:colleague_of<=~friend_of.friend_of": 1.0,
+          "syn:colleague_of<=~friend_of.~friend_of": 1.0,
+          "syn:primary_language<=~manages.primary_language": 0.8214,
+          "syn:primary_language<=manages.primary_language": 0.7536,
+          "syn:superior_of<=superior_of.manages": 1.0,
+          "syn:superior_of<=superior_of.~manages": 1.0,
+          "syn:superior_of<=manages": 1.0,
+          "syn:superior_of<=manages.manages": 1.0,
+          "syn:superior_of<=superior_of.superior_of": 1.0,
+          "syn:superior_of<=manages.superior_of": 1.0
+        },
+        "proposed": 280,
+        "installed": 16,
+        "world_correct": 14,
+        "mean_precision": 0.9734
+      },
+      {
+        "seed": 1,
+        "workload_size": 300,
+        "synth_relations": [
+          "colleague_of",
+          "superior_of"
+        ],
+        "installed_rule_names": [
+          "syn:colleague_of<=works_at.~works_at",
+          "syn:colleague_of<=colleague_of.friend_of",
+          "syn:colleague_of<=colleague_of.~friend_of",
+          "syn:colleague_of<=colleague_of.manages",
+          "syn:colleague_of<=colleague_of.colleague_of",
+          "syn:colleague_of<=~colleague_of.colleague_of",
+          "syn:colleague_of<=colleague_of.~manages",
+          "syn:colleague_of<=friend_of.friend_of",
+          "syn:superior_of<=superior_of.manages",
+          "syn:superior_of<=superior_of.~manages",
+          "syn:superior_of<=manages",
+          "syn:superior_of<=manages.manages",
+          "syn:superior_of<=superior_of.superior_of"
+        ],
+        "per_rule_precision": {
+          "syn:colleague_of<=works_at.~works_at": 1.0,
+          "syn:colleague_of<=colleague_of.friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.~friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.manages": 1.0,
+          "syn:colleague_of<=colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=~colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=colleague_of.~manages": 1.0,
+          "syn:colleague_of<=friend_of.friend_of": 1.0,
+          "syn:superior_of<=superior_of.manages": 1.0,
+          "syn:superior_of<=superior_of.~manages": 1.0,
+          "syn:superior_of<=manages": 1.0,
+          "syn:superior_of<=manages.manages": 1.0,
+          "syn:superior_of<=superior_of.superior_of": 1.0
+        },
+        "proposed": 221,
+        "installed": 13,
+        "world_correct": 13,
+        "mean_precision": 1.0
+      },
+      {
+        "seed": 2,
+        "workload_size": 300,
+        "synth_relations": [
+          "colleague_of",
+          "superior_of"
+        ],
+        "installed_rule_names": [
+          "syn:colleague_of<=colleague_of.friend_of",
+          "syn:colleague_of<=colleague_of.~friend_of",
+          "syn:colleague_of<=works_at.~works_at",
+          "syn:colleague_of<=colleague_of.manages",
+          "syn:colleague_of<=colleague_of.colleague_of",
+          "syn:colleague_of<=~colleague_of.colleague_of",
+          "syn:colleague_of<=friend_of.friend_of",
+          "syn:colleague_of<=friend_of.~friend_of",
+          "syn:superior_of<=superior_of.manages",
+          "syn:superior_of<=manages",
+          "syn:superior_of<=superior_of.~manages",
+          "syn:superior_of<=manages.manages",
+          "syn:superior_of<=superior_of.superior_of",
+          "syn:superior_of<=manages.superior_of"
+        ],
+        "per_rule_precision": {
+          "syn:colleague_of<=colleague_of.friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.~friend_of": 1.0,
+          "syn:colleague_of<=works_at.~works_at": 1.0,
+          "syn:colleague_of<=colleague_of.manages": 1.0,
+          "syn:colleague_of<=colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=~colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=friend_of.friend_of": 1.0,
+          "syn:colleague_of<=friend_of.~friend_of": 1.0,
+          "syn:superior_of<=superior_of.manages": 1.0,
+          "syn:superior_of<=manages": 1.0,
+          "syn:superior_of<=superior_of.~manages": 1.0,
+          "syn:superior_of<=manages.manages": 1.0,
+          "syn:superior_of<=superior_of.superior_of": 1.0,
+          "syn:superior_of<=manages.superior_of": 1.0
+        },
+        "proposed": 209,
+        "installed": 14,
+        "world_correct": 14,
+        "mean_precision": 1.0
+      },
+      {
+        "seed": 3,
+        "workload_size": 300,
+        "synth_relations": [
+          "colleague_of",
+          "primary_language",
+          "superior_of"
+        ],
+        "installed_rule_names": [
+          "syn:colleague_of<=colleague_of.friend_of",
+          "syn:colleague_of<=colleague_of.~friend_of",
+          "syn:colleague_of<=works_at.~works_at",
+          "syn:colleague_of<=colleague_of.manages",
+          "syn:colleague_of<=colleague_of.colleague_of",
+          "syn:colleague_of<=~colleague_of.colleague_of",
+          "syn:colleague_of<=friend_of.friend_of",
+          "syn:colleague_of<=friend_of.~friend_of",
+          "syn:primary_language<=manages.primary_language",
+          "syn:superior_of<=superior_of.manages",
+          "syn:superior_of<=manages",
+          "syn:superior_of<=superior_of.~manages",
+          "syn:superior_of<=manages.manages",
+          "syn:superior_of<=superior_of.superior_of",
+          "syn:superior_of<=manages.superior_of"
+        ],
+        "per_rule_precision": {
+          "syn:colleague_of<=colleague_of.friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.~friend_of": 1.0,
+          "syn:colleague_of<=works_at.~works_at": 1.0,
+          "syn:colleague_of<=colleague_of.manages": 1.0,
+          "syn:colleague_of<=colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=~colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=friend_of.friend_of": 1.0,
+          "syn:colleague_of<=friend_of.~friend_of": 1.0,
+          "syn:primary_language<=manages.primary_language": 0.8261,
+          "syn:superior_of<=superior_of.manages": 1.0,
+          "syn:superior_of<=manages": 1.0,
+          "syn:superior_of<=superior_of.~manages": 1.0,
+          "syn:superior_of<=manages.manages": 1.0,
+          "syn:superior_of<=superior_of.superior_of": 1.0,
+          "syn:superior_of<=manages.superior_of": 1.0
+        },
+        "proposed": 285,
+        "installed": 15,
+        "world_correct": 14,
+        "mean_precision": 0.9884
+      },
+      {
+        "seed": 4,
+        "workload_size": 300,
+        "synth_relations": [
+          "colleague_of",
+          "superior_of"
+        ],
+        "installed_rule_names": [
+          "syn:colleague_of<=works_at.~works_at",
+          "syn:colleague_of<=colleague_of.friend_of",
+          "syn:colleague_of<=colleague_of.~friend_of",
+          "syn:colleague_of<=colleague_of.manages",
+          "syn:colleague_of<=colleague_of.colleague_of",
+          "syn:colleague_of<=~colleague_of.colleague_of",
+          "syn:colleague_of<=friend_of.friend_of",
+          "syn:colleague_of<=friend_of.~friend_of",
+          "syn:superior_of<=superior_of.manages",
+          "syn:superior_of<=superior_of.~manages",
+          "syn:superior_of<=manages",
+          "syn:superior_of<=manages.manages",
+          "syn:superior_of<=superior_of.superior_of"
+        ],
+        "per_rule_precision": {
+          "syn:colleague_of<=works_at.~works_at": 1.0,
+          "syn:colleague_of<=colleague_of.friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.~friend_of": 1.0,
+          "syn:colleague_of<=colleague_of.manages": 1.0,
+          "syn:colleague_of<=colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=~colleague_of.colleague_of": 1.0,
+          "syn:colleague_of<=friend_of.friend_of": 1.0,
+          "syn:colleague_of<=friend_of.~friend_of": 1.0,
+          "syn:superior_of<=superior_of.manages": 1.0,
+          "syn:superior_of<=superior_of.~manages": 1.0,
+          "syn:superior_of<=manages": 1.0,
+          "syn:superior_of<=manages.manages": 1.0,
+          "syn:superior_of<=superior_of.superior_of": 1.0
+        },
+        "proposed": 210,
+        "installed": 13,
+        "world_correct": 13,
+        "mean_precision": 1.0
+      }
+    ]
+  },
+  "oracle_2hop": {
+    "installed_rule_names": [
+      "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+    ],
+    "installed": 1,
+    "world_correct": 1,
+    "mean_precision": 1.0,
+    "source": "oracle_2hop_300.json"
+  }
+}

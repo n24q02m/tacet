@@ -1,0 +1,49 @@
+{
+  "seed": 0,
+  "corpus_size": 40,
+  "corpus_path": null,
+  "arm_a_tacet": {
+    "wallclock_s": 0.0,
+    "n": 20,
+    "total_cost": 0.6507000000000001,
+    "accuracy": 0.9,
+    "cost_percentiles": {
+      "p50": 0.05,
+      "p95": 0.05,
+      "p99": 0.05,
+      "mean": 0.032535
+    },
+    "latency_s_percentiles": {
+      "p50": 0.9,
+      "p95": 0.9,
+      "p99": 0.9,
+      "mean": 0.58605
+    },
+    "tier_counts": {
+      "3": 13,
+      "1": 7
+    }
+  },
+  "arm_b_baseline_rag": {
+    "wallclock_s": 1.01,
+    "n": 20,
+    "total_cost": 1.0,
+    "accuracy": 0.9,
+    "cost_percentiles": {
+      "p50": 0.05,
+      "p95": 0.05,
+      "p99": 0.05,
+      "mean": 0.05
+    },
+    "latency_s_percentiles": {
+      "p50": 0.050264835357666016,
+      "p95": 0.0505826473236084,
+      "p99": 0.0505826473236084,
+      "mean": 0.050306057929992674
+    },
+    "tier_counts": {
+      "rag": 20
+    }
+  },
+  "cost_reduction_x": 1.537
+}

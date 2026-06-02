@@ -1,0 +1,68 @@
+[project]
+name = "tacet"
+version = "0.1.0"
+description = "TACET: a self-distilling neuro-symbolic cascade that amortises LLM cost in knowledge-graph QA, with auditable Datalog proof trees"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Nguyen Quang Minh", email = "quangminh2402.dev@gmail.com" }]
+keywords = ["neuro-symbolic", "knowledge-graph", "datalog", "proof-trees", "auditable-ai", "rule-distillation", "llm-cascade", "cost-amortization", "kgqa", "llm"]
+dependencies = [
+    "numpy>=1.26.4",
+]
+
+[project.optional-dependencies]
+experiments = ["matplotlib>=3.10.9", "scipy>=1.17.1"]
+service = ["fastapi>=0.136.3", "uvicorn[standard]>=0.48.0", "pydantic>=2.13.4", "pydantic-settings>=2.14.1", "httpx>=0.28.1", "prometheus_client>=0.25.0"]
+torch = ["torch>=2.12.0"]
+llm = ["google-genai>=1.75.0", "openai>=1.109.1"]
+all = ["tacet[experiments,service,torch,llm]"]
+dev = ["pytest>=9.0.3", "ruff>=0.15.14"]
+
+[project.scripts]
+tacet = "tacet.serve.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tacet"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# experiment runners pin BLAS threads via os.environ before importing numpy.
+"src/tacet/eval/experiment.py" = ["E402"]
+"experiments/kge_real_eval.py" = ["E402"]
+"experiments/run_layer4_eval.py" = ["E402"]
+# kge.py uses upper-case names for batched index arrays (H, T, R), matching
+# the mathematical notation in the ComplEx derivation. Same convention in
+# concepts.py for the design matrix X.  fca.py uses A/B for extent/
+# intent (canonical FCA notation, Wille / Ganter).
+"src/tacet/kge/kge.py" = ["N806"]
+"src/tacet/kge/kge_torch.py" = ["N806", "E402"]
+"src/tacet/eval/benchmark.py" = ["N806"]
+"src/tacet/distill/concepts.py" = ["N803", "N806"]
+"src/tacet/distill/fca.py" = ["N803", "N806"]
+"experiments/run_metaqa.py" = ["E402"]
+"tests/test_tier_a.py" = ["E702"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+build_command = ""
+commit_message = "chore(release): {version}"
+tag_format = "v{version}"
+
+[tool.semantic_release.branches.main]
+match = "main"

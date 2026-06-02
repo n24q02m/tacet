@@ -1,0 +1,75 @@
+{
+  "dataset": "MetaQA-2hop-dev",
+  "teacher": "oracle",
+  "stream_len": 800,
+  "distinct_in_stream": 157,
+  "zipf_a": 1.4,
+  "consolidate_every": 200,
+  "run1_full": {
+    "blended_cost": 6.8165,
+    "llm_only_cost": 40.0,
+    "cost_reduction_x": 5.868,
+    "windowed_cost_per_query": [
+      0.02305,
+      0.01707,
+      0.01307,
+      0.00709,
+      0.01208,
+      0.01108,
+      0.00709,
+      0.01108,
+      0.00509,
+      0.00409,
+      0.00309,
+      0.00509,
+      0.00509,
+      0.00409,
+      0.00409,
+      0.00409
+    ],
+    "tier_early_first200": {
+      "1": 140,
+      "2": 0,
+      "3": 60
+    },
+    "tier_late_last200": {
+      "1": 183,
+      "2": 0,
+      "3": 17
+    },
+    "synthesised_rules": [
+      "syn:co_actor<=~starred_actors.starred_actors",
+      "syn:co_actor<=~directed_by.starred_actors",
+      "syn:director_of_acted<=~starred_actors.directed_by",
+      "syn:release_year_of_written<=~written_by.release_year",
+      "syn:writer_of_acted<=~written_by.starred_actors",
+      "syn:writer_of_acted<=~starred_actors.written_by",
+      "syn:release_year_of_acted<=~starred_actors.release_year",
+      "syn:shares_actor<=starred_actors.~starred_actors",
+      "syn:shares_actor<=written_by.~starred_actors",
+      "syn:shares_director<=directed_by.~directed_by"
+    ]
+  },
+  "run2_ablation_oracle": {
+    "full": {
+      "holdout_cost": 2.3104,
+      "holdout_accuracy": 1.0,
+      "holdout_tiers": {
+        "1": 104,
+        "2": 0,
+        "3": 46
+      },
+      "synthesised_rules": 18
+    },
+    "cache_only": {
+      "holdout_cost": 7.5,
+      "holdout_accuracy": 1.0,
+      "holdout_tiers": {
+        "1": 0,
+        "2": 0,
+        "3": 150
+      },
+      "synthesised_rules": 0
+    }
+  }
+}
