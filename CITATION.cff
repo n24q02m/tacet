@@ -31,3 +31,17 @@ license: MIT
 repository-code: "https://github.com/n24q02m/tacet"
 date-released: 2026-06-10
 version: "0.1.0"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20621241
+    description: "Zenodo preprint of the paper"
+preferred-citation:
+  type: article
+  title: "Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling Neuro-Symbolic Cascades"
+  authors:
+    - family-names: "Nguyen"
+      given-names: "Quang Minh"
+  doi: 10.5281/zenodo.20621241
+  year: 2026
+  publisher:
+    name: "Zenodo"
