@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use TACET, please cite the preprint below."
+title: "Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling Neuro-Symbolic Cascades"
+authors:
+  - family-names: "Nguyen"
+    given-names: "Quang Minh"
+    email: "quangminh2402.dev@gmail.com"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"  # add once registered
+abstract: >-
+  TACET is a self-distilling neuro-symbolic cascade that amortises LLM cost in
+  knowledge-graph question answering. Each query is routed through a sound
+  forward-chaining Datalog rule engine, a confidence-calibrated ComplEx link
+  predictor verified against a typed ontology, and an LLM teacher; an online
+  distillation loop mines the teacher's answers into Datalog-checkable Horn
+  rules and writes facts back, so the routing distribution drifts toward the
+  cheap tiers as the workload streams. The measured dollar saving is delivered
+  by answer reuse, while rule distillation is shown to be teacher-quality-gated.
+  Tier-1 answers carry replayable proof trees with an ontology-preservation
+  guarantee.
+keywords:
+  - neuro-symbolic
+  - knowledge-graph
+  - kgqa
+  - datalog
+  - proof-trees
+  - rule-distillation
+  - llm-cascade
+  - cost-amortization
+  - complex-embedding
+license: MIT
+repository-code: "https://github.com/n24q02m/tacet"
+date-released: 2026-06-10
+version: "0.1.0"
