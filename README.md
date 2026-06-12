@@ -4,7 +4,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/n24q02m/tacet/ci.yml?branch=main&label=CI)](https://github.com/n24q02m/tacet/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/n24q02m/tacet)](LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20621240.svg)](https://doi.org/10.5281/zenodo.20621240)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20666554.svg)](https://doi.org/10.5281/zenodo.20666554)
 
 [![Python](https://img.shields.io/badge/python-3.13-blue?logo=python&logoColor=white)](https://www.python.org)
 [![semantic-release](https://img.shields.io/badge/semantic--release-python-e10079?logo=semantic-release)](https://github.com/python-semantic-release/python-semantic-release)
