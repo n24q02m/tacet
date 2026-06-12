@@ -65,10 +65,10 @@ def stream_repeat_rate(ds, fields):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--privaci-dir", type=Path, required=True,
-                        help="Path to a PrivaCI-Bench checkout")
-    parser.add_argument("--split", default="GDPR",
-                        choices=["GDPR", "AI_ACT", "HIPAA", "ACLU"])
+    parser.add_argument(
+        "--privaci-dir", type=Path, required=True, help="Path to a PrivaCI-Bench checkout"
+    )
+    parser.add_argument("--split", default="GDPR", choices=["GDPR", "AI_ACT", "HIPAA", "ACLU"])
     args = parser.parse_args()
 
     ds = load_from_disk(str(args.privaci_dir / "HF_cache" / "cases"))[args.split]
@@ -91,8 +91,10 @@ def main():
     ]:
         pats = Counter(pattern(ds[i], fields) for i in range(n))
         singletons = sum(1 for c in pats.values() if c == 1)
-        print(f"  {name}: distinct={len(pats)}/{n} singletons={singletons} "
-              f"stream-hit={stream_repeat_rate(ds, fields):.1%}")
+        print(
+            f"  {name}: distinct={len(pats)}/{n} singletons={singletons} "
+            f"stream-hit={stream_repeat_rate(ds, fields):.1%}"
+        )
 
     print("\n== verdict consistency (full CI pattern -> norm_type) ==")
     by_pat = {}
@@ -120,7 +122,7 @@ def main():
         if s and s <= seen:
             hits += 1
         seen |= s
-    print(f"  stream: cases fully within previously-seen articles: {hits/len(violating):.1%}")
+    print(f"  stream: cases fully within previously-seen articles: {hits / len(violating):.1%}")
 
 
 if __name__ == "__main__":
