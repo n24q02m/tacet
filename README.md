@@ -46,7 +46,7 @@ on the symbolic tier, provably sound.
 *"Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling
 Neuro-Symbolic Cascades."*  The paper source is in
 [`paper/`](paper) (build with `tectonic paper/main.tex`), and the preprint
-is published on Zenodo: [doi:10.5281/zenodo.20621240](https://doi.org/10.5281/zenodo.20621240).
+is published on Zenodo: [doi:10.5281/zenodo.20666554](https://doi.org/10.5281/zenodo.20666554).
 
 > **Status:** the preprint is published on Zenodo and pending arXiv
 > endorsement for cs.LG. If you have published in cs.LG and find the work
