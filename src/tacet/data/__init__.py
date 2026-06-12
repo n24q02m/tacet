@@ -38,8 +38,7 @@ Triple = tuple[str, str, str]
 _HERE = Path(__file__).resolve().parent
 
 
-def load_triples_tsv(path: str | Path, sep: str = "\t",
-                     limit: int | None = None) -> list[Triple]:
+def load_triples_tsv(path: str | Path, sep: str = "\t", limit: int | None = None) -> list[Triple]:
     """Read triples from a single TSV/CSV file (``head<sep>relation<sep>tail``)."""
     out: list[Triple] = []
     with Path(path).open(encoding="utf-8") as fh:
@@ -72,8 +71,11 @@ class KGDataset:
         ents = {x for h, _, t in self.all_triples() for x in (h, t)}
         rels = {r for _, r, _ in self.all_triples()}
         return {
-            "entities": len(ents), "relations": len(rels),
-            "train": len(self.train), "valid": len(self.valid), "test": len(self.test),
+            "entities": len(ents),
+            "relations": len(rels),
+            "train": len(self.train),
+            "valid": len(self.valid),
+            "test": len(self.test),
         }
 
     def to_graph(self) -> WorldGraph:
@@ -90,7 +92,8 @@ def load_kg_dataset(root: str | Path, name: str | None = None) -> KGDataset:
     missing = [p for p, fp in files.items() if not fp.exists()]
     if missing:
         raise FileNotFoundError(
-            f"missing {missing} split file(s) in {root}; expected train.txt/valid.txt/test.txt")
+            f"missing {missing} split file(s) in {root}; expected train.txt/valid.txt/test.txt"
+        )
     return KGDataset(
         name=name or root.name,
         train=load_triples_tsv(files["train"]),
@@ -99,8 +102,9 @@ def load_kg_dataset(root: str | Path, name: str | None = None) -> KGDataset:
     )
 
 
-def split_triples(triples: list[Triple], ratios: tuple[float, float, float] = (0.8, 0.1, 0.1),
-                  seed: int = 0) -> KGDataset:
+def split_triples(
+    triples: list[Triple], ratios: tuple[float, float, float] = (0.8, 0.1, 0.1), seed: int = 0
+) -> KGDataset:
     """Split a triple list into train/valid/test with the given ratios (deterministic)."""
     if abs(sum(ratios) - 1.0) > 1e-9:
         raise ValueError("ratios must sum to 1")
@@ -112,8 +116,8 @@ def split_triples(triples: list[Triple], ratios: tuple[float, float, float] = (0
     return KGDataset(
         name="split",
         train=shuffled[:n_train],
-        valid=shuffled[n_train:n_train + n_valid],
-        test=shuffled[n_train + n_valid:],
+        valid=shuffled[n_train : n_train + n_valid],
+        test=shuffled[n_train + n_valid :],
     )
 
 
@@ -122,8 +126,9 @@ def load_worldgeo() -> WorldGraph:
     return WorldGraph.from_json(_HERE / "worldgeo.json")
 
 
-def worldgeo_dataset(ratios: tuple[float, float, float] = (0.8, 0.1, 0.1),
-                     seed: int = 0) -> KGDataset:
+def worldgeo_dataset(
+    ratios: tuple[float, float, float] = (0.8, 0.1, 0.1), seed: int = 0
+) -> KGDataset:
     """Train/valid/test split of the world-geography graph — handy for KGE smoke tests.
 
     Note: only 100ish edges total — useful as a sanity-check, not a benchmark.
@@ -135,9 +140,9 @@ def worldgeo_dataset(ratios: tuple[float, float, float] = (0.8, 0.1, 0.1),
     return ds
 
 
-def synthetic_kg_dataset(seed: int = 0,
-                         ratios: tuple[float, float, float] = (0.8, 0.1, 0.1)
-                         ) -> KGDataset:
+def synthetic_kg_dataset(
+    seed: int = 0, ratios: tuple[float, float, float] = (0.8, 0.1, 0.1)
+) -> KGDataset:
     """The synthetic-benchmark graph split into KGC train/valid/test.
 
     Larger (≈1400 triples, ≈176 entities, 10 relations) and structurally rich
@@ -145,6 +150,7 @@ def synthetic_kg_dataset(seed: int = 0,
     downloads a public benchmark.
     """
     from tacet.eval.benchmark import BenchmarkConfig, generate
+
     bench = generate(BenchmarkConfig(seed=seed))
     triples = [(e.source, e.relation, e.target) for e in bench.graph.edges]
     ds = split_triples(triples, ratios=ratios, seed=seed)

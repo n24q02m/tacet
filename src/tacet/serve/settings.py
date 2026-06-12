@@ -63,7 +63,8 @@ if _HAS_PYDANTIC:
             default="oracle", description="oracle | gemini | grok | fallback | rotating"
         )
         gemini_api_key: str | None = None
-        gemini_model: str = "gemini-2.5-flash"
+        gemini_model: str = "gemini-3.5-flash"
+        gemini_endpoint: str = "generativelanguage"  # generativelanguage | vertex
         xai_api_key: str | None = None
         xai_model: str = "grok-4.3"
         xai_model_fast: str = "grok-4.3"
@@ -143,7 +144,8 @@ else:
 
         teacher: str = "oracle"
         gemini_api_key: str | None = None
-        gemini_model: str = "gemini-2.5-flash"
+        gemini_model: str = "gemini-3.5-flash"
+        gemini_endpoint: str = "generativelanguage"  # generativelanguage | vertex
         xai_api_key: str | None = None
         xai_model: str = "grok-4.3"
         xai_model_fast: str = "grok-4.3"
@@ -178,7 +180,9 @@ else:
             return cls(
                 teacher=_env(f"{p}TEACHER", "oracle") or "oracle",
                 gemini_api_key=_env(f"{p}GEMINI_API_KEY"),
-                gemini_model=_env(f"{p}GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash",
+                gemini_model=_env(f"{p}GEMINI_MODEL", "gemini-3.5-flash") or "gemini-3.5-flash",
+                gemini_endpoint=_env(f"{p}GEMINI_ENDPOINT", "generativelanguage")
+                or "generativelanguage",
                 xai_api_key=_env(f"{p}XAI_API_KEY"),
                 xai_model=_env(f"{p}XAI_MODEL", "grok-4.3") or "grok-4.3",
                 xai_model_fast=_env(f"{p}XAI_MODEL_FAST", "grok-4.3") or "grok-4.3",

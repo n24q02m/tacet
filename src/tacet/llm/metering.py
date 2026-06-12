@@ -36,6 +36,10 @@ DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # Source: https://openrouter.ai/x-ai/grok-4.3 and https://docs.x.ai
     # (xAI standard <=200k-token-context tier), verified 2026-06-03.
     "grok-4.3": (0.00125, 0.0025),
+    # Gemini 3.5 Flash: $1.50 / 1M input, $9.00 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/google/gemini-3.5-flash and
+    # https://ai.google.dev/gemini-api/docs/pricing, verified 2026-06-12.
+    "gemini-3.5-flash": (0.0015, 0.009),
     # update to current Gemini pricing
     "gemini-2.5-pro": (0.00125, 0.005),
     "gemini-2.5-flash": (0.0003, 0.0025),

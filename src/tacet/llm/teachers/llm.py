@@ -112,15 +112,19 @@ class GeminiRestTeacher(Teacher):
     """
 
     _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    _VERTEX_ENDPOINT = (
+        "https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent"
+    )
 
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-2.5-flash",
+        model: str = "gemini-3.5-flash",
         cost: float = 0.005,
         timeout: float = 30.0,
         max_retries: int = 5,
         qps: float | None = 9 / 60,
+        endpoint: str = "generativelanguage",
     ) -> None:
         """
         Parameters
@@ -130,15 +134,22 @@ class GeminiRestTeacher(Teacher):
         qps:
             Soft client-side rate limit. ``9/60`` ≈ free-tier safe (≤ 9 req/min).
             Pass ``None`` to disable.
+        endpoint:
+            ``"generativelanguage"`` (default) or ``"vertex"`` for the Vertex AI
+            express-mode endpoint — required when the API key is restricted to
+            ``aiplatform.googleapis.com`` and generativelanguage returns 403.
 
         ``httpx`` is imported lazily on the first ``answer`` call, so the teacher
         can be constructed (and the rotation wired up) without the optional
         ``service`` extra installed; the ``ImportError`` is raised only when a
         call actually needs the HTTP client.
         """
+        if endpoint not in ("generativelanguage", "vertex"):
+            raise ValueError(f"unknown endpoint {endpoint!r}")
         self._timeout = timeout
         self._client = None  # built lazily on first answer() (needs httpx)
-        self._url = self._ENDPOINT.format(model=model)
+        template = self._VERTEX_ENDPOINT if endpoint == "vertex" else self._ENDPOINT
+        self._url = template.format(model=model)
         self._api_key = api_key
         self._cost = cost
         self._max_retries = max_retries
@@ -175,7 +186,7 @@ class GeminiRestTeacher(Teacher):
         import time
 
         prompt = _PROMPT_TEMPLATE.format(head=head, relation=relation)
-        body = {"contents": [{"parts": [{"text": prompt}]}]}
+        body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}]}
         client = self._get_client()
         text = ""
         for attempt in range(self._max_retries + 1):
@@ -203,15 +214,21 @@ class GeminiRestTeacher(Teacher):
                     if data.get("candidates")
                     else ""
                 )
-                # Gemini reports usage under ``usage_metadata`` with the keys
-                # ``prompt_token_count`` / ``candidates_token_count``; normalise
-                # to the xAI/OpenAI key names so the meter is provider-agnostic.
-                um = data.get("usage_metadata") or {}
+                # The REST API reports usage under camelCase ``usageMetadata``
+                # (``promptTokenCount`` / ``candidatesTokenCount``); the
+                # snake_case spelling only exists on google-genai SDK objects,
+                # so accept both and normalise to the xAI/OpenAI key names so
+                # the meter is provider-agnostic.
+                um = data.get("usageMetadata") or data.get("usage_metadata") or {}
                 if um:
                     self.last_usage = {
-                        "prompt_tokens": um.get("prompt_token_count", 0),
-                        "completion_tokens": um.get("candidates_token_count", 0),
-                        "total_tokens": um.get("total_token_count", 0),
+                        "prompt_tokens": um.get(
+                            "promptTokenCount", um.get("prompt_token_count", 0)
+                        ),
+                        "completion_tokens": um.get(
+                            "candidatesTokenCount", um.get("candidates_token_count", 0)
+                        ),
+                        "total_tokens": um.get("totalTokenCount", um.get("total_token_count", 0)),
                     }
                 break
             except Exception as e:  # pragma: no cover - network
@@ -385,12 +402,15 @@ def build_teacher_from_settings(settings) -> Teacher | None:  # noqa: ANN001
     """Build the configured teacher; returns None for ``teacher=oracle`` so
     the caller can wire in its own ``OracleTeacher`` from a benchmark."""
     name = settings.teacher
+    gemini_endpoint = getattr(settings, "gemini_endpoint", "generativelanguage")
     if name == "oracle":
         return None
     if name == "gemini":
         if not settings.gemini_api_key:
             raise RuntimeError("TACET_GEMINI_API_KEY not set")
-        return GeminiRestTeacher(settings.gemini_api_key, settings.gemini_model)
+        return GeminiRestTeacher(
+            settings.gemini_api_key, settings.gemini_model, endpoint=gemini_endpoint
+        )
     if name == "grok":
         if not settings.xai_api_key:
             raise RuntimeError("TACET_XAI_API_KEY not set")
@@ -404,6 +424,7 @@ def build_teacher_from_settings(settings) -> Teacher | None:  # noqa: ANN001
                 settings.gemini_api_key,
                 model=m,
                 qps=getattr(settings, "rotating_qps_per_model", 9 / 60),
+                endpoint=gemini_endpoint,
             )
             for m in models
         ]
@@ -411,7 +432,11 @@ def build_teacher_from_settings(settings) -> Teacher | None:  # noqa: ANN001
     if name == "fallback":
         chain = []
         if settings.gemini_api_key:
-            chain.append(GeminiRestTeacher(settings.gemini_api_key, settings.gemini_model))
+            chain.append(
+                GeminiRestTeacher(
+                    settings.gemini_api_key, settings.gemini_model, endpoint=gemini_endpoint
+                )
+            )
         if settings.xai_api_key:
             chain.append(
                 GrokTeacher(settings.xai_api_key, settings.xai_model, settings.xai_base_url)

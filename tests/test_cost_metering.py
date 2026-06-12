@@ -175,3 +175,13 @@ class MeteredTeacherTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_default_prices_cover_phase1_teachers():
+    """Both real teachers used by the v2 experiments must have price entries."""
+    from tacet.llm.metering import DEFAULT_PRICES
+
+    assert "grok-4.3" in DEFAULT_PRICES
+    assert "gemini-3.5-flash" in DEFAULT_PRICES
+    inp, out = DEFAULT_PRICES["gemini-3.5-flash"]
+    assert 0 < inp < out

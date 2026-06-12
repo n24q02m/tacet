@@ -35,10 +35,10 @@ _TOPIC_RE = re.compile(r"\[(.+?)\]")
 
 @dataclass
 class MetaQAQuestion:
-    question: str           # raw natural-language sentence with [head] marker
-    head: str               # the topic entity extracted from [...]
-    answers: list[str]      # gold tail entity set
-    hop: int                # 1, 2, or 3
+    question: str  # raw natural-language sentence with [head] marker
+    head: str  # the topic entity extracted from [...]
+    answers: list[str]  # gold tail entity set
+    hop: int  # 1, 2, or 3
 
 
 @dataclass
@@ -47,7 +47,7 @@ class MetaQABenchmark:
 
     name: str
     hop: int
-    split: str              # train | dev | test
+    split: str  # train | dev | test
     kg: WorldGraph
     questions: list[MetaQAQuestion]
     # entity / relation lookup tables built from kb.txt
@@ -55,10 +55,12 @@ class MetaQABenchmark:
     relations: set[str] = field(default_factory=set)
 
     def stats(self) -> dict[str, int]:
-        return {"kg_triples": len(self.kg.edges),
-                "kg_entities": len(self.entities),
-                "kg_relations": len(self.relations),
-                "questions": len(self.questions)}
+        return {
+            "kg_triples": len(self.kg.edges),
+            "kg_entities": len(self.entities),
+            "kg_relations": len(self.relations),
+            "questions": len(self.questions),
+        }
 
 
 def load_kb(root: str | Path) -> tuple[WorldGraph, set[str], set[str]]:
@@ -99,12 +101,10 @@ def _parse_question_line(line: str, hop: int) -> MetaQAQuestion | None:
         return None
     head = m.group(1).strip()
     answers = [a.strip() for a in a_part.split("|") if a.strip()]
-    return MetaQAQuestion(question=q_part.strip(), head=head,
-                          answers=answers, hop=hop)
+    return MetaQAQuestion(question=q_part.strip(), head=head, answers=answers, hop=hop)
 
 
-def load_metaqa(root: str | Path, *, hop: int = 1,
-                split: str = "dev") -> MetaQABenchmark:
+def load_metaqa(root: str | Path, *, hop: int = 1, split: str = "dev") -> MetaQABenchmark:
     """Load a (hop, split) slice with its shared KB.
 
     ``root`` is the path you cloned MetaQA into (the repo's top-level
@@ -146,8 +146,13 @@ def load_metaqa(root: str | Path, *, hop: int = 1,
                 questions.append(parsed)
 
     return MetaQABenchmark(
-        name=f"MetaQA-{hop}hop-{split}", hop=hop, split=split,
-        kg=kg, questions=questions, entities=entities, relations=relations,
+        name=f"MetaQA-{hop}hop-{split}",
+        hop=hop,
+        split=split,
+        kg=kg,
+        questions=questions,
+        entities=entities,
+        relations=relations,
     )
 
 

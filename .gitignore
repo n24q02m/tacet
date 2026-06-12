@@ -1,5 +1,7 @@
 # Benchmark datasets are downloaded/extracted locally, never committed.
-data/
+# Anchored to the repo root: an unanchored "data/" also swallows new files
+# under src/tacet/data/ (silently dropped from commits).
+/data/
 .venv/
 __pycache__/
 *.pyc

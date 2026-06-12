@@ -48,10 +48,7 @@ from tacet.core.symbolic import Pattern, Rule
 
 # Repo-local default root for the extracted ProofWriter V2020.12.3 release.
 DATA_ROOT = (
-    Path(__file__).resolve().parents[3]
-    / "data"
-    / "proofwriter"
-    / "proofwriter-dataset-V2020.12.3"
+    Path(__file__).resolve().parents[3] / "data" / "proofwriter" / "proofwriter-dataset-V2020.12.3"
 )
 
 # Tokens that act as the universally-quantified variable in a rule. ProofWriter
@@ -115,9 +112,9 @@ class ProofWriterQuestion:
 
     qid: str
     text: str
-    atom: Atom              # (arg0, verb, arg1, polarity) of the queried fact
-    answer: bool            # gold boolean under the closed-world assumption
-    depth: int              # QDep: proof depth (0 = base fact)
+    atom: Atom  # (arg0, verb, arg1, polarity) of the queried fact
+    answer: bool  # gold boolean under the closed-world assumption
+    depth: int  # QDep: proof depth (0 = base fact)
 
 
 @dataclass
