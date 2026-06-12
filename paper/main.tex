@@ -60,38 +60,39 @@ via Self-Distilling Neuro-Symbolic Cascades}}
 Large language models make knowledge-graph question answering (KGQA)
 fluent, but every query pays the full price of an LLM call. We present
 \textbf{TACET} (Latin: \emph{it is silent}), a self-distilling
-neuro-symbolic cascade that amortises that cost by progressively migrating a
-streamed workload off the LLM and onto cheap, checkable tiers --- so the
-expensive teacher progressively falls silent. The cascade has three tiers: a \emph{sound}
-forward-chaining Datalog rule engine (Tier~1, which abstains when it cannot
-prove an answer), a confidence-calibrated ComplEx link
-predictor~\citep{trouillon2016complex,guo2017calibration} verified against a
-typed ontology (Tier~2), and an LLM teacher (Tier~3). The central mechanism
-is an \emph{online distillation} loop: whenever the teacher answers, TACET
-mines its answers into Datalog-checkable Horn rules and writes the facts
-back, so the routing distribution drifts toward the cheap tiers as the
-workload streams. Crucially, a synthesised rule generalises to entities the
-teacher never saw, which an answer cache cannot do. On a controlled
-KGQA benchmark (\seeds{} seeds), the cascade answers at \akAcc{} accuracy
-while reducing blended cost by ${\sim}\costFactor\times$ relative to an
-LLM-only system under a \emph{simulated per-tier cost model}. We then
-confirm this on \emph{real data with a real teacher}: streaming MetaQA
-(a $43$k-entity movie KG) through a real Grok~4.3 teacher over \textbf{3 seeds}
-in a controlled design (Tier-2 disabled and a single teacher answer shared
-across arms, so accuracy is matched \emph{by construction}), TACET amortises
-\emph{measured} LLM dollars by $2.8\times$ (1-hop) and $5.1\times$ (2-hop) in
-pooled cost --- the per-seed cost ratio spans $1.5$--$6.3\times$ on 1-hop
-because only non-empty teacher answers are cached. This saving is delivered by \emph{answer reuse}
-(the cascade's caching tier); under the real teacher, rule distillation adds no
-dollar advantage --- full distillation \emph{ties the cache on every seed}. The
-distillation-over-caching effect is itself \emph{teacher-quality-gated}:
-with an oracle teacher the miner recovers a generalising composition rule and
-makes $87\%$ fewer teacher calls than a cache (it answers unseen
-heads, a cache cannot), but under the noisy real LLM the miner recovers no
-installable rule and the cascade reduces to a cache. Tier-1 answers carry replayable Datalog proof
-trees, and we prove an ontology-preservation guarantee (Theorem~\ref{thm:soundness})
-for the synthesised rules. We release the implementation, the benchmark
-generator, and the full experiment grid.
+neuro-symbolic cascade that amortises that cost by progressively migrating
+a streamed workload off the LLM and onto cheap, checkable tiers, so that
+the expensive teacher falls silent over time. The cascade has three tiers:
+a \emph{sound} forward-chaining Datalog rule engine that abstains when it
+cannot prove an answer (Tier~1), a confidence-calibrated ComplEx link
+predictor~\citep{trouillon2016complex,guo2017calibration} verified against
+a typed ontology (Tier~2), and an LLM teacher (Tier~3). The central
+mechanism is an \emph{online distillation} loop. Whenever the teacher
+answers, TACET mines the answer into Datalog-checkable Horn rules and
+writes the facts back, so routing drifts toward the cheap tiers as the
+workload streams. A synthesised rule generalises to entities the teacher
+never saw; an answer cache cannot do that. On a controlled KGQA benchmark
+(\seeds{} seeds), the cascade answers at \akAcc{} accuracy while reducing
+blended cost by ${\sim}\costFactor\times$ relative to an LLM-only system
+under a \emph{simulated per-tier cost model}. We then confirm this on real
+data with a real teacher. Streaming MetaQA (a $43$k-entity movie KG)
+through a real Grok~4.3 teacher over \textbf{3 seeds} in a controlled
+design (Tier-2 disabled and a single teacher answer shared across arms, so
+accuracy is matched \emph{by construction}), TACET amortises
+\emph{measured} LLM dollars by $2.8\times$ on 1-hop and $5.1\times$ on
+2-hop in pooled cost; the per-seed cost ratio spans $1.5$--$6.3\times$ on
+1-hop because only non-empty teacher answers are cached. This saving is
+delivered by answer reuse, the cascade's caching tier. Under the real
+teacher, rule distillation adds no dollar advantage: full distillation ties
+the cache on every seed. The distillation-over-caching effect is itself
+\emph{teacher-quality-gated}. With an oracle teacher the miner recovers a
+generalising composition rule and makes $87\%$ fewer teacher calls than a
+cache, because a rule answers unseen heads and a cache cannot; under the
+noisy real LLM the miner recovers no installable rule and the cascade
+reduces to a cache. Tier-1 answers carry replayable Datalog proof trees,
+and we prove an ontology-preservation guarantee
+(Theorem~\ref{thm:soundness}) for the synthesised rules. We release the
+implementation, the benchmark generator, and the full experiment grid.
 \end{abstract}
 
 \section{Introduction}
@@ -144,7 +145,11 @@ Concretely, \textbf{TACET} is a three-tier cascade:
   anything. Cost ${\sim}5\times10^{-2}$.
 \end{itemize}
 
-The novel component is the \emph{online distillation loop}. Whenever the
+The component we claim as novel is the \emph{conjunction}: an online
+distillation loop whose artifact is \emph{executable} --- type-checked
+Datalog rules and facts inside a sound symbolic tier --- rather than
+retrieved text or student parameters; Section~\ref{sec:related} situates
+this against cascades that learn over time. Whenever the
 teacher answers, TACET (a) \emph{writes the fact back} into the graph, so
 the identical query drops to Tier~1; (b) runs an AMIE-style rule
 miner~\citep{galarraga2015amie} over the accumulated teacher answers and,
@@ -204,9 +209,14 @@ study --- the dynamics of routing and distillation --- from the orthogonal
 question of LLM answer quality. The real-LLM, real-data result that closes
 this gap is reported in Section~\ref{sec:realcost}; the extension modules
 shipped but not invoked by the cascade are described in
-Appendix~\ref{sec:extmodules}.
+Appendix~\ref{sec:extmodules}. We use MetaQA and ProofWriter as
+\emph{mechanism testbeds}: both have long been saturated by specialised
+systems~\citep{saxena2020embedkgqa,tafjord2021proofwriter}, so we make no
+state-of-the-art accuracy claim on either; they are small enough to meter a
+real teacher end-to-end, which is the measurement this paper is about.
 
 \section{Related Work}
+\label{sec:related}
 
 \paragraph{Model cascades and adaptive inference.} Cascades route inputs
 through models of increasing cost, stopping early when a cheap model is
@@ -221,6 +231,28 @@ than merely cheap. Second, and centrally, a static cascade has a
 experiments include a static cascade as a baseline precisely to isolate
 this effect.
 
+\paragraph{Cascades that learn over time.} Two recent lines share TACET's
+goal of a cascade whose cost falls as the workload streams. Online cascade
+learning~\citep{onlinecascade2024} imitates the LLM with a cheap neural
+student trained on the stream; the distilled artifact is student
+\emph{parameters}. Inter-Cascade~\citep{intercascade2025} extracts reusable
+natural-language strategies from strong-model answers and retrieves them
+into the weak model's context, cutting strong-model calls by up to 48\%;
+the artifact is \emph{text}, applied in-context. TACET's artifact is a set
+of executable, type-checked Datalog rules and facts: it answers without any
+neural model in the loop, generalises to unseen entities through deductive
+closure, and every Tier-1 answer carries a replayable proof tree.
+LLM2LAS~\citep{llm2las2025} also turns LLM output into logic rules (via
+ILASP) but offline, outside any cost-accounted cascade;
+NeSyC~\citep{nesyc2025} continually refines LLM-hypothesised rules for
+embodied agents. Compile-once neuro-symbolic offloading in the legal
+domain~\citep{legaloffload2026} and reasoning-to-program
+compilation~\citep{reacomp2026} share the amortisation telos but translate
+top-down in a single pass, rather than mining incrementally from teacher
+answers under an ontology gate. A recent survey~\citep{expcompression2026}
+places declarative rules at the maximal-compression end of agent experience
+and identifies precisely this design point as under-explored.
+
 \paragraph{KGQA.} Embedding-based KGQA answers multi-hop questions in a
 learned vector space~\citep{saxena2020embedkgqa}. A recent line uses an LLM
 as an agent that walks the graph: Think-on-Graph~\citep{sun2024tog} and
@@ -228,7 +260,10 @@ Reasoning-on-Graphs~\citep{luo2024rog} interleave LLM reasoning with graph
 retrieval for faithfulness. These systems make every query an LLM
 interaction; they improve \emph{quality}, not \emph{cost}, and they do not
 accumulate reusable knowledge. TACET is complementary: such an agent could
-serve as our Tier-3 teacher.
+serve as our Tier-3 teacher. Closest in benchmark terms, recent work
+combines LLM planning with embedding-guided search for efficient multi-hop
+QA on MetaQA~\citep{effmultihop2025}, but the pipeline is static: nothing
+learned while answering one query reduces the cost of the next.
 
 \paragraph{KG embeddings and rule mining.} TransE~\citep{bordes2013transe},
 ComplEx~\citep{trouillon2016complex}, RotatE~\citep{sun2019rotate} and
@@ -242,6 +277,10 @@ pruning and no confidence bounds --- and we make no claim of superiority
 over AMIE/AMIE+. Our
 contribution is the \emph{setting}: mining rules from \emph{teacher answers}
 as a workload streams, and feeding them to a downstream sound reasoner.
+ChatRule~\citep{chatrule2023} prompts an LLM to propose logical rules for
+KG completion offline and ranks them with AMIE-style support and
+confidence; TACET instead mines rules online from teacher answers during
+serving, and installs them only after they pass an ontology type-gate.
 
 \paragraph{Temporal knowledge graphs and graph world models.} A mature line
 forecasts future edges of a temporal knowledge graph from its history:
@@ -921,143 +960,6 @@ voting/agreement check is the natural mitigation.
 \label{fig:noise}
 \end{figure}
 
-\section{TACET in Context: Caching, Transformers, and On-Device LLMs}
-\label{sec:context}
-
-Three questions follow naturally from the architecture: is TACET merely a
-semantic cache; does it approximate or replace the Transformer; and what
-LLM does it actually need? We address each directly.
-
-\subsection{Is TACET ``just a semantic cache''?}
-
-A semantic cache memoises past (query, answer) pairs and additionally
-serves near-duplicate queries by embedding similarity. It is the natural
-sceptical reading of any system that sits in front of an LLM and makes
-repeated questions cheap. The reading deserves to be taken seriously ---
-and rejected precisely.
-
-Our \textbf{cache cascade} baseline is an \emph{exact-match} cache (rules
-$+$ an exact-match answer store $+$ the LLM) --- the honest ``just
-memoise'' baseline. We do not implement the stronger embedding-similarity
-(semantic) cache; below we mark exactly where one would and would not
-close the gap. Every cost result separates TACET
-from the exact-match cache. The decisive evidence is E5 (Figure~\ref{fig:sens}): as the
-workload repeat rate falls to zero --- every query distinct --- the
-cache's cost climbs steeply toward the LLM-only regime (rising
-${\sim}2.5\times$ across the sweep) because an exact-match cache can only
-return an answer it has \emph{literally seen}. A semantic cache would blunt
-this curve only insofar as the distinct queries are near-duplicates of
-prior ones; against \emph{structurally novel} heads (the regime E5 sweeps
-toward) it degrades just as the exact-match cache does. TACET's cost is
-roughly half the cache's at zero repetition. A cache's value is
-repetition; TACET's value survives its absence.
-
-The gap is produced by what a cache structurally cannot do:
-\begin{itemize}
-\item \textbf{Compositional generalisation.} When the teacher answers
-\texttt{superior\_of} for ten employees, the miner induces the \emph{rule}
-$\mathit{manages}\circ\mathit{manages}\Rightarrow\mathit{superior\_of}$.
-That rule answers \texttt{superior\_of} for \emph{every} employee in the
-graph, including those never queried and never seen by the teacher. Neither
-an exact-match nor an embedding-similarity (semantic) cache has any entry
-for a structurally unseen head, so this gap is robust to upgrading the
-cache from exact-match to semantic.
-\item \textbf{Deductive inference.} Tier 1 returns the deductive
-\emph{closure} --- facts that were never stored and never asked
-(transitive ancestors, alliance-derived relations). A cache stores facts;
-it does not derive them.
-\item \textbf{Structural prediction.} Tier 2 predicts genuinely unseen
-edges from graph structure; a cache recalls but cannot predict.
-\item \textbf{Soundness and verification.} Tier-1 answers are provably
-entailed and Tier-2 answers ontology-checked; a cache returns whatever it
-stored, stale or wrong, unchecked.
-\item \textbf{Editability.} Change one fact and the closure updates
-consistently; a cache silently keeps every entry that depended on the old
-value.
-\end{itemize}
-
-A semantic cache is, precisely, the \emph{degenerate special case} of
-TACET with rule synthesis and Tier 2 disabled and only fact write-back
-retained --- the \texttt{no\_rule\_synth} configuration of
-Table~\ref{tab:ablation}. The measured gap between that row and full
-TACET \emph{is} the value beyond caching; the ablation exists to quantify
-it. We concede the converse honestly: for the \textsc{Novel} class ---
-idiosyncratic facts with no structure --- TACET's write-back genuinely
-\emph{is} a cache and nothing more. The claim is not that TACET is never
-a cache; it is that TACET is a cache \emph{plus} a deductive reasoner
-\emph{plus} a structural learner, and the cache is the least interesting
-part. Caching amortises \emph{computation} --- the same question, cheaper
-next time. Distillation amortises \emph{knowledge} --- an entire class of
-questions, cheap thereafter, because the generative rule behind them has
-been recovered. It is the difference between memorising answers and
-learning the law that produces them.
-
-\subsection{Relationship to the Transformer}
-
-TACET does not approximate or replace the Transformer, and should not
-claim to; the two operate at different levels. A Transformer is a
-general-purpose learner over token sequences --- open-world language,
-perception, generation, in-context adaptation. TACET's tiers operate on
-discrete, typed, curated symbolic structure: they do not parse free-form
-language, do not perceive, do not generate text, and have no in-context
-learning. TACET cannot stand in for a Transformer; it \emph{needs} one,
-as teacher and as narrator.
-
-Functionally, TACET's symbolic and KGE tiers are \emph{strictly less
-expressive} than a Transformer, by design. The architecture's premise is
-that a large fraction of a real KGQA workload falls inside that small,
-cheap, interpretable subset and can be served without the Transformer,
-while the genuinely linguistic, perceptual or novel long tail inherently
-requires it and is routed to it. TACET is therefore best read as an
-\emph{amortisation layer} around an LLM --- closer in spirit to a
-just-in-time compiler, or a cache in front of an interpreter, than to an
-alternative interpreter.
-
-Could a graph world model become \emph{part of} an LLM? It depends on what
-``part'' means. As an external, editable long-term memory and a discrete
-reasoning tool inside an LLM \emph{agent system}, yes --- that is
-essentially what TACET already is, and it aligns with the
-non-parametric-memory branch of memory-augmented transformers
-\citep{memaug2025,hipporag2024} and with modular neuro-symbolic agent
-designs \citep{karpas2022mrkl}. Fusing the graph world model into the
-Transformer's \emph{differentiable core} --- as a learned graph- or
-memory-layer inside the network --- is, however, in tension with its
-reason for existing. The value of Tier 1 is precisely that it is \emph{not}
-a learned latent: it is discrete, inspectable, editable and sound.
-Compiling it into the weights buys end-to-end differentiability at the
-price of every property that distinguishes it from the Transformer beside
-it. The honest trajectory is hybrid systems in which a Transformer and a
-graph world model coexist behind a clean interface, not one dissolved into
-the other.
-
-\subsection{What LLM does TACET need? An on-device reading}
-
-The cascade uses an LLM in two roles with very different requirements. The
-\textbf{teacher} (Tier 3, the distillation source) must be \emph{strong}:
-it defines the ground truth that becomes rules and facts, so a weak
-teacher distils weak knowledge --- but by construction it is invoked
-\emph{rarely} and with decreasing frequency. The \textbf{narrator/parser}
---- mapping a natural-language question to a structured query, and a
-structured answer back to prose --- is invoked on \emph{every} query but
-is an easy task.
-
-This split maps cleanly onto the current model landscape. A small
-on-device model such as \textbf{Gemma~4~E2B} --- ${\sim}2.3$B effective
-parameters, a 128K context, multimodal input, running on commodity edge
-hardware at interactive speed \citep{gemma4} --- is well suited to the
-narrator/parser role and ill-suited to the teacher role. It should
-\emph{not} be the distillation teacher; it can comfortably be the
-always-on language front-end, and its text embeddings can additionally
-initialise the KGE tier for text-attributed entities, fusing language with
-structure. The consequence is a concrete deployment story: once
-distillation has populated Tiers 1--2, TACET can run \emph{entirely
-on-device} --- a symbolic engine, a small KGE, and an E2B-class model for
-language --- with no cloud LLM in the hot path; a frontier teacher is
-consulted only occasionally, for the shrinking novel fraction, as a cloud
-call or a periodic batch job. A small on-device LLM does not go into the
-\emph{core} of TACET --- that core is symbolic and structural --- but it
-is the right LLM for the loop around it.
-
 \section{Discussion and Limitations}
 \label{sec:limitations}
 
@@ -1149,6 +1051,71 @@ imperfect LLM teacher rather than collapsing to cache-equivalent behaviour.
 \paragraph{Engineering.} The graph store is in-memory; the symbolic and
 graph operations map directly onto a production graph database, and the
 consolidation step onto a scheduled batch job.
+
+\subsection{Is TACET ``just a semantic cache''?}
+\label{sec:semcache}
+
+A semantic cache memoises past (query, answer) pairs and additionally
+serves near-duplicate queries by embedding similarity. It is the natural
+sceptical reading of any system that sits in front of an LLM and makes
+repeated questions cheap. The reading deserves to be taken seriously ---
+and rejected precisely.
+
+Our \textbf{cache cascade} baseline is an \emph{exact-match} cache (rules
+$+$ an exact-match answer store $+$ the LLM) --- the honest ``just
+memoise'' baseline. We do not implement the stronger embedding-similarity
+(semantic) cache; below we mark exactly where one would and would not
+close the gap. Every cost result separates TACET
+from the exact-match cache. The decisive evidence is E5 (Figure~\ref{fig:sens}): as the
+workload repeat rate falls to zero --- every query distinct --- the
+cache's cost climbs steeply toward the LLM-only regime (rising
+${\sim}2.5\times$ across the sweep) because an exact-match cache can only
+return an answer it has \emph{literally seen}. A semantic cache would blunt
+this curve only insofar as the distinct queries are near-duplicates of
+prior ones; against \emph{structurally novel} heads (the regime E5 sweeps
+toward) it degrades just as the exact-match cache does. TACET's cost is
+roughly half the cache's at zero repetition. A cache's value is
+repetition; TACET's value survives its absence.
+
+The gap is produced by what a cache structurally cannot do:
+\begin{itemize}
+\item \textbf{Compositional generalisation.} When the teacher answers
+\texttt{superior\_of} for ten employees, the miner induces the \emph{rule}
+$\mathit{manages}\circ\mathit{manages}\Rightarrow\mathit{superior\_of}$.
+That rule answers \texttt{superior\_of} for \emph{every} employee in the
+graph, including those never queried and never seen by the teacher. Neither
+an exact-match nor an embedding-similarity (semantic) cache has any entry
+for a structurally unseen head, so this gap is robust to upgrading the
+cache from exact-match to semantic.
+\item \textbf{Deductive inference.} Tier 1 returns the deductive
+\emph{closure} --- facts that were never stored and never asked
+(transitive ancestors, alliance-derived relations). A cache stores facts;
+it does not derive them.
+\item \textbf{Structural prediction.} Tier 2 predicts genuinely unseen
+edges from graph structure; a cache recalls but cannot predict.
+\item \textbf{Soundness and verification.} Tier-1 answers are provably
+entailed and Tier-2 answers ontology-checked; a cache returns whatever it
+stored, stale or wrong, unchecked.
+\item \textbf{Editability.} Change one fact and the closure updates
+consistently; a cache silently keeps every entry that depended on the old
+value.
+\end{itemize}
+
+A semantic cache is, precisely, the \emph{degenerate special case} of
+TACET with rule synthesis and Tier 2 disabled and only fact write-back
+retained --- the \texttt{no\_rule\_synth} configuration of
+Table~\ref{tab:ablation}. The measured gap between that row and full
+TACET \emph{is} the value beyond caching; the ablation exists to quantify
+it. We concede the converse honestly: for the \textsc{Novel} class ---
+idiosyncratic facts with no structure --- TACET's write-back genuinely
+\emph{is} a cache and nothing more. The claim is not that TACET is never
+a cache; it is that TACET is a cache \emph{plus} a deductive reasoner
+\emph{plus} a structural learner, and the cache is the least interesting
+part. Caching amortises \emph{computation} --- the same question, cheaper
+next time. Distillation amortises \emph{knowledge} --- an entire class of
+questions, cheap thereafter, because the generative rule behind them has
+been recovered. It is the difference between memorising answers and
+learning the law that produces them.
 
 \section{Conclusion}
 
@@ -1640,7 +1607,7 @@ distillation-beyond-caching effect, isolated: it materialises exactly when the
 teacher is accurate and complete enough for the miner to recover a generalising
 rule.
 
-\paragraph{Answering ``is TACET just a semantic cache?''} Section~\ref{sec:context}
+\paragraph{Answering ``is TACET just a semantic cache?''} Section~\ref{sec:semcache}
 poses this question architecturally; the real-LLM data answers it empirically.
 TACET \emph{exceeds} a cache precisely when the teacher is reliable enough for
 the miner to recover generalising rules (the oracle 2-hop run: 87\% fewer
