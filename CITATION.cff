@@ -33,7 +33,7 @@ date-released: 2026-06-10
 version: "0.1.0"
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.20621240
+    value: 10.5281/zenodo.20666554
     description: "Zenodo preprint of the paper"
 preferred-citation:
   type: article
@@ -41,7 +41,7 @@ preferred-citation:
   authors:
     - family-names: "Nguyen"
       given-names: "Quang Minh"
-  doi: 10.5281/zenodo.20621240
+  doi: 10.5281/zenodo.20666554
   year: 2026
   publisher:
     name: "Zenodo"
