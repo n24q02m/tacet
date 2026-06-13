@@ -4,7 +4,7 @@ from tacet.llm.teachers.compliance import (
     COMPLIANCE_PROMPT_TEMPLATE,
     parse_compliance_answer,
 )
-from tacet.llm.teachers.llm import GeminiRestTeacher
+from tacet.llm.teachers.llm import GeminiRestTeacher, OpenRouterTeacher
 
 
 class _FakeResponse:
@@ -63,3 +63,10 @@ def test_parse_compliance_answer_edge_cases():
         ("art32", "art6"),
     )
     assert parse_compliance_answer(["weird"]) == ("abstain", ())
+
+
+def test_openrouter_teacher_points_at_openrouter():
+    # thin subclass of GrokTeacher: OpenRouter base_url + the model slug, no network
+    t = OpenRouterTeacher("k", model="anthropic/claude-sonnet-4.6", prompt_template="{head}")
+    assert t._model == "anthropic/claude-sonnet-4.6"
+    assert str(t._client.base_url).rstrip("/") == "https://openrouter.ai/api/v1"

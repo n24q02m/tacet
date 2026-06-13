@@ -25,3 +25,6 @@ paper/*.blg
 *.pem
 experiments/results/raw.json
 experiments/results/*_pilot.json
+# transient experiment-run scratch (tee logs, per-seed partial dumps)
+experiments/results/_*
+experiments/results/privaci_matrix_partial_*.json

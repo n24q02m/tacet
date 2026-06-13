@@ -312,6 +312,32 @@ class GrokTeacher(Teacher):
         return TeacherResponse(answers=_parse_json_list(text), cost=self._cost)
 
 
+class OpenRouterTeacher(GrokTeacher):
+    """OpenAI-compatible teacher via OpenRouter (https://openrouter.ai/api/v1).
+
+    OpenRouter is OpenAI-compatible, so this reuses ``GrokTeacher.answer``
+    unchanged (the xAI-only usage fields it probes are simply absent here, and
+    ``getattr`` degrades them to ``None``/0 so ``MeteredTeacher`` falls back to
+    the token-times-price estimate). The model slug is the OpenRouter id, e.g.
+    ``anthropic/claude-sonnet-4.6``; with the matching provider key attached on
+    the OpenRouter dashboard, BYOK routing spends that provider's own credit
+    first and only then OpenRouter's shared capacity.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "anthropic/claude-sonnet-4.6",
+        prompt_template: str | None = None,
+    ) -> None:
+        super().__init__(
+            api_key,
+            model=model,
+            base_url="https://openrouter.ai/api/v1",
+            prompt_template=prompt_template,
+        )
+
+
 class RotatingTeacher(Teacher):
     """Cycle through a priority-ordered list of teachers, one per query.
 

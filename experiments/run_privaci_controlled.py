@@ -52,7 +52,11 @@ from tacet.llm.teachers.compliance import (  # noqa: E402
     NL_STRATEGY_PROMPT_TEMPLATE,
     parse_compliance_answer,
 )
-from tacet.llm.teachers.llm import GeminiRestTeacher, GrokTeacher  # noqa: E402
+from tacet.llm.teachers.llm import (  # noqa: E402
+    GeminiRestTeacher,
+    GrokTeacher,
+    OpenRouterTeacher,
+)
 
 Answer = tuple[str, tuple[str, ...]]  # (verdict, violated articles)
 
@@ -73,6 +77,13 @@ def _build_teacher(name: str, prompt_template: str = COMPLIANCE_PROMPT_TEMPLATE)
         return "grok-4.3", GrokTeacher(
             os.environ["TACET_XAI_API_KEY"],
             "grok-4.3",
+            prompt_template=prompt_template,
+        )
+    if name == "claude":
+        # OpenRouter BYOK -> anthropic/claude-sonnet-4.6 (priced as claude-sonnet-4.6)
+        return "claude-sonnet-4.6", OpenRouterTeacher(
+            os.environ["TACET_OPENROUTER_API_KEY"],
+            model="anthropic/claude-sonnet-4.6",
             prompt_template=prompt_template,
         )
     return "gemini-3.5-flash", GeminiRestTeacher(
@@ -479,7 +490,7 @@ def main() -> None:
     ap.add_argument("--split", default="GDPR")
     ap.add_argument("--n", type=int, default=300)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--teacher", choices=("gemini", "grok"), default="gemini")
+    ap.add_argument("--teacher", choices=("gemini", "grok", "claude"), default="gemini")
     ap.add_argument("--budget-usd", type=float, default=2.0)
     ap.add_argument("--consolidate-every", type=int, default=25)
     ap.add_argument("--min-support", type=int, default=5)

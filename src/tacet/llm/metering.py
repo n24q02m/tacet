@@ -40,6 +40,12 @@ DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # Source: https://openrouter.ai/google/gemini-3.5-flash and
     # https://ai.google.dev/gemini-api/docs/pricing, verified 2026-06-12.
     "gemini-3.5-flash": (0.0015, 0.009),
+    # Claude Sonnet 4.6: $3 / 1M input, $15 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/anthropic/claude-sonnet-4.6, verified
+    # 2026-06-13. Used via OpenRouter BYOK (anthropic/claude-sonnet-4.6); the
+    # 5% BYOK surcharge (waived for the first 1M requests/month) is not modelled
+    # here, so reported cost is the Anthropic token price.
+    "claude-sonnet-4.6": (0.003, 0.015),
     # update to current Gemini pricing
     "gemini-2.5-pro": (0.00125, 0.005),
     "gemini-2.5-flash": (0.0003, 0.0025),
