@@ -1654,6 +1654,89 @@ mining (Section~\ref{sec:limitations}). The controlled runner is
 \texttt{experiments/results/real\_kg\_controlled\_\{1hop,2hop\}\_seed\{0,1,2\}.json}
 and the oracle run at \texttt{oracle\_2hop\_300.json}.
 
+\subsection{Cross-Domain Validation: Compliance Checking}
+\label{sec:compliance}
+The MetaQA real-LLM study (Section~\ref{sec:realcost}) answers question~(i) ---
+the cascade amortises measured dollars --- but leaves question~(ii) neutral:
+under a noisy single-relation/2-hop teacher no generalising rule clears the
+miner, so distillation ties the cache. To test whether question~(ii) is
+answerable with a real teacher at all, we move to a second, non-saturated
+domain where the latent rules are genuinely deductive and the teacher is
+accurate: \emph{regulatory-compliance checking}.
+
+\paragraph{Task and benchmark.} PrivaCI-Bench~\citep{privacibench2025} (ACL
+2025) frames GDPR compliance as contextual-integrity reasoning: each case is a
+data-flow scenario with a typed tuple (sender, recipient, subject, role,
+information type, consent form, transmission purpose) and a gold verdict
+(permitted / prohibited / not-applicable) plus the followed/violated GDPR
+articles. We stream $300$ GDPR cases ($3$ seeds). The teacher answers a
+verdict and the cited articles; TACET mines the verdicts online into
+ontology-gated Datalog rules over the contextual-integrity atoms --- the same
+miner, type-gate, and proof-tree machinery as the KGQA cascade
+(Section~\ref{sec:distill}), with the contextual-integrity tuple as the typed
+fact ontology. To avoid an extractor oracle, a single fixed cheap extractor
+produces the typed atoms from raw case text for \emph{every} arm, with its cost
+folded into the amortisation curve; gold tuples never enter the graph or the
+miner (they appear only in the held-out verdict/article oracle).
+
+\paragraph{Arms and control.} We compare four arms under a shared-teacher
+control (one teacher call per distinct case, reused across arms, so verdict
+accuracy is matched by construction --- the same device as
+Section~\ref{sec:realcost}): \textbf{llm\_only} (every case to the teacher),
+\textbf{cache} (exact-match verdict cache + teacher), \textbf{full} (online
+rule distillation + cache + teacher), and \textbf{nl\_strategy}, a faithful
+port of Inter-Cascade~\citep{intercascade2025} that retrieves
+natural-language compliance strategies into the teacher's context under a
+retrieval-coverage gate (deferring to the teacher when no stored strategy
+covers the case). \textbf{nl\_strategy uses the same frontier model as the
+teacher}, so the contrast isolates representation (NL memory vs executable
+symbolic rules), not model capability.
+
+\input{results/tab_privaci.tex}
+
+\paragraph{Distillation beats caching with a real teacher, across providers.}
+Table~\ref{tab:privaci} reports the amortisation factor (LLM-only cost /
+arm cost) at matched verdict accuracy. Full online distillation amortises
+measured teacher cost by \privFullGemini$\times$ (gemini-3.5-flash),
+\privFullClaude$\times$ (claude-sonnet-4.6) and \privFullGrok$\times$
+(grok-4.3) --- positive on all three frontier teachers --- against
+${\sim}\privCacheGemini\times$ for the exact-match cache. Crucially, only
+\privDistinct{} of $300$ cases per stream are repeats of a seen pattern
+(a ${\sim}9\%$ ceiling), so the cache is near-useless and the full arm's
+lead comes from rules that generalise to \emph{unseen} cases --- the
+distillation-beyond-caching effect the KGQA workload could not exhibit under
+a noisy teacher. This is the positive, real-(non-oracle)-teacher answer to
+question~(ii) of Section~\ref{sec:realcost}, on the identical mechanism.
+
+\paragraph{Why NL strategies and offline compilation do not amortise.} The
+faithful in-context-strategy baseline (nl\_strategy) is \emph{more} expensive
+than LLM-only on every teacher (\privNlGemini$\times$, \privNlClaude$\times$,
+\privNlGrok$\times$, i.e.\ ${<}1\times$): each covered case still issues a
+teacher call, and the retrieved strategy inflates the prompt, so moving answers
+into a model's \emph{context} does not remove the per-query LLM cost --- only
+moving them into a free symbolic engine does. We further contrast online
+distillation against \textbf{compile\_once}, an offline variant that mines a
+frozen rule set from a prefix of the stream and applies it to the suffix
+(same miner and gate). Scored on the matched suffix, online \textbf{full} is at
+least as cheap as compile\_once at equal-or-higher accuracy at every prefix
+length $K\in\{90,150,210\}$ (per-seed \texttt{offline\_contrast}), because
+online consolidation keeps installing rules as later cases arrive rather than
+freezing an early, partial rule set. Both baselines harden the positioning
+against Inter-Cascade~\citep{intercascade2025} and compile-once
+offloading~\citep{legaloffload2026,reacomp2026} in
+Section~\ref{sec:related}.
+
+\paragraph{An honest trade-off: article attribution.} The amortisation is not
+free. While \emph{verdict} accuracy holds at the iso-accuracy control, the
+\emph{article-level} attribution micro-F1 of the full arm drops to
+\privArtFOneFullGemini--\privArtFOneFullGrok{} against
+${\sim}\privArtFOneLlmGemini{}$ for LLM-only: a synthesised pattern$\to$article
+rule over-generalises, citing an article that the typed pattern usually but not
+always implies. This is a cost/attribution trade-off, not a verdict-accuracy
+regression, and it is the same over-generalisation failure mode the synthetic
+\texttt{primary\_language} rule exhibits (Section~\ref{sec:rule_precision}); we
+discuss it and its held-out-precision guard in Section~\ref{sec:limitations}.
+
 \section{Ontology-Preservation and Complexity of the Symbolic Tier}
 \label{sec:soundness}
 
