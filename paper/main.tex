@@ -1570,7 +1570,11 @@ cost reduction under a \emph{simulated} per-tier cost model. The de-scoped
 thesis of this paper is that two claims must be settled on real data with a
 real teacher: (i) does the cascade actually amortise \emph{measured dollars}
 the way the cost model predicts, and (ii) does distillation genuinely exceed a
-cache? We answer both by streaming a $300$-query Zipfian-repeat
+cache? (We answer (i) affirmatively below; (ii) is neutral on this noisy KGQA teacher,
+but Section~\ref{sec:compliance} answers it affirmatively on a second domain ---
+GDPR compliance --- where a real teacher is accurate enough for the miner to
+recover generalising rules, so the teacher-quality boundary is crossed on a real
+workload, not only under an oracle.) We answer both by streaming a $300$-query Zipfian-repeat
 workload over MetaQA --- a real-entity movie KG ($133{,}582$ triples,
 $43{,}234$ entities) --- with a real \textbf{Grok~4.3} Tier-3 teacher, metering
 every token at xAI's published price (Table~\ref{tab:real_kg}), over
@@ -1646,7 +1650,11 @@ teacher calls than a cache). On a \emph{noisy} real-LLM compositional workload
 rule and the cascade gracefully \emph{falls back} to cache-equivalent behaviour
 --- still delivering the full $2.8\times$/$5.1\times$ pooled amortisation
 (identical for the cache and full arms), just without the extra edge over
-caching. We report this honestly: with a real LLM teacher on this
+caching. Section~\ref{sec:compliance} supplies the missing positive case on a real
+teacher: on GDPR compliance the miner \emph{does} recover generalising rules,
+and full distillation beats the cache across three frontier teachers --- so the
+``just a cache'' reading is rejected not only by the oracle run but by a real,
+non-oracle teacher on a second domain. We report this honestly: with a real LLM teacher on this
 benchmark, distillation does \emph{not} beat caching; the teacher-quality
 bottleneck is itself a finding, and it directly motivates noise-robust rule
 mining (Section~\ref{sec:limitations}). The controlled runner is
