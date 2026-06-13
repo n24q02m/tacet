@@ -1,0 +1,13 @@
+\begin{table}[t]\centering
+\caption{Compliance-domain cost amortisation on PrivaCI-Bench GDPR ($n{=}300$, 3 seeds, iso-accuracy). Full online distillation beats an exact-match cache across three frontier teachers; the in-context-strategy baseline (nl\_strategy) does not amortise.}
+\label{tab:privaci}
+\begin{tabular}{lrrrrr}
+\toprule
+Teacher & full $\times$ & cache $\times$ & nl\_strategy $\times$ & acc (full) & article-F1 (full / LLM-only) \\
+\midrule
+gemini-3.5-flash & $2.06\pm0.21$ & $1.11$ & $0.86$ & $0.91$ & $0.49$ / $0.63$ \\
+claude-sonnet-4.6 & $1.83\pm0.10$ & $1.11$ & $0.82$ & $0.93$ & $0.51$ / $0.57$ \\
+grok-4.3 & $1.51\pm0.10$ & $1.12$ & $0.99$ & $0.93$ & $0.57$ / $0.63$ \\
+\bottomrule
+\end{tabular}
+\end{table}
