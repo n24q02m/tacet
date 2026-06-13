@@ -93,7 +93,16 @@ cache, because a rule answers unseen heads and a cache cannot; under the
 noisy real LLM the miner recovers no installable rule and the cascade
 reduces to a cache. Tier-1 answers carry replayable Datalog proof trees,
 and we prove an ontology-preservation guarantee
-(Theorem~\ref{thm:soundness}) for the synthesised rules. We release the
+(Theorem~\ref{thm:soundness}) for the synthesised rules. The
+distillation-over-caching effect that is neutral under the noisy KGQA
+teacher turns \emph{positive} on a second domain: streaming GDPR
+compliance cases from PrivaCI-Bench~\citep{privacibench2025} past three real
+frontier teachers (gemini-3.5-flash, claude-sonnet-4.6, grok-4.3) over $3$
+seeds at matched verdict accuracy, online rule distillation amortises measured
+teacher cost by $1.5$--$2.1\times$ versus an LLM-only system --- against
+${\sim}1.1\times$ for an exact-match cache and ${<}1\times$ for a faithful
+in-context-strategy baseline --- with only a ${\sim}9\%$ repeat ceiling, so the
+saving is rule \emph{generalisation}, not memoisation. We release the
 implementation, the benchmark generator, and the full experiment grid.
 \end{abstract}
 
