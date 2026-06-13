@@ -125,6 +125,7 @@ class GeminiRestTeacher(Teacher):
         max_retries: int = 5,
         qps: float | None = 9 / 60,
         endpoint: str = "generativelanguage",
+        prompt_template: str | None = None,
     ) -> None:
         """
         Parameters
@@ -146,6 +147,8 @@ class GeminiRestTeacher(Teacher):
         """
         if endpoint not in ("generativelanguage", "vertex"):
             raise ValueError(f"unknown endpoint {endpoint!r}")
+        #: Domain prompt; must contain ``{head}`` (and optionally ``{relation}``).
+        self._prompt_template = prompt_template or _PROMPT_TEMPLATE
         self._timeout = timeout
         self._client = None  # built lazily on first answer() (needs httpx)
         template = self._VERTEX_ENDPOINT if endpoint == "vertex" else self._ENDPOINT
@@ -185,7 +188,7 @@ class GeminiRestTeacher(Teacher):
     def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
         import time
 
-        prompt = _PROMPT_TEMPLATE.format(head=head, relation=relation)
+        prompt = self._prompt_template.format(head=head, relation=relation)
         body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}]}
         client = self._get_client()
         text = ""
@@ -248,6 +251,7 @@ class GrokTeacher(Teacher):
         model: str = "grok-4.3",
         base_url: str = "https://api.x.ai/v1",
         cost: float = 0.05,
+        prompt_template: str | None = None,
     ) -> None:
         try:
             from openai import OpenAI  # type: ignore[import-not-found]
@@ -258,6 +262,8 @@ class GrokTeacher(Teacher):
         self._client = OpenAI(api_key=api_key, base_url=base_url)
         self._model = model
         self._cost = cost
+        #: Domain prompt; must contain ``{head}`` (and optionally ``{relation}``).
+        self._prompt_template = prompt_template or _PROMPT_TEMPLATE
         #: xAI/OpenAI-style token usage from the most recent call
         #: (``prompt_tokens`` / ``completion_tokens`` / ``total_tokens``).
         #: ``None`` until the first successful call. Read by
@@ -265,7 +271,7 @@ class GrokTeacher(Teacher):
         self.last_usage: dict | None = None
 
     def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
-        prompt = _PROMPT_TEMPLATE.format(head=head, relation=relation)
+        prompt = self._prompt_template.format(head=head, relation=relation)
         try:
             resp = self._client.chat.completions.create(
                 model=self._model,

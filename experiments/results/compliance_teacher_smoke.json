@@ -1,0 +1,660 @@
+{
+  "n": 20,
+  "seed": 0,
+  "split": "GDPR",
+  "teachers": {
+    "grok-4.3": {
+      "verdict_acc": 1.0,
+      "n_abstain": 0,
+      "article_micro_p": 0.7308,
+      "article_micro_r": 0.6333,
+      "article_micro_f1": 0.6786,
+      "usd": 0.030281,
+      "prompt_tokens": 5685,
+      "completion_tokens": 10587,
+      "rows": [
+        {
+          "case_id": "GDPR-1577",
+          "gold": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-3104",
+          "gold": [
+            "permit",
+            []
+          ],
+          "pred": [
+            "permit",
+            []
+          ]
+        },
+        {
+          "case_id": "GDPR-1722",
+          "gold": [
+            "prohibit",
+            [
+              "art33"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art9"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0165",
+          "gold": [
+            "prohibit",
+            [
+              "art33",
+              "art34"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art33"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1060",
+          "gold": [
+            "prohibit",
+            [
+              "art31"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art31"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2094",
+          "gold": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1990",
+          "gold": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1658",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1242",
+          "gold": [
+            "prohibit",
+            [
+              "art13",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1952",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art33",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1466",
+          "gold": [
+            "prohibit",
+            [
+              "art6",
+              "art7"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2389",
+          "gold": [
+            "prohibit",
+            [
+              "art12",
+              "art13",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art13",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0894",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2067",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0570",
+          "gold": [
+            "prohibit",
+            [
+              "art6",
+              "art7"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1154",
+          "gold": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0572",
+          "gold": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-3095",
+          "gold": [
+            "permit",
+            []
+          ],
+          "pred": [
+            "permit",
+            []
+          ]
+        },
+        {
+          "case_id": "GDPR-0388",
+          "gold": [
+            "prohibit",
+            [
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2532",
+          "gold": [
+            "permit",
+            []
+          ],
+          "pred": [
+            "permit",
+            []
+          ]
+        }
+      ]
+    },
+    "gemini-3.5-flash": {
+      "verdict_acc": 1.0,
+      "n_abstain": 0,
+      "article_micro_p": 0.6286,
+      "article_micro_r": 0.7333,
+      "article_micro_f1": 0.6769,
+      "usd": 0.007554,
+      "prompt_tokens": 3320,
+      "completion_tokens": 286,
+      "rows": [
+        {
+          "case_id": "GDPR-1577",
+          "gold": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-3104",
+          "gold": [
+            "permit",
+            []
+          ],
+          "pred": [
+            "permit",
+            []
+          ]
+        },
+        {
+          "case_id": "GDPR-1722",
+          "gold": [
+            "prohibit",
+            [
+              "art33"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art9"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0165",
+          "gold": [
+            "prohibit",
+            [
+              "art33",
+              "art34"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art33"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1060",
+          "gold": [
+            "prohibit",
+            [
+              "art31"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art31"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2094",
+          "gold": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1990",
+          "gold": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1658",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1242",
+          "gold": [
+            "prohibit",
+            [
+              "art13",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1952",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art33",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5",
+              "art9"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1466",
+          "gold": [
+            "prohibit",
+            [
+              "art6",
+              "art7"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2389",
+          "gold": [
+            "prohibit",
+            [
+              "art12",
+              "art13",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art13",
+              "art5",
+              "art6",
+              "art88"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0894",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2067",
+          "gold": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0570",
+          "gold": [
+            "prohibit",
+            [
+              "art6",
+              "art7"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-1154",
+          "gold": [
+            "prohibit",
+            [
+              "art5",
+              "art6"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5",
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-0572",
+          "gold": [
+            "prohibit",
+            [
+              "art32"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art32",
+              "art5"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-3095",
+          "gold": [
+            "permit",
+            []
+          ],
+          "pred": [
+            "permit",
+            []
+          ]
+        },
+        {
+          "case_id": "GDPR-0388",
+          "gold": [
+            "prohibit",
+            [
+              "art5"
+            ]
+          ],
+          "pred": [
+            "prohibit",
+            [
+              "art6"
+            ]
+          ]
+        },
+        {
+          "case_id": "GDPR-2532",
+          "gold": [
+            "permit",
+            []
+          ],
+          "pred": [
+            "permit",
+            []
+          ]
+        }
+      ]
+    }
+  }
+}
