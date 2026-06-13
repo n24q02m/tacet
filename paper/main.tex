@@ -211,6 +211,18 @@ downward and the blended cost decays toward the symbolic floor.
   \emph{forecasting} showing that a learned forward-dynamics extension does
   not beat purpose-built temporal models, reported as a negative result
   rather than a headline claim (Section~\ref{sec:layer4}).
+  \item[(C5)] \textbf{A second domain where distillation beats caching with a
+  real teacher.} We port the identical cascade to regulatory-compliance
+  checking on PrivaCI-Bench~\citep{privacibench2025} (GDPR), mining online
+  Datalog rules over typed contextual-integrity atoms from a real teacher's
+  verdicts. Over $3$ seeds at matched verdict accuracy, full distillation
+  amortises measured teacher cost by $1.5$--$2.1\times$ across three frontier
+  teachers, against ${\sim}1.1\times$ for an exact-match cache and ${<}1\times$
+  for a faithful in-context-strategy baseline (an Inter-Cascade~\citep{intercascade2025}
+  port at the same model); with a ${\sim}9\%$ repeat ceiling the gain is rule
+  generalisation, not memoisation (Section~\ref{sec:compliance}). This is the
+  positive real-(non-oracle)-teacher answer to the question (ii) of
+  Section~\ref{sec:realcost} that the KGQA workload leaves neutral.
 \end{enumerate}
 
 \paragraph{Scope.} The main grid evaluates on a \emph{controlled synthetic}
