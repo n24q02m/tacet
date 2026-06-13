@@ -93,3 +93,11 @@ def test_violates_relation_gated_by_ontology():
     assert onto.allows(g, "GDPR-0000", "violates", "article:art32") is True
     # type gate rejects a violates edge into a non-article node
     assert onto.allows(g, "GDPR-0000", "violates", "role:controller") is False
+
+
+def test_verdict_relation_gated_by_ontology():
+    bench = _benchmark()
+    g, onto = bench.graph, bench.ontology
+    g.add_node("verdict:permit", type="verdict")
+    assert onto.allows(g, "GDPR-0000", "verdict", "verdict:permit") is True
+    assert onto.allows(g, "GDPR-0000", "violates", "verdict:permit") is False

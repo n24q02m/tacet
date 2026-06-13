@@ -1,0 +1,297 @@
+{
+  "dataset": "PrivaCI-Bench-GDPR",
+  "design": "controlled: shared teacher answers across arms; gold only in oracle",
+  "n": 300,
+  "seed": 0,
+  "teacher": "gemini",
+  "model": "gemini-3.5-flash",
+  "distinct_patterns": 273,
+  "consolidate_every": 25,
+  "min_support": 5,
+  "min_confidence": 0.9,
+  "real_teacher_calls": 300,
+  "total_measured_spend_usd": 0.130218,
+  "truncated_by_budget": false,
+  "arms": [
+    {
+      "arm": "llm_only",
+      "n": 300,
+      "verdict_acc": 0.9233,
+      "article_micro_f1": 0.6041,
+      "article_micro_p": 0.52,
+      "article_micro_r": 0.7207,
+      "teacher_calls": 300,
+      "total_cost_usd": 0.130218,
+      "cost_curve_usd": [
+        0.022939,
+        0.044257,
+        0.066855,
+        0.087429,
+        0.108196,
+        0.130218
+      ],
+      "wallclock_s": 2243.2
+    },
+    {
+      "arm": "cache",
+      "n": 300,
+      "verdict_acc": 0.92,
+      "article_micro_f1": 0.5934,
+      "article_micro_p": 0.5076,
+      "article_micro_r": 0.7143,
+      "teacher_calls": 273,
+      "total_cost_usd": 0.1186,
+      "cost_curve_usd": [
+        0.022081,
+        0.041571,
+        0.062395,
+        0.082188,
+        0.100917,
+        0.1186
+      ],
+      "wallclock_s": 0.0,
+      "distinct_patterns": 273
+    },
+    {
+      "arm": "full",
+      "n": 300,
+      "verdict_acc": 0.93,
+      "article_micro_f1": 0.5005,
+      "article_micro_p": 0.4804,
+      "article_micro_r": 0.5224,
+      "teacher_calls": 155,
+      "total_cost_usd": 0.06695,
+      "cost_curve_usd": [
+        0.022081,
+        0.034383,
+        0.045179,
+        0.053672,
+        0.059913,
+        0.06695
+      ],
+      "wallclock_s": 0.3,
+      "engine_hits": 137,
+      "cache_hits": 8,
+      "distinct_patterns": 155,
+      "rules_installed": [
+        {
+          "name": "mined_art6__purpose-security_and_fraud_prevention",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 7
+        },
+        {
+          "name": "mined_art6__information_type-audiovisual_and_multimedia_data__subject_role-other",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art5__information_type-audiovisual_and_multimedia_data__purpose-security_and_fraud_prevention",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__information_type-other__subject_role-other",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__sender_role-data_controller_or_processor__subject_role-other",
+          "target": "art6",
+          "confidence": 0.9,
+          "support": 9
+        },
+        {
+          "name": "mined_art5__consent_form-authorization__recipient_role-other",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art5__consent_form-authorization__information_type-health_and_medical_data",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__recipient_role-data_controller",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_permit__consent_form-consent__purpose-analytics_and_service_improvement",
+          "target": "permit",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__information_type-identity_and_contact_information__sender_role-data_controller_or_processor",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__sender_role-public_authority_or_government",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__consent_form-none__subject_role-customer_or_client",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art32__consent_form-none__information_type-financial_and_transaction_data",
+          "target": "art32",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art32__consent_form-none__recipient_role-other",
+          "target": "art32",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__information_type-financial_and_transaction_data__subject_role-customer_or_client",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__purpose-marketing_and_advertising__recipient_role-data_subject",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art58__purpose-legal_compliance_and_cooperation__recipient_role-public_authority",
+          "target": "art58",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art58__purpose-legal_compliance_and_cooperation__sender_role-data_controller_or_processor",
+          "target": "art58",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__purpose-public_interest_and_journalism",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__sender_role-employee_or_internal_staff",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 7
+        },
+        {
+          "name": "mined_art5__consent_form-authorization__subject_role-employee_or_worker",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__information_type-identity_and_contact_information__purpose-service_delivery_and_operations",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__information_type-other__recipient_role-general_public",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__subject_role-other",
+          "target": "art6",
+          "confidence": 0.9,
+          "support": 18
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__purpose-marketing_and_advertising",
+          "target": "art6",
+          "confidence": 0.9,
+          "support": 9
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__purpose-marketing_and_advertising__recipient_role-customer_or_client",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art32__recipient_role-malicious_actor",
+          "target": "art32",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art5__information_type-demographic_and_social_data",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art5__sender_role-general_commercial_entity__subject_role-customer_or_client",
+          "target": "art5",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__information_type-financial_and_transaction_data",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 6
+        },
+        {
+          "name": "mined_art15__purpose-privacy_and_data_subject_rights__sender_role-data_controller_or_processor",
+          "target": "art15",
+          "confidence": 1.0,
+          "support": 5
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__subject_role-citizen_or_public_member",
+          "target": "art6",
+          "confidence": 0.9167,
+          "support": 11
+        },
+        {
+          "name": "mined_art6__consent_form-authorization__sender_role-general_commercial_entity__subject_role-customer_or_client",
+          "target": "art6",
+          "confidence": 1.0,
+          "support": 5
+        }
+      ],
+      "rules_rejected_by_gate": 0
+    }
+  ],
+  "verdict": {
+    "amortisation_cache_vs_llm": 1.098,
+    "amortisation_full_vs_llm": 1.945,
+    "calls_llm": 300,
+    "calls_cache": 273,
+    "calls_full": 155,
+    "verdict_acc": {
+      "llm_only": 0.9233,
+      "cache": 0.92,
+      "full": 0.93
+    },
+    "article_f1": {
+      "llm_only": 0.6041,
+      "cache": 0.5934,
+      "full": 0.5005
+    },
+    "n_rules_installed": 33
+  }
+}

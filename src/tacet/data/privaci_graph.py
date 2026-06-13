@@ -42,7 +42,7 @@ class ComplianceBenchmark:
 
 def build_compliance_ontology() -> Ontology:
     onto = Ontology()
-    for nt in ("case", "info_type", "purpose", "role", "consent", "article"):
+    for nt in ("case", "info_type", "purpose", "role", "consent", "article", "verdict"):
         onto.add_node_type(NodeType(name=nt))
     for slot, (rel, target_type) in SLOT_RELATIONS.items():
         onto.add_relation_type(
@@ -55,6 +55,9 @@ def build_compliance_ontology() -> Ontology:
         )
     onto.add_relation_type(
         RelationType(name="violates", domain=frozenset({"case"}), range=frozenset({"article"}))
+    )
+    onto.add_relation_type(
+        RelationType(name="verdict", domain=frozenset({"case"}), range=frozenset({"verdict"}))
     )
     return onto
 
