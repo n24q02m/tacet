@@ -60,19 +60,27 @@ Answer = tuple[str, tuple[str, ...]]  # (verdict, violated articles)
 CURVE_EVERY = 50
 
 
-def _build_teacher(name: str):  # noqa: ANN202
+def _build_teacher(name: str, prompt_template: str = COMPLIANCE_PROMPT_TEMPLATE):  # noqa: ANN202
+    """Build a teacher for the two approved models only (grok-4.3, gemini-3.5-flash).
+
+    The same builder serves the frontier teacher and the nl_strategy in-context
+    model: per the no-routing directive, nl_strategy re-prompts the SAME model
+    as the frontier (just with retrieved guidelines), so the only difference
+    measured is NL-memory vs executable symbolic rules -- no cheaper model is
+    introduced and no model-capability confound enters the comparison.
+    """
     if name == "grok":
         return "grok-4.3", GrokTeacher(
             os.environ["TACET_XAI_API_KEY"],
             "grok-4.3",
-            prompt_template=COMPLIANCE_PROMPT_TEMPLATE,
+            prompt_template=prompt_template,
         )
     return "gemini-3.5-flash", GeminiRestTeacher(
         os.environ["TACET_GEMINI_API_KEY"],
         model="gemini-3.5-flash",
         endpoint="vertex",
         qps=None,
-        prompt_template=COMPLIANCE_PROMPT_TEMPLATE,
+        prompt_template=prompt_template,
     )
 
 
@@ -376,17 +384,20 @@ def _run_nl_strategy(
     Faithful port of the deferral-to-learning cascade: a growing repository of
     natural-language guidelines (distilled from earlier deferred cases) is
     retrieved by case similarity. A case is COVERED when its top retrieved
-    guideline clears a similarity gate ``tau`` -- then a CHEAP weak-model call
-    conditioned on the retrieved guidelines answers it, at the weak-token cost
-    (a per-query floor the symbolic engine does NOT pay, and an answer with NO
-    replayable proof tree). An UNCOVERED case (empty/low-similarity repo, i.e.
-    the cold start) DEFERS to the same shared frontier teacher and appends a new
-    guideline. The repo grows, coverage rises, weak calls displace teacher calls
-    -- exactly Inter-Cascade's amortisation, but here every accepted answer
-    still pays tokens and lacks a proof tree.
+    guideline clears a similarity gate ``tau`` -- then an in-context model call
+    conditioned on the retrieved guidelines answers it. Per the no-routing
+    directive this model is the SAME as the frontier (no cheaper tier), so the
+    comparison is purely NL-memory vs executable symbolic rules: the covered
+    case STILL costs a full LLM call (a per-query floor the free symbolic engine
+    eliminates) and its answer carries NO replayable proof tree. An UNCOVERED
+    case (empty/low-similarity repo, i.e. the cold start) DEFERS to the same
+    shared frontier teacher and appends a new guideline. The repo grows and
+    coverage rises -- exactly Inter-Cascade's accumulation -- but because every
+    answer is still an LLM call, NL strategies do not amortise teacher cost the
+    way executable rules do.
 
-    Deferral is gated on retrieval coverage rather than the weak model's
-    self-reported confidence, which is uncalibrated (gemini-2.5-flash returns
+    Deferral is gated on retrieval coverage rather than the model's
+    self-reported confidence, which is uncalibrated (gemini-3.5-flash returns
     >=0.9 on essentially every case, so a confidence gate never fires); coverage
     is deterministic, reproducible, and actually exercises the repository.
     """
@@ -485,7 +496,6 @@ def main() -> None:
     )
     ap.add_argument("--nl-tau", type=float, default=0.5, help="nl_strategy retrieval-coverage gate")
     ap.add_argument("--nl-top-k", type=int, default=2)
-    ap.add_argument("--weak-model", default="gemini-2.5-flash")
     ap.add_argument(
         "--suffix-scoring",
         action="store_true",
@@ -533,14 +543,9 @@ def main() -> None:
     weak_metered = None
     embed = None
     if "nl_strategy" in selected:
-        weak_raw = GeminiRestTeacher(
-            os.environ["TACET_GEMINI_API_KEY"],
-            model=args.weak_model,
-            endpoint="vertex",
-            qps=None,
-            prompt_template=NL_STRATEGY_PROMPT_TEMPLATE,
-        )
-        weak_metered = MeteredTeacher(weak_raw, PriceTable.default(), model=args.weak_model)
+        # no routing: the nl_strategy in-context model is the SAME as the frontier
+        weak_model, weak_raw = _build_teacher(args.teacher, NL_STRATEGY_PROMPT_TEMPLATE)
+        weak_metered = MeteredTeacher(weak_raw, PriceTable.default(), model=weak_model)
         embed = _load_embedder()
 
     def _dispatch(name: str) -> dict:
@@ -643,7 +648,7 @@ def main() -> None:
                 "score_from": score_from,
                 "prefix_k": prefix_k if "compile_once" in selected else None,
                 "nl_tau": args.nl_tau if "nl_strategy" in selected else None,
-                "weak_model": args.weak_model if "nl_strategy" in selected else None,
+                "weak_model": (weak_metered.model if weak_metered else None),
                 "real_teacher_calls": shared.real_calls,
                 "total_measured_spend_usd": round(guard.spent_usd, 6),
                 "truncated_by_budget": truncated,

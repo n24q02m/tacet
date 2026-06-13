@@ -32,13 +32,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import os  # noqa: E402
-
 from run_privaci_controlled import (  # noqa: E402
     NL_STRATEGY_PROMPT_TEMPLATE,
     BudgetExceededError,
     BudgetGuard,
-    GeminiRestTeacher,
     MeteredTeacher,
     PriceTable,
     SharedComplianceCache,
@@ -73,7 +70,6 @@ def _run_seed(
     min_support: int,
     min_confidence: float,
     nl_tau: float,
-    weak_model: str,
     do_sweeps: bool,
 ) -> dict:
     cases = load_privaci(privaci, split=split)
@@ -88,17 +84,9 @@ def _run_seed(
     metered = MeteredTeacher(raw_teacher, PriceTable.default(), model=model)
     guard = BudgetGuard(budget_usd)
     shared = SharedComplianceCache(metered, guard, bench)
-    weak = MeteredTeacher(
-        GeminiRestTeacher(
-            os.environ["TACET_GEMINI_API_KEY"],
-            model=weak_model,
-            endpoint="vertex",
-            qps=None,
-            prompt_template=NL_STRATEGY_PROMPT_TEMPLATE,
-        ),
-        PriceTable.default(),
-        model=weak_model,
-    )
+    # no routing: nl_strategy re-prompts the SAME model as the frontier
+    weak_model, weak_raw = _build_teacher(teacher, NL_STRATEGY_PROMPT_TEMPLATE)
+    weak = MeteredTeacher(weak_raw, PriceTable.default(), model=weak_model)
     embed = _load_embedder()
 
     print(f"\n=== {teacher} seed={seed} n={len(cases)} distinct={distinct} model={model} ===")
@@ -218,7 +206,6 @@ def main() -> None:
     ap.add_argument("--min-support", type=int, default=5)
     ap.add_argument("--min-confidence", type=float, default=0.9)
     ap.add_argument("--nl-tau", type=float, default=0.5)
-    ap.add_argument("--weak-model", default="gemini-2.5-flash")
     ap.add_argument("--sweep-seed", type=int, default=0, help="seed that also runs tau/K sweeps")
     ap.add_argument("--out", default="experiments/results/privaci_matrix.json")
     args = ap.parse_args()
@@ -242,7 +229,6 @@ def main() -> None:
                 min_support=args.min_support,
                 min_confidence=args.min_confidence,
                 nl_tau=args.nl_tau,
-                weak_model=args.weak_model,
                 do_sweeps=(seed == args.sweep_seed),
             )
             runs.append(r)
@@ -276,7 +262,7 @@ def main() -> None:
         "n": args.n,
         "teachers": teachers,
         "seeds": seeds,
-        "weak_model": args.weak_model,
+        "nl_strategy_model": "same-as-frontier (no routing: weak == frontier per run)",
         "runs": runs,
         "aggregate": aggregate,
     }
