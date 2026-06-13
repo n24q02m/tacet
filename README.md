@@ -1,10 +1,10 @@
 # TACET
 
-**A self-distilling neuro-symbolic cascade that amortises LLM cost in knowledge-graph QA, with auditable Datalog proof trees.**
+**A self-distilling neuro-symbolic cascade that amortises LLM cost across knowledge-graph QA and regulatory-compliance checking, with auditable Datalog proof trees.**
 
 [![CI](https://img.shields.io/github/actions/workflow/status/n24q02m/tacet/ci.yml?branch=main&label=CI)](https://github.com/n24q02m/tacet/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/n24q02m/tacet)](LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20666554.svg)](https://doi.org/10.5281/zenodo.20666554)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20621240.svg)](https://doi.org/10.5281/zenodo.20621240)
 
 [![Python](https://img.shields.io/badge/python-3.13-blue?logo=python&logoColor=white)](https://www.python.org)
 [![semantic-release](https://img.shields.io/badge/semantic--release-python-e10079?logo=semantic-release)](https://github.com/python-semantic-release/python-semantic-release)
@@ -43,10 +43,10 @@ query falls toward the symbolic floor while the answers stay explainable and,
 on the symbolic tier, provably sound.
 
 **TACET** is the system; the paper is
-*"Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling
-Neuro-Symbolic Cascades."*  The paper source is in
+*"Cost-Amortised Reasoning via Self-Distilling Neuro-Symbolic Cascades:
+From Knowledge-Graph QA to Regulatory-Compliance Checking."*  The paper source is in
 [`paper/`](paper) (build with `tectonic paper/main.tex`), and the preprint
-is published on Zenodo: [doi:10.5281/zenodo.20666554](https://doi.org/10.5281/zenodo.20666554).
+is published on Zenodo: [doi:10.5281/zenodo.20621240](https://doi.org/10.5281/zenodo.20621240).
 
 > **Status:** the preprint is published on Zenodo and pending arXiv
 > endorsement for cs.LG. If you have published in cs.LG and find the work

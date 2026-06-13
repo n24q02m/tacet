@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use TACET, please cite the preprint below."
-title: "Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling Neuro-Symbolic Cascades"
+title: "Cost-Amortised Reasoning via Self-Distilling Neuro-Symbolic Cascades: From Knowledge-Graph QA to Regulatory-Compliance Checking"
 authors:
   - family-names: "Nguyen"
     given-names: "Quang Minh"
@@ -33,15 +33,15 @@ date-released: 2026-06-10
 version: "0.1.0"
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.20666554
-    description: "Zenodo preprint of the paper"
+    value: 10.5281/zenodo.20621240
+    description: "Zenodo concept DOI (resolves to the latest version)"
 preferred-citation:
   type: article
-  title: "Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling Neuro-Symbolic Cascades"
+  title: "Cost-Amortised Reasoning via Self-Distilling Neuro-Symbolic Cascades: From Knowledge-Graph QA to Regulatory-Compliance Checking"
   authors:
     - family-names: "Nguyen"
       given-names: "Quang Minh"
-  doi: 10.5281/zenodo.20666554
+  doi: 10.5281/zenodo.20621240
   year: 2026
   publisher:
     name: "Zenodo"
