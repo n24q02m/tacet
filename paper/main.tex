@@ -361,6 +361,28 @@ Datalog instantiation of the idea, producing a per-answer proof tree --- the
 minimal set of ground rule firings that derives each committed answer ---
 that can be replayed independently of the model that proposed it.
 
+\paragraph{Neuro-symbolic compliance and privacy reasoning.} Regulatory
+compliance is a natural home for proof-carrying neuro-symbolic reasoning, and a
+recent line attacks it directly. PrivaCI-Bench~\citep{privacibench2025} frames
+GDPR/HIPAA compliance as contextual-integrity reasoning and is the benchmark we
+adopt for our second domain. GraphCompliance~\citep{graphcompliance2025} aligns
+policy and context graphs for LLM-based compliance assessment, and
+Cosmic~\citep{cosmicgdpr2026} performs automated reasoning over GDPR consent
+violations; both translate a fixed policy top-down, whereas TACET \emph{mines}
+the compliance rules online from a teacher's verdicts under an ontology gate.
+ARIEL~\citep{arielprivacy2025} personalises agent privacy decisions by logical
+entailment over prior user choices --- rule-based privacy reasoning, but not a
+cost-amortising cascade. Closest in name, SELFCI~\citep{selfci2026} performs
+\emph{self-distillation for contextual integrity}, but its student is the LLM's
+own \emph{parameters}; TACET's student is a set of executable Datalog rules,
+a cross-representation distillation whose artifact answers without any neural
+model in the loop. Finally, a position paper argues that logical
+\emph{soundness} alone is not a reliable correctness criterion for
+neuro-symbolic fact-checking~\citep{soundnessnotreliable2026}; we agree, and it
+is exactly why our soundness guarantee (Theorem~\ref{thm:soundness}) is scoped
+to type-consistency and provenance rather than world-correctness, and why we
+report the article-F1 over-generalisation honestly (Section~\ref{sec:limitations}).
+
 \paragraph{Causal reasoning over knowledge graphs.} Causal knowledge graphs
 encode interventional and counterfactual structure to explain
 predictions~\citep{causalkg2022}, and recent work routes LLM causal
