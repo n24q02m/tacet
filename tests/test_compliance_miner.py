@@ -86,3 +86,31 @@ def test_most_general_pruning():
 
 def test_empty_input():
     assert mine_compliance_rules([]) == []
+
+
+def test_offline_mine_over_prefix_generalises_to_held_out_suffix():
+    """compile_once path: mine ONCE over a prefix, the rule fires on a suffix case.
+
+    Splits the synthetic dataset into prefix/suffix, mines only the prefix, and
+    checks the planted (credentials AND no-consent -> art32) rule body matches a
+    held-out suffix case sharing that pattern — i.e. the offline-mined ruleset
+    generalises without re-mining.
+    """
+    from tacet.data.privaci_graph import SLOT_RELATIONS
+
+    data = _dataset()
+    prefix = data[:20]  # contains the planted credentials+no-consent -> art32 cases
+    rules = mine_compliance_rules(prefix, min_support=5, min_confidence=0.9)
+    art32 = [r for r in rules if r.target == "art32"]
+    assert art32, "no art32 rule mined from the prefix"
+    body = {(b[1], b[2]) for b in art32[0].rule.body}
+
+    # map a held-out suffix case's (slot, category) atoms to engine-edge form and
+    # assert the mined rule body is satisfied by it -> the offline rule fires on
+    # an unseen case without any re-mining.
+    held_out = _case(99, [CRED, NOCONSENT], "prohibit", ["art32"])
+    held_edges = {
+        (SLOT_RELATIONS[slot][0], f"{SLOT_RELATIONS[slot][1]}:{cat}")
+        for slot, cat in held_out.atoms
+    }
+    assert body <= held_edges

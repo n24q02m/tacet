@@ -25,6 +25,24 @@ Scenario:
 Answer:"""
 
 
+#: NL-strategy (Inter-Cascade-style) weak-model prompt. ``{head}`` is built by
+#: the arm as a guidelines block followed by the scenario, so retrieved
+#: strategies condition the weak model in-context. The contract stays the same
+#: JSON LIST as the frontier teacher, so ``parse_compliance_answer`` is reused
+#: unchanged.
+NL_STRATEGY_PROMPT_TEMPLATE = """You are a GDPR compliance auditor. Guidelines
+distilled from earlier cases may precede the scenario; use them only when
+relevant.
+
+{head}
+
+Return ONLY a JSON list of strings, no commentary:
+- first element: "permit" or "prohibit"
+- remaining elements: violated articles as "artN" (e.g. "art6", "art32")
+
+Answer:"""
+
+
 def _base_article(label: str) -> str | None:
     m = re.search(r"art(?:icle)?\s*(\d+)", str(label).lower())
     return f"art{m.group(1)}" if m else None
@@ -45,4 +63,8 @@ def parse_compliance_answer(answers: list[str]) -> tuple[str, tuple[str, ...]]:
     return (verdict, tuple(arts))
 
 
-__all__ = ["COMPLIANCE_PROMPT_TEMPLATE", "parse_compliance_answer"]
+__all__ = [
+    "COMPLIANCE_PROMPT_TEMPLATE",
+    "NL_STRATEGY_PROMPT_TEMPLATE",
+    "parse_compliance_answer",
+]

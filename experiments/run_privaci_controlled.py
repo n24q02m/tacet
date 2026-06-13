@@ -35,6 +35,8 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from run_real_kg_amortization import BudgetExceededError, BudgetGuard  # noqa: E402
@@ -47,6 +49,7 @@ from tacet.distill.compliance_miner import LabeledCase, mine_compliance_rules  #
 from tacet.llm.metering import MeteredTeacher, PriceTable  # noqa: E402
 from tacet.llm.teachers.compliance import (  # noqa: E402
     COMPLIANCE_PROMPT_TEMPLATE,
+    NL_STRATEGY_PROMPT_TEMPLATE,
     parse_compliance_answer,
 )
 from tacet.llm.teachers.llm import GeminiRestTeacher, GrokTeacher  # noqa: E402
@@ -105,10 +108,18 @@ def _case_atoms(slots: dict[str, tuple[str, ...]]) -> frozenset[tuple[str, str]]
 
 
 class ArmScore:
-    """Streaming verdict accuracy + article micro-F1 + attributed cost."""
+    """Streaming verdict accuracy + article micro-F1 + attributed cost.
 
-    def __init__(self, oracle: dict[str, Answer]) -> None:
+    ``score_from`` enables suffix-only scoring: cases with ``idx < score_from``
+    are still PROCESSED by the arm (teacher calls, rule mining happen — that is
+    the training/warm-up exposure) but are NOT scored or cost-attributed, so an
+    online arm and a compile-once arm can be compared on the identical test
+    suffix without the prefix confounding the comparison.
+    """
+
+    def __init__(self, oracle: dict[str, Answer], score_from: int = 0) -> None:
         self.oracle = oracle
+        self.score_from = score_from
         self.n = 0
         self.verdict_ok = 0
         self.tp = self.fp = self.fn = 0
@@ -116,7 +127,9 @@ class ArmScore:
         self.teacher_calls = 0
         self.curve: list[float] = []
 
-    def record(self, case_id: str, pred: Answer, usd: float, teacher_call: bool) -> None:
+    def record(self, case_id: str, pred: Answer, usd: float, teacher_call: bool, idx: int) -> None:
+        if idx < self.score_from:
+            return
         gold_v, gold_a = self.oracle[case_id]
         pred_a = set(pred[1])
         self.n += 1
@@ -148,12 +161,14 @@ class ArmScore:
         }
 
 
-def _run_llm_only(bench: ComplianceBenchmark, shared: SharedComplianceCache) -> dict:
-    score = ArmScore(bench.oracle)
+def _run_llm_only(
+    bench: ComplianceBenchmark, shared: SharedComplianceCache, *, score_from: int = 0
+) -> dict:
+    score = ArmScore(bench.oracle, score_from)
     t0 = time.time()
-    for case_id in bench.workload:
+    for idx, case_id in enumerate(bench.workload):
         pred, usd = shared.answer(case_id)
-        score.record(case_id, pred, usd, teacher_call=True)
+        score.record(case_id, pred, usd, teacher_call=True, idx=idx)
     return score.report("llm_only", time.time() - t0)
 
 
@@ -161,18 +176,20 @@ def _run_cache(
     bench: ComplianceBenchmark,
     shared: SharedComplianceCache,
     atoms: dict[str, frozenset[tuple[str, str]]],
+    *,
+    score_from: int = 0,
 ) -> dict:
-    score = ArmScore(bench.oracle)
+    score = ArmScore(bench.oracle, score_from)
     pattern_cache: dict[frozenset[tuple[str, str]], Answer] = {}
     t0 = time.time()
-    for case_id in bench.workload:
+    for idx, case_id in enumerate(bench.workload):
         pattern = atoms[case_id]
         if pattern in pattern_cache:
-            score.record(case_id, pattern_cache[pattern], 0.0, teacher_call=False)
+            score.record(case_id, pattern_cache[pattern], 0.0, teacher_call=False, idx=idx)
             continue
         pred, usd = shared.answer(case_id)
         pattern_cache[pattern] = pred
-        score.record(case_id, pred, usd, teacher_call=True)
+        score.record(case_id, pred, usd, teacher_call=True, idx=idx)
     return score.report("cache", time.time() - t0, distinct_patterns=len(pattern_cache))
 
 
@@ -202,8 +219,9 @@ def _run_full(
     consolidate_every: int,
     min_support: int,
     min_confidence: float,
+    score_from: int = 0,
 ) -> dict:
-    score = ArmScore(bench.oracle)
+    score = ArmScore(bench.oracle, score_from)
     engine = RuleEngine(bench.ontology)
     engine.materialise(bench.graph)
     pattern_cache: dict[frozenset[tuple[str, str]], Answer] = {}
@@ -214,21 +232,21 @@ def _run_full(
     engine_hits = cache_hits = 0
     t0 = time.time()
 
-    for case_id in bench.workload:
+    for idx, case_id in enumerate(bench.workload):
         pred = _engine_answer(engine, case_id)
         if pred is not None:
             engine_hits += 1
-            score.record(case_id, pred, 0.0, teacher_call=False)
+            score.record(case_id, pred, 0.0, teacher_call=False, idx=idx)
             continue
         pattern = atoms[case_id]
         if pattern in pattern_cache:
             cache_hits += 1
-            score.record(case_id, pattern_cache[pattern], 0.0, teacher_call=False)
+            score.record(case_id, pattern_cache[pattern], 0.0, teacher_call=False, idx=idx)
             continue
 
         pred, usd = shared.answer(case_id)
         pattern_cache[pattern] = pred
-        score.record(case_id, pred, usd, teacher_call=True)
+        score.record(case_id, pred, usd, teacher_call=True, idx=idx)
         labeled.append(
             LabeledCase(case_id=case_id, atoms=pattern, verdict=pred[0], articles=pred[1])
         )
@@ -267,6 +285,183 @@ def _run_full(
     )
 
 
+def _run_compile_once(
+    bench: ComplianceBenchmark,
+    shared: SharedComplianceCache,
+    atoms: dict[str, frozenset[tuple[str, str]]],
+    *,
+    prefix_k: int,
+    min_support: int,
+    min_confidence: float,
+) -> dict:
+    """Offline-distilled baseline: mine ONCE over a prefix, freeze, apply to suffix.
+
+    Isolates the value of ONLINE consolidation: the prefix is escalated to the
+    teacher and mined once with the SAME miner/gate/engine as the full arm, then
+    the ruleset is FROZEN. On the test suffix a frozen-engine hit is free; a miss
+    escalates to the teacher but NEVER re-mines. Scored on the suffix only
+    (``score_from=prefix_k``), so the full arm must also be suffix-scored to
+    compare fairly.
+    """
+    engine = RuleEngine(bench.ontology)
+    engine.materialise(bench.graph)
+    labeled: list[LabeledCase] = []
+    installed: list[dict] = []
+    rejected = 0
+    score = ArmScore(bench.oracle, score_from=prefix_k)
+    t0 = time.time()
+
+    # ----- PHASE 1: prefix -> escalate all, mine once, freeze ----------------
+    for idx in range(min(prefix_k, len(bench.workload))):
+        case_id = bench.workload[idx]
+        pred, usd = shared.answer(case_id)
+        score.record(case_id, pred, usd, teacher_call=True, idx=idx)  # not scored (idx<k)
+        labeled.append(
+            LabeledCase(case_id=case_id, atoms=atoms[case_id], verdict=pred[0], articles=pred[1])
+        )
+    mined = mine_compliance_rules(labeled, min_support=min_support, min_confidence=min_confidence)
+    for m in mined:
+        if engine.add_rule(m.rule):
+            installed.append(
+                {
+                    "name": m.rule.name,
+                    "target": m.target,
+                    "confidence": round(m.confidence, 4),
+                    "support": m.support,
+                }
+            )
+        elif all(r.name != m.rule.name for r in engine.rules):
+            rejected += 1
+    if installed:
+        engine.materialise(bench.graph)
+    frozen_rule_count = len(engine.rules)
+
+    # ----- PHASE 2: test suffix -> frozen engine, no re-mining ---------------
+    engine_hits = 0
+    for idx in range(prefix_k, len(bench.workload)):
+        case_id = bench.workload[idx]
+        pred = _engine_answer(engine, case_id)
+        if pred is not None:
+            engine_hits += 1
+            score.record(case_id, pred, 0.0, teacher_call=False, idx=idx)
+        else:
+            pred, usd = shared.answer(case_id)
+            score.record(case_id, pred, usd, teacher_call=True, idx=idx)
+        assert len(engine.rules) == frozen_rule_count, "compile_once ruleset must stay frozen"
+
+    return score.report(
+        "compile_once",
+        time.time() - t0,
+        prefix_k=prefix_k,
+        n_test=len(bench.workload) - prefix_k,
+        engine_hits=engine_hits,
+        rules_installed=installed,
+        rules_rejected_by_gate=rejected,
+    )
+
+
+def _run_nl_strategy(
+    bench: ComplianceBenchmark,
+    shared: SharedComplianceCache,
+    *,
+    weak_metered: MeteredTeacher,
+    embed,  # noqa: ANN001 — Callable[[list[str]], np.ndarray]
+    guard: BudgetGuard,
+    tau: float = 0.5,
+    top_k: int = 2,
+    score_from: int = 0,
+) -> dict:
+    """Inter-Cascade-style online NL-distillation baseline (arXiv:2509.22984).
+
+    Faithful port of the deferral-to-learning cascade: a growing repository of
+    natural-language guidelines (distilled from earlier deferred cases) is
+    retrieved by case similarity. A case is COVERED when its top retrieved
+    guideline clears a similarity gate ``tau`` -- then a CHEAP weak-model call
+    conditioned on the retrieved guidelines answers it, at the weak-token cost
+    (a per-query floor the symbolic engine does NOT pay, and an answer with NO
+    replayable proof tree). An UNCOVERED case (empty/low-similarity repo, i.e.
+    the cold start) DEFERS to the same shared frontier teacher and appends a new
+    guideline. The repo grows, coverage rises, weak calls displace teacher calls
+    -- exactly Inter-Cascade's amortisation, but here every accepted answer
+    still pays tokens and lacks a proof tree.
+
+    Deferral is gated on retrieval coverage rather than the weak model's
+    self-reported confidence, which is uncalibrated (gemini-2.5-flash returns
+    >=0.9 on essentially every case, so a confidence gate never fires); coverage
+    is deterministic, reproducible, and actually exercises the repository.
+    """
+    score = ArmScore(bench.oracle, score_from)
+    strategies: list[str] = []
+    vectors: list[np.ndarray] = []
+    weak_cost = 0.0
+    defers = 0
+    accepts = 0
+    t0 = time.time()
+
+    for idx, case_id in enumerate(bench.workload):
+        scenario = bench.case_content[case_id]
+        q = np.asarray(embed([scenario]), dtype=np.float32)[0]
+        max_sim, top = -1.0, []
+        if vectors:
+            mat = np.vstack(vectors)
+            qn = q / (np.linalg.norm(q) + 1e-12)
+            mn = mat / (np.linalg.norm(mat, axis=1, keepdims=True) + 1e-12)
+            sims = mn @ qn
+            order = list(np.argsort(-sims))
+            top = order[:top_k]
+            max_sim = float(sims[order[0]])
+
+        if max_sim >= tau:  # COVERED -> cheap weak call conditioned on guidelines
+            block = "Guidelines from earlier cases:\n" + "\n".join(
+                f"- {strategies[i]}" for i in top
+            )
+            resp = weak_metered.answer(None, f"{block}\n\nScenario:\n{scenario}", "verdict")
+            guard.add(weak_metered.last_cost_usd)
+            weak_cost += weak_metered.last_cost_usd
+            verdict, arts = parse_compliance_answer(resp.answers)
+            if verdict in ("permit", "prohibit"):
+                accepts += 1
+                score.record(case_id, (verdict, arts), weak_metered.last_cost_usd, False, idx)
+                continue
+            # weak model failed to produce a verdict -> fall through to defer
+            extra_weak = weak_metered.last_cost_usd
+        else:
+            extra_weak = 0.0
+
+        defers += 1
+        pred, tcost = shared.answer(case_id)
+        score.record(case_id, pred, extra_weak + tcost, True, idx)
+        snippet = scenario[:160].replace("\n", " ")
+        arts_txt = ", ".join(pred[1]) if pred[1] else "none"
+        strategies.append(
+            f"When a scenario resembles: {snippet} -> {pred[0]} (articles: {arts_txt})"
+        )
+        vectors.append(q)
+
+    return score.report(
+        "nl_strategy",
+        time.time() - t0,
+        n_strategies=len(strategies),
+        defers=defers,
+        accepts=accepts,
+        weak_llm_cost_usd=round(weak_cost, 6),
+        tau=tau,
+        weak_model=weak_metered.model,
+    )
+
+
+def _load_embedder():  # noqa: ANN202
+    """Lazy sentence-transformers all-MiniLM-L6-v2 encoder (Inter-Cascade config).
+
+    Imported lazily so unit tests (which inject a deterministic fake) and the
+    light CI never load torch / download the model.
+    """
+    from sentence_transformers import SentenceTransformer
+
+    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    return lambda texts: model.encode(list(texts), normalize_embeddings=False)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--privaci", default="../PrivaCI-Bench")
@@ -278,8 +473,32 @@ def main() -> None:
     ap.add_argument("--consolidate-every", type=int, default=25)
     ap.add_argument("--min-support", type=int, default=5)
     ap.add_argument("--min-confidence", type=float, default=0.9)
+    ap.add_argument(
+        "--arms",
+        default="llm_only,cache,full",
+        help="csv subset of: llm_only,cache,full,nl_strategy,compile_once",
+    )
+    ap.add_argument(
+        "--prefix-k",
+        default="0.5",
+        help="compile_once train prefix: int cases or 0<frac<1 of n",
+    )
+    ap.add_argument("--nl-tau", type=float, default=0.5, help="nl_strategy retrieval-coverage gate")
+    ap.add_argument("--nl-top-k", type=int, default=2)
+    ap.add_argument("--weak-model", default="gemini-2.5-flash")
+    ap.add_argument(
+        "--suffix-scoring",
+        action="store_true",
+        help="score every arm on the compile_once test suffix only (auto-on with compile_once)",
+    )
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
+
+    selected = [a.strip() for a in args.arms.split(",") if a.strip()]
+    known = {"llm_only", "cache", "full", "nl_strategy", "compile_once"}
+    unknown = [a for a in selected if a not in known]
+    if unknown:
+        raise SystemExit(f"unknown arms: {unknown}; choose from {sorted(known)}")
 
     cases = load_privaci(args.privaci, split=args.split)
     rng = random.Random(args.seed)
@@ -299,26 +518,74 @@ def main() -> None:
     metered = MeteredTeacher(raw_teacher, PriceTable.default(), model=model)
     guard = BudgetGuard(args.budget_usd)
     shared = SharedComplianceCache(metered, guard, bench)
-    print(f"  teacher={args.teacher} model={model}")
+    print(f"  teacher={args.teacher} model={model} arms={selected}")
 
-    arms: list[dict] = []
-    truncated = False
-    try:
-        print("\narm (a) llm_only ...")
-        arms.append(_run_llm_only(bench, shared))
-        print("\narm (b) cache (exact normalised-pattern match) ...")
-        arms.append(_run_cache(bench, shared, atoms))
-        print("\narm (c) full (engine + mined rules + pattern cache) ...")
-        arms.append(
-            _run_full(
+    # prefix_k: int cases or a 0<frac<1 fraction of n
+    raw_k = float(args.prefix_k)
+    prefix_k = int(round(raw_k * len(cases))) if 0 < raw_k < 1 else int(raw_k)
+    # suffix scoring isolates the online-vs-offline contrast: when compile_once
+    # is present every arm is scored on the same test suffix [prefix_k:].
+    suffix = args.suffix_scoring or "compile_once" in selected
+    score_from = prefix_k if suffix else 0
+    if suffix:
+        print(f"  suffix-scoring ON: scoring cases [{prefix_k}:{len(cases)}] for every arm")
+
+    weak_metered = None
+    embed = None
+    if "nl_strategy" in selected:
+        weak_raw = GeminiRestTeacher(
+            os.environ["TACET_GEMINI_API_KEY"],
+            model=args.weak_model,
+            endpoint="vertex",
+            qps=None,
+            prompt_template=NL_STRATEGY_PROMPT_TEMPLATE,
+        )
+        weak_metered = MeteredTeacher(weak_raw, PriceTable.default(), model=args.weak_model)
+        embed = _load_embedder()
+
+    def _dispatch(name: str) -> dict:
+        if name == "llm_only":
+            return _run_llm_only(bench, shared, score_from=score_from)
+        if name == "cache":
+            return _run_cache(bench, shared, atoms, score_from=score_from)
+        if name == "full":
+            return _run_full(
                 bench,
                 shared,
                 atoms,
                 consolidate_every=args.consolidate_every,
                 min_support=args.min_support,
                 min_confidence=args.min_confidence,
+                score_from=score_from,
             )
-        )
+        if name == "compile_once":
+            return _run_compile_once(
+                bench,
+                shared,
+                atoms,
+                prefix_k=prefix_k,
+                min_support=args.min_support,
+                min_confidence=args.min_confidence,
+            )
+        if name == "nl_strategy":
+            return _run_nl_strategy(
+                bench,
+                shared,
+                weak_metered=weak_metered,
+                embed=embed,
+                guard=guard,
+                tau=args.nl_tau,
+                top_k=args.nl_top_k,
+                score_from=score_from,
+            )
+        raise SystemExit(f"unhandled arm {name}")
+
+    arms: list[dict] = []
+    truncated = False
+    try:
+        for name in selected:
+            print(f"\narm {name} ...")
+            arms.append(_dispatch(name))
     except BudgetExceededError as e:
         truncated = True
         print(f"\n[HARD STOP] {e}")
@@ -331,36 +598,28 @@ def main() -> None:
 
     by = {a["arm"]: a for a in arms}
     verdict: dict[str, object] = {}
-    if {"llm_only", "cache", "full"} <= by.keys():
-        llm, cache, full = by["llm_only"], by["cache"], by["full"]
+    if "llm_only" in by:
+        llm = by["llm_only"]
+        amort = {}
+        for name, a in by.items():
+            if name == "llm_only":
+                continue
+            amort[f"amortisation_{name}_vs_llm"] = (
+                round(llm["total_cost_usd"] / a["total_cost_usd"], 3)
+                if a["total_cost_usd"]
+                else None
+            )
         verdict = {
-            "amortisation_cache_vs_llm": round(llm["total_cost_usd"] / cache["total_cost_usd"], 3)
-            if cache["total_cost_usd"]
-            else None,
-            "amortisation_full_vs_llm": round(llm["total_cost_usd"] / full["total_cost_usd"], 3)
-            if full["total_cost_usd"]
-            else None,
-            "calls_llm": llm["teacher_calls"],
-            "calls_cache": cache["teacher_calls"],
-            "calls_full": full["teacher_calls"],
-            "verdict_acc": {
-                "llm_only": llm["verdict_acc"],
-                "cache": cache["verdict_acc"],
-                "full": full["verdict_acc"],
-            },
-            "article_f1": {
-                "llm_only": llm["article_micro_f1"],
-                "cache": cache["article_micro_f1"],
-                "full": full["article_micro_f1"],
-            },
-            "n_rules_installed": len(full["rules_installed"]),
+            **amort,
+            "calls": {name: a["teacher_calls"] for name, a in by.items()},
+            "verdict_acc": {name: a["verdict_acc"] for name, a in by.items()},
+            "article_f1": {name: a["article_micro_f1"] for name, a in by.items()},
+            "weak_llm_cost_usd": by.get("nl_strategy", {}).get("weak_llm_cost_usd"),
+            "prefix_k": prefix_k if "compile_once" in by else None,
+            "suffix_scoring": suffix,
         }
-        print(
-            f"\nVERDICT: cache {verdict['amortisation_cache_vs_llm']}x / full "
-            f"{verdict['amortisation_full_vs_llm']}x cheaper than llm_only; "
-            f"calls {verdict['calls_llm']}/{verdict['calls_cache']}/{verdict['calls_full']}; "
-            f"rules={verdict['n_rules_installed']}"
-        )
+        print("\nVERDICT: " + "; ".join(f"{k}={v}" for k, v in amort.items()))
+        print(f"  calls={verdict['calls']}")
 
     out = Path(
         args.out or f"experiments/results/privaci_controlled_{args.teacher}_seed{args.seed}.json"
@@ -375,10 +634,16 @@ def main() -> None:
                 "seed": args.seed,
                 "teacher": args.teacher,
                 "model": model,
+                "arms_run": selected,
                 "distinct_patterns": distinct,
                 "consolidate_every": args.consolidate_every,
                 "min_support": args.min_support,
                 "min_confidence": args.min_confidence,
+                "suffix_scoring": suffix,
+                "score_from": score_from,
+                "prefix_k": prefix_k if "compile_once" in selected else None,
+                "nl_tau": args.nl_tau if "nl_strategy" in selected else None,
+                "weak_model": args.weak_model if "nl_strategy" in selected else None,
                 "real_teacher_calls": shared.real_calls,
                 "total_measured_spend_usd": round(guard.spent_usd, 6),
                 "truncated_by_budget": truncated,
