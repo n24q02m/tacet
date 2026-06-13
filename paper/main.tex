@@ -1674,10 +1674,17 @@ verdict and the cited articles; TACET mines the verdicts online into
 ontology-gated Datalog rules over the contextual-integrity atoms --- the same
 miner, type-gate, and proof-tree machinery as the KGQA cascade
 (Section~\ref{sec:distill}), with the contextual-integrity tuple as the typed
-fact ontology. To avoid an extractor oracle, a single fixed cheap extractor
-produces the typed atoms from raw case text for \emph{every} arm, with its cost
-folded into the amortisation curve; gold tuples never enter the graph or the
-miner (they appear only in the held-out verdict/article oracle).
+fact ontology. The typed atoms come from each case's annotated
+contextual-integrity slots, mapped through a single fixed \emph{deterministic}
+vocabulary normaliser (a committed closed vocabulary, identical across all arms
+--- not a per-arm or learned extractor), so the only metered cost is the
+teacher's verdict call. The gold \emph{verdict} and \emph{articles} --- the
+labels the task predicts --- are held out in the oracle for scoring and never
+enter the graph or the miner. Taking the contextual-integrity slots from the
+benchmark's annotations isolates the verdict-reasoning cost we study from
+contextual-integrity \emph{extraction}; a deployed system would add a separate
+(costly, potentially noisy) extractor from raw text, whose cost and error we do
+not model here (Section~\ref{sec:limitations}).
 
 \paragraph{Arms and control.} We compare four arms under a shared-teacher
 control (one teacher call per distinct case, reused across arms, so verdict
