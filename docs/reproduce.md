@@ -21,14 +21,17 @@ The headline cost/accuracy results run entirely on the in-repo synthetic
 benchmark generator — no download required:
 
 ```bash
-python -m tacet.eval.experiment --out experiments/results --seeds 12
-python experiments/analyze.py --results experiments/results --out experiments/results
+python -m tacet.eval.experiment --out experiments/results --seeds 8
+python experiments/analyze.py --results experiments/results --out paper
 ```
 
-This runs the full grid (E1 main comparison, E2 cost trajectory, E3
-cost–accuracy frontier, E4 ablations, E5 repetition sensitivity, E6
-noisy-teacher robustness) and writes the figures and LaTeX tables under
-`experiments/results/`.
+The first command runs the full grid (E1 main comparison, E2 cost trajectory,
+E3 cost–accuracy frontier, E4 ablations, E5 repetition sensitivity, E6
+noisy-teacher robustness) and writes the raw rows + `summary.json` under
+`experiments/results/`. The second turns that summary into the paper's figures
+(`paper/figures/`) and `\input`-able tables, and *merges* the synthetic-grid
+macros into the shared `paper/results/macros.tex` (the file `main.tex` reads).
+`--seeds 8` matches the committed artifacts.
 
 ## 3. ProofWriter (auditability benchmark) — requires a download
 
@@ -51,9 +54,9 @@ Then run the per-depth evaluation (proof validity / coverage / accuracy):
 python experiments/run_proofwriter.py --split dev --depths 0 1 2 3 5 --limit 300
 ```
 
-Outputs land in `experiments/results/` as `tab_proofwriter.tex` and the macro
-file `macros.tex`. If `data/` is absent these ProofWriter steps (and the
-corresponding tests) skip rather than fail.
+This writes `paper/results/tab_proofwriter.tex` and merges the ProofWriter
+macros into `paper/results/macros.tex`. If `data/` is absent these ProofWriter
+steps (and the corresponding tests) skip rather than fail.
 
 ## 4. Symbolic auditability on the synthetic workload
 
@@ -61,8 +64,8 @@ corresponding tests) skip rather than fail.
 python experiments/run_audit_eval.py --seed 0 --workload-size 300
 ```
 
-Prints mean proof coverage / validity and writes `experiments/results/tab_audit.tex`
-plus `experiments/results/macros.tex`.
+Prints mean proof coverage / validity and writes `paper/results/tab_audit.tex`
+plus the merged `paper/results/macros.tex`.
 
 ## 5. Causal-layer demo
 
@@ -83,8 +86,17 @@ Writes a small RotatE/ComplEx link-prediction smoke result to the given path.
 
 ## Where outputs land
 
-Every runner writes into `experiments/results/`. That directory is tracked, so a
-fresh run overwrites the committed sample artifacts in place.
+Raw experiment data (per-run rows and `summary.json`, plus the `*.json` result
+files) is written under `experiments/results/`. The artifacts the paper actually
+`\input`s — the `tab_*.tex` tables and the figures — are written under
+`paper/results/` and `paper/figures/`, and every runner that contributes paper
+macros (`analyze.py`, `run_rule_precision.py`, `run_audit_eval.py`,
+`run_proofwriter.py`) *merges* its own macros into the single shared
+`paper/results/macros.tex`, so the runners can be re-run in any order without
+clobbering each other. All of these directories are tracked, so a fresh run
+overwrites the committed sample artifacts in place. (The ProofWriter macros
+require the `data/` download from Section 3; without it those macros keep their
+committed values.)
 
 ## Building the paper
 

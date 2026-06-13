@@ -2,10 +2,10 @@
 
 ## 0.1.0 — first public release
 Initial public release of TACET, the reference implementation for the paper
-"Cost-Amortised Knowledge-Graph Question Answering via Self-Distilling Neuro-Symbolic Cascades."
+"Cost-Amortised Reasoning via Self-Distilling Neuro-Symbolic Cascades: From Knowledge-Graph QA to Regulatory-Compliance Checking."
 
 - Sound Datalog reasoning with machine-checkable proof trees (`tacet.core.symbolic`)
-- Pearl causal identification — do-calculus, front-door, IV, counterfactuals (`tacet.core.causal`)
+- Causal utility functions — Pearl-framework back-door / front-door / IV detection and counterfactuals over a discrete SCM; library helpers, not integrated into the cascade (`tacet.core.causal`)
 - Bi-temporal reasoning with Allen interval relations (`tacet.core.temporal`)
 - Online distillation of teacher knowledge into Datalog-checkable Horn rules (`tacet.distill`)
 - Three-tier cascade with KGE link prediction and LLM teachers (`tacet.cascade`, `tacet.kge`, `tacet.llm`)

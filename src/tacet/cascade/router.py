@@ -146,6 +146,7 @@ class TACET:
         facts = self.distiller.record(head, relation, answers)
         if self.config.write_back:
             for h, r, t in facts:
+                self._type_endpoints(r, h, t)
                 self.graph.add_edge(h, r, t, provenance="teacher")
                 self.engine.add_fact((h, r, t))
         if self.config.rule_synthesis and self.distiller.ready_to_synthesise(relation):
@@ -157,6 +158,31 @@ class TACET:
                     changed = True
             if changed:
                 self.engine.materialise(self.graph)
+
+    def _type_endpoints(self, relation: str, source: str, target: str) -> None:
+        """Type brand-new write-back endpoints from the relation's declared schema.
+
+        Theorem~1's ontology-preservation guarantee holds while the graph stays
+        ontology-consistent. A teacher write-back can introduce a fresh endpoint;
+        left untyped it defaults to the catch-all ``Entity`` type and a valid
+        rule then derives a type-violating fact, breaking that premise during
+        normal operation. Assigning the relation's declared *singleton* domain /
+        range type to a **new** endpoint keeps the written-back fact well-typed.
+        Existing nodes and ambiguous positions (``*`` or a multi-type set) are
+        left untouched, so untyped/schema-free relations are unaffected.
+        """
+        rt = self.ontology.relation(relation)
+        if rt is None:
+            return
+        self._ensure_type(source, rt.domain)
+        self._ensure_type(target, rt.range)
+
+    def _ensure_type(self, node_id: str, type_set: frozenset[str]) -> None:
+        if self.graph.node(node_id) is not None:
+            return
+        concrete = [ty for ty in type_set if ty != "*"]
+        if len(concrete) == 1:
+            self.graph.add_node(node_id, concrete[0])
 
     def _record(
         self,

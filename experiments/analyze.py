@@ -1,9 +1,12 @@
 """Turn experiment results into the paper's figures and LaTeX tables.
 
-    python experiments/analyze.py --results experiments/results --out experiments/results
+    python experiments/analyze.py --results experiments/results --out paper
 
-Reads `summary.json` and writes vector PDF figures to `<out>/figures/` and
-`\\input`-able LaTeX tables to `<out>/results/`.
+Reads `summary.json` (from `--results`) and writes vector PDF figures to
+`<out>/figures/` and `\\input`-able LaTeX tables + the merged `macros.tex` to
+`<out>/results/`. The default `--out paper` targets the directories the paper
+actually `\\input`s (`paper/figures`, `paper/results`); the macro write merges
+into the shared `macros.tex` so the other runners' macros are preserved.
 """
 
 from __future__ import annotations
@@ -32,6 +35,22 @@ COLOR = {
     "static_cascade": "#2980b9",
     "tacet": "#27ae60",
 }
+
+
+def _merge_macros(path: Path, macros: dict[str, str]) -> None:
+    """Write ``\\renewcommand`` lines into ``path``, replacing any existing
+    definition of the same macro while preserving every other line.
+
+    The paper's ``results/macros.tex`` is shared by several result runners
+    (this script plus ``run_rule_precision``/``run_audit_eval``/
+    ``run_proofwriter``); merging rather than overwriting lets each runner
+    update only its own macros.
+    """
+    existing = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    kept = [ln for ln in existing if not any(f"{{{name}}}" in ln for name in macros)]
+    for name, value in macros.items():
+        kept.append(f"\\renewcommand{{{name}}}{{{value}}}")
+    path.write_text("\n".join(kept) + "\n", encoding="utf-8")
 
 
 def fig_cost_trajectory(summary: dict, out: Path) -> None:
@@ -194,7 +213,7 @@ def table_ablation(summary: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="experiments/results")
-    ap.add_argument("--out", default="experiments/results")
+    ap.add_argument("--out", default="paper")
     args = ap.parse_args()
 
     summary = json.loads((Path(args.results) / "summary.json").read_text())
@@ -223,18 +242,20 @@ def main() -> None:
     }
     (results / "digest.json").write_text(json.dumps(digest, indent=2), encoding="utf-8")
 
-    # LaTeX result macros consumed by paper/main.tex
-    macros = "\n".join(
-        [
-            f"\\renewcommand{{\\akCost}}{{{ak['cost']['mean']:.2f}}}",
-            f"\\renewcommand{{\\akAcc}}{{{ak['accuracy']['mean']:.3f}}}",
-            f"\\renewcommand{{\\llmCost}}{{{llm['cost']['mean']:.1f}}}",
-            f"\\renewcommand{{\\cacheCost}}{{{cache['cost']['mean']:.1f}}}",
-            f"\\renewcommand{{\\costFactor}}{{{llm['cost']['mean'] / ak['cost']['mean']:.1f}}}",
-            f"\\renewcommand{{\\seeds}}{{{seeds}}}",
-        ]
+    # LaTeX result macros consumed by paper/main.tex. Merge (not overwrite) into
+    # the shared macros file so the macros written by the other result runners
+    # (run_rule_precision, run_audit_eval, run_proofwriter) are preserved.
+    _merge_macros(
+        results / "macros.tex",
+        {
+            r"\akCost": f"{ak['cost']['mean']:.2f}",
+            r"\akAcc": f"{ak['accuracy']['mean']:.3f}",
+            r"\llmCost": f"{llm['cost']['mean']:.1f}",
+            r"\cacheCost": f"{cache['cost']['mean']:.1f}",
+            r"\costFactor": f"{llm['cost']['mean'] / ak['cost']['mean']:.1f}",
+            r"\seeds": str(seeds),
+        },
     )
-    (results / "macros.tex").write_text(macros + "\n", encoding="utf-8")
     print("figures + tables written:")
     print(json.dumps(digest, indent=2))
 

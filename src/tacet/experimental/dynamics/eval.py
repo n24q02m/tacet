@@ -11,7 +11,10 @@ def filtered_rank(scores, gold_idx, filter_idx) -> int:  # noqa: ANN001
 
     ``scores`` is indexed by entity id; entities in ``filter_idx`` (other true
     answers at the same timestamp) are excluded from the count, per the
-    standard time-aware filtered protocol.
+    standard time-aware filtered protocol. Ties are broken optimistically
+    (minimum rank): only strictly-greater scores count as better. This is
+    harmless for the continuous neural scores used here, where exact ties do
+    not occur.
     """
     gold = scores[gold_idx]
     better = 0

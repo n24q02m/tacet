@@ -114,6 +114,9 @@ def test_compile_once_freezes_and_scores_suffix():
     # a planted rule was mined and froze, so suffix cases hit the engine for free
     assert rep["engine_hits"] >= 1
     assert rep["total_cost_usd"] < 6 * 0.01  # not every suffix case paid the teacher
+    # the engine-served verdicts are not just cheap, they are CORRECT: the planted
+    # rule matches the oracle, so every scored suffix verdict is right.
+    assert rep["verdict_acc"] == 1.0
 
 
 def test_compile_once_with_no_rules_falls_back_to_teacher():
@@ -209,3 +212,47 @@ def test_nl_strategy_all_distinct_always_defers():
     assert weak.n == 0  # uncovered cases skip the weak call entirely
     assert shared.real_calls == 3
     assert abs(rep["total_cost_usd"] - 3 * 0.01) < 1e-9  # teacher only
+
+
+# --------------------------------------------------------------- _engine_answer
+def _engine_with(*facts):
+    from tacet.core.graph import WorldGraph
+    from tacet.core.symbolic import RuleEngine
+
+    bench = _bench([_case(0, "passwords", "none", "prohibit", ["art32"])])
+    g = WorldGraph()
+    for h, r, t in facts:
+        g.add_edge(h, r, t)
+    eng = RuleEngine(bench.ontology)
+    eng.materialise(g)  # closure includes the planted edges
+    return eng
+
+
+def test_engine_answer_serves_prohibit_from_violates():
+    from run_privaci_controlled import _engine_answer
+
+    eng = _engine_with(("X", "violates", "article:art32"))
+    assert _engine_answer(eng, "X") == ("prohibit", ("art32",))
+
+
+def test_engine_answer_serves_permit_from_verdict():
+    from run_privaci_controlled import _engine_answer
+
+    eng = _engine_with(("Y", "verdict", "verdict:permit"))
+    assert _engine_answer(eng, "Y") == ("permit", ())
+
+
+def test_engine_answer_abstains_on_violates_permit_conflict():
+    # a case the closure marks BOTH violates and permit is a rule conflict;
+    # _engine_answer must abstain (return None) and let the teacher arbitrate.
+    from run_privaci_controlled import _engine_answer
+
+    eng = _engine_with(("Z", "violates", "article:art32"), ("Z", "verdict", "verdict:permit"))
+    assert _engine_answer(eng, "Z") is None
+
+
+def test_engine_answer_abstains_when_silent():
+    from run_privaci_controlled import _engine_answer
+
+    eng = _engine_with()
+    assert _engine_answer(eng, "nobody") is None

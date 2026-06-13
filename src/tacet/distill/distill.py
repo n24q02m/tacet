@@ -133,7 +133,11 @@ def mine_rules_with_stats(
         if r1 == target:
             continue
         for inv1 in (False, True):
-            body = keep(_directed(idx[r1], inv1))
+            # exclude reflexive (x, x) pairs from the confidence denominator, as
+            # the length-2 branch does: the installed rule carries a distinct
+            # guard and can never fire on (x, x), so confidence must be measured
+            # over the non-reflexive pairs the rule can actually derive.
+            body = keep({(x, y) for x, y in _directed(idx[r1], inv1) if x != y})
             if len(body) < min_support:
                 continue
             # A well-formed candidate (a body of sufficient size): proposed.

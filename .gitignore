@@ -25,6 +25,8 @@ paper/*.blg
 *.pem
 experiments/results/raw.json
 experiments/results/*_pilot.json
+# analyze.py convenience dump (derived; not consumed by the paper)
+digest.json
 # transient experiment-run scratch (tee logs, per-seed partial dumps)
 experiments/results/_*
 experiments/results/privaci_matrix_partial_*.json
