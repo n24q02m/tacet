@@ -1197,7 +1197,15 @@ separates the two regimes, together with the instruments needed to locate it. Th
 boundary is sharp: with an oracle teacher rule distillation is positive ($87\%$
 fewer teacher calls than caching on unseen heads), whereas with a real Grok~4.3
 teacher at ${\sim}53\%$ accuracy on $2$-hop compositions the rule miner degrades
-and the distillation-beyond-caching effect is \emph{neutral}. The instruments
+and the distillation-beyond-caching effect is \emph{neutral}.
+On a second domain the boundary is \emph{crossed by a real teacher}: streaming
+GDPR compliance cases (PrivaCI-Bench) past three frontier teachers, online rule
+distillation beats an exact-match cache by $1.5$--$2.1\times$ at matched verdict
+accuracy with a ${\sim}9\%$ repeat ceiling (Section~\ref{sec:compliance}), so the
+distillation-over-caching premium is not an oracle artefact --- it materialises
+whenever a real teacher is accurate enough for the miner to recover generalising
+rules, and an accurate compliance teacher is.
+The instruments
 that make this measurable rather than anecdotal are proof-validity (does Tier~1
 answer only through sound, replayable derivations?), rule-precision (do installed
 rules hold on the \emph{whole} world, not just the answered heads?), and
