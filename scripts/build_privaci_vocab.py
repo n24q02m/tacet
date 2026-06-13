@@ -124,7 +124,8 @@ def main() -> None:
                 aliases[v] = "other"
         vocab[slot] = {"categories": cats, "aliases": aliases}
         other_n = sum(1 for v in aliases.values() if v == "other")
-        print(f"  mapped {len(aliases)} values, other={other_n} ({other_n / len(aliases):.1%})")
+        ratio = other_n / len(aliases) if aliases else 0.0
+        print(f"  mapped {len(aliases)} values, other={other_n} ({ratio:.1%})")
 
     out_path.write_text(
         json.dumps(vocab, indent=1, ensure_ascii=False, sort_keys=True), encoding="utf-8"
