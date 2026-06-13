@@ -1072,6 +1072,34 @@ test proposed in Section~\ref{sec:rule_precision} --- gating rule
 \emph{installation} on a fresh evaluation slice --- to cover fairness, not
 only world-precision.
 
+\paragraph{Rule-induced article over-generalisation (compliance).} On the
+compliance domain (Section~\ref{sec:compliance}) the same over-generalisation
+that the synthetic \texttt{primary\_language} rule exhibits
+(Section~\ref{sec:rule_precision}) appears at the level of \emph{cited
+articles}: a synthesised pattern$\to$article rule fires on cases where the typed
+contextual-integrity pattern usually --- but not always --- implies the article,
+so the full arm's article-level micro-F1 falls
+(\privArtFOneFullGemini--\privArtFOneFullGrok{} vs
+${\sim}\privArtFOneLlmGemini{}$ for LLM-only) even though \emph{verdict} accuracy
+is preserved at the iso-accuracy control. The mitigation is the one already
+proposed for rule precision (Section~\ref{sec:rule_precision}): gate rule
+\emph{installation} on a held-out article-precision estimate rather than
+answered-case confidence alone. We report the trade-off plainly: the cost
+amortisation is real, and it is paid for in article-attribution recall, not in
+verdict correctness.
+
+\paragraph{Compliance inputs are annotated, not extracted (compliance).} The
+compliance experiment (Section~\ref{sec:compliance}) takes each case's
+contextual-integrity slots from the benchmark's annotations, normalised by a
+fixed deterministic vocabulary; it does \emph{not} include a learned extractor
+that recovers those slots from raw case text. The reported amortisation is
+therefore the saving on the verdict-reasoning cost, holding contextual-integrity
+extraction fixed and free. A deployed pipeline would add an extraction stage
+whose dollar cost and error both enter the picture --- a noisy extractor could
+inject wrong atoms into the miner --- so extending the cost accounting and the
+noise analysis to a real extractor is future work, the compliance-domain
+analogue of the noise-robust-mining direction below.
+
 \paragraph{Noise-robust rule mining.} The key next step exposed by the
 real-LLM evaluation (Section~\ref{sec:realcost}) is a rule miner that
 recovers generalising composition rules from a \emph{noisy, incomplete}
