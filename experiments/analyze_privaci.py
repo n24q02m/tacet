@@ -59,7 +59,7 @@ def build_macros(matrices):
             f"\\newcommand{{\\privNl{token}}}{{{nl['amortisation_mean']:.2f}}}",
             f"\\newcommand{{\\privAccFull{token}}}{{{full['verdict_acc_mean']:.2f}}}",
             f"\\newcommand{{\\privArtFOneFull{token}}}{{{full['article_f1_mean']:.2f}}}",
-            f"\\newcommand{{\\privArtFOneLlm{token}}}" f"{{{llm_only_article_f1_mean(runs):.2f}}}",
+            f"\\newcommand{{\\privArtFOneLlm{token}}}{{{llm_only_article_f1_mean(runs):.2f}}}",
         ]
         distinct_max = max(distinct_max, max(r["distinct_patterns"] for r in runs))
         spend_total += sum(r["total_measured_spend_usd"] for r in runs)
