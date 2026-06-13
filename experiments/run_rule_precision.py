@@ -86,10 +86,13 @@ def _evaluate_synthetic(seed: int, workload_size: int) -> dict:
         if (idx + 1) % 100 == 0:
             ak.consolidate()
 
-    # Re-mine each synthesised relation from the cascade's own accumulated
+    # Re-mine each synthesised relation from the cascade's *final* accumulated
     # distiller state to recover the PROPOSED candidate count, then score every
-    # installed rule's world precision. ``ak.distiller`` holds exactly the
-    # teacher_facts / complete_heads the cascade mined from.
+    # installed rule's world precision. Note: this re-mines from the end-of-run
+    # graph / complete_heads, which can differ from the intermediate state at the
+    # consolidation step where a rule was originally installed; the scored set is
+    # the re-mined set, not the exact per-step cascade-installed rules (they
+    # coincide on the reported seed).
     distiller = ak.distiller
     # ak.synthesised_rules are full names like "syn:superior_of<=manages"; the
     # relation is the token between "syn:" and "<=".

@@ -85,14 +85,33 @@ def _run_job(job: Job) -> dict:
     }
 
 
+def _t_critical(df: int) -> float:
+    """Two-sided 95% Student-t critical value for ``df`` degrees of freedom.
+
+    With few seeds the normal approximation (1.96) understates the interval:
+    for the 8-seed grid here ``df=7`` gives ``t=2.365``, a 1.21x wider bar. We
+    use the t value deliberately and fall back to 1.96 only if SciPy is absent.
+    """
+    if df < 1:
+        return 0.0
+    try:
+        from scipy.stats import t as _t
+
+        return float(_t.ppf(0.975, df))
+    except Exception:
+        return 1.96
+
+
 def _summary(values: list[float]) -> dict[str, float]:
     if not values:
         return {"mean": 0.0, "std": 0.0, "ci95": 0.0, "n": 0}
     n = len(values)
     mean = statistics.fmean(values)
-    std = statistics.pstdev(values) if n > 1 else 0.0
-    sem = (statistics.stdev(values) / (n**0.5)) if n > 1 else 0.0
-    return {"mean": mean, "std": std, "ci95": 1.96 * sem, "n": n}
+    # sample statistics (ddof=1) reported consistently: a single sample has no
+    # spread, so std/sem/CI are zero at n=1.
+    std = statistics.stdev(values) if n > 1 else 0.0
+    sem = (std / (n**0.5)) if n > 1 else 0.0
+    return {"mean": mean, "std": std, "ci95": _t_critical(n - 1) * sem, "n": n}
 
 
 # --------------------------------------------------------------------------

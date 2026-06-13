@@ -77,9 +77,9 @@ is published on Zenodo: [doi:10.5281/zenodo.20621240](https://doi.org/10.5281/ze
   ontology-verified and confidence-calibrated (`tacet.kge`).
 - **LLM teacher Tier 3** — pluggable real-LLM adapters (Gemini, Grok, GPT) and
   oracle/callable teachers (`tacet.llm`).
-- **Causal identification** (`tacet.core.causal`) — Pearl-framework do-calculus,
-  back-door / front-door criteria, instrumental-variable detection,
-  counterfactuals via abduction-action-prediction.
+- **Causal utilities** (`tacet.core.causal`) — Pearl-framework helper functions
+  (back-door / front-door / instrumental-variable detection, counterfactual
+  evaluation over a discrete SCM); library helpers, not invoked by the cascade.
 - **Bi-temporal reasoning** (`tacet.core.temporal`) — `valid_from` / `valid_to`
   per edge, time-sliced queries, Allen interval relations.
 - **Online rule distillation** (`tacet.distill`) — fact write-back, AMIE-style
@@ -105,8 +105,10 @@ the stack over time:
   answers, so a whole *pattern* — not just one fact — drops to the sound Tier 1;
 * **KGE augmentation** — teacher facts join the embedding's training set.
 
-Rule synthesis is what makes TACET beat a cache: a synthesised rule answers
-**unseen** entities, a cache only answers exact repeats.
+Rule synthesis is what lets TACET beat a cache **when the teacher is good
+enough**: a synthesised rule answers **unseen** entities, a cache only answers
+exact repeats. This advantage is teacher-quality-gated — under a noisy teacher
+no installable rule is recovered and the cascade ties the cache (see the paper).
 
 ## Install
 

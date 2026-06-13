@@ -30,6 +30,9 @@ from tacet.eval.benchmark import BenchmarkConfig
 from tacet.eval.eval_audit import proof_coverage, proof_validity
 
 _RESULTS = Path(__file__).resolve().parents[1] / "experiments" / "results"
+# Paper-consumed artifacts (\input-ed tables + the shared macros file) live under
+# paper/results so a documented run regenerates exactly what the paper reads.
+_PAPER_RESULTS = Path(__file__).resolve().parents[1] / "paper" / "results"
 
 
 def _write_table(path: Path, coverage: float, validity: float, answered: int, total: int) -> None:
@@ -93,11 +96,11 @@ def main() -> None:
     print(f"  mean proof_coverage (over workload) : {mean_coverage:.3f}")
     print(f"  mean proof_validity (over answered) : {mean_validity:.3f}")
 
-    _RESULTS.mkdir(parents=True, exist_ok=True)
-    _write_table(_RESULTS / "tab_audit.tex", mean_coverage, mean_validity, answered, n_total)
-    _update_macros(_RESULTS / "macros.tex", mean_coverage, mean_validity)
-    print(f"  wrote {_RESULTS / 'tab_audit.tex'}")
-    print(f"  updated {_RESULTS / 'macros.tex'}")
+    _PAPER_RESULTS.mkdir(parents=True, exist_ok=True)
+    _write_table(_PAPER_RESULTS / "tab_audit.tex", mean_coverage, mean_validity, answered, n_total)
+    _update_macros(_PAPER_RESULTS / "macros.tex", mean_coverage, mean_validity)
+    print(f"  wrote {_PAPER_RESULTS / 'tab_audit.tex'}")
+    print(f"  updated {_PAPER_RESULTS / 'macros.tex'}")
 
 
 if __name__ == "__main__":

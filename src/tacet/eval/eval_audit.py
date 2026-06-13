@@ -33,7 +33,9 @@ def _parse_top_level_triples(proof: list[str]) -> list[Triple]:
     Only un-indented lines are top-level conclusions; each renders as
     ``<KIND><pad>h -r-> t[...]``. We split on the ``-r->`` arrow so entity names
     containing other characters survive. Lines that do not parse are skipped
-    (and surface as a missing triple, lowering validity rather than crashing).
+    entirely (excluded from both the grounded count and the total, rather than
+    crashing); on the clean synthetic / ProofWriter proof strings used here no
+    top-level line fails to parse, so validity is computed over every conclusion.
     """
     triples: list[Triple] = []
     for line in proof:

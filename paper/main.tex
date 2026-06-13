@@ -184,15 +184,19 @@ downward and the blended cost decays toward the symbolic floor.
   advantage is \emph{teacher-quality-gated} (C3): it materialises with an
   accurate teacher and degrades to cache-equivalent behaviour under a noisy
   one.
-  \item[(C2)] \textbf{Auditability by construction.} Tier-1 answers carry
-  replayable Datalog proof trees that ground in base facts and named rules,
-  and we prove an \emph{ontology-preservation} guarantee for the
-  online-synthesised rules (Theorem~\ref{thm:soundness}): the closure never
-  contains a fact that violates the typed ontology, even as rules are mined
-  at run time.
+  \item[(C2)] \textbf{Auditability with a typed-closure guarantee.} Tier-1
+  answers carry replayable Datalog proof trees that ground in base facts and
+  named rules, and we prove an \emph{ontology-preservation} guarantee for the
+  online-synthesised rules (Theorem~\ref{thm:soundness}): the engine installs
+  a rule only if it is type-consistent, and write-back types each new entity
+  from the relation's declared schema, so the symbolic closure preserves the
+  typed ontology whenever the written-back facts are themselves well-typed. A
+  noisy teacher that asserts a type-inconsistent fact between existing entities
+  can still introduce a violation; we surface such facts with an explicit
+  validator rather than assume they cannot occur (Section~\ref{sec:limitations}).
   \item[(C3)] \textbf{A real-LLM, real-cost evaluation.} We evaluate the
   cascade with a real Grok~4.3 teacher on a real-entity MetaQA KG, metering
-  every token at the provider's published price (Section~\ref{sec:realcost}).
+  every token at xAI's published price (Section~\ref{sec:realcost}).
   Over \textbf{3 seeds} in a controlled design (Tier-2 disabled, a single
   teacher answer shared across arms so accuracy is matched by construction),
   the measured cost amortisation is $2.8\times$
@@ -927,8 +931,8 @@ trades accuracy for cost: a low $\theta$ admits more (occasionally wrong)
 embedding predictions and lowers cost; a high $\theta$ routes uncertain
 queries to the teacher. Figure~\ref{fig:pareto} sweeps $\theta$ and traces
 the resulting frontier. The frontier dominates the cache cascade: at its
-high-accuracy end (peak \(0.994\) at \$\(4.13\)) TACET is \(\sim\)30\%
-cheaper than the cache cascade (\$\(5.92\) at \(1.000\)) for a \(\le 0.006\)
+high-accuracy end (peak \(0.9933\) at \$\(4.16\)) TACET is \(\sim\)30\%
+cheaper than the cache cascade (\$\(5.92\) at \(1.000\)) for a \(\le 0.0067\)
 accuracy gap; at $\theta\!\to\!1$ (Tier~2 effectively off) the saving
 still holds, demonstrating that rule synthesis alone --- without the
 embedding tier --- already beats caching, because synthesised rules
@@ -972,10 +976,10 @@ in general.
 workload repeat rate. The cache cascade depends entirely on repeats: as
 repetition falls toward zero its cost climbs steeply (\$\(3.4\!\to\!8.5\)
 across the sweep), losing most of its advantage. TACET degrades far more
-gently (\$\(2.6\!\to\!4.9\)) because rule synthesis and the embedding
+gently (\$\(2.6\!\to\!5.0\)) because rule synthesis and the embedding
 generalise across \emph{distinct} queries, so its cost lead over the cache
 is widest exactly where caching fails --- at zero repetition TACET is
-${\sim}1.8\times$ cheaper.
+${\sim}1.7\times$ cheaper.
 
 \begin{figure}[t]
 \centering
@@ -990,7 +994,7 @@ because synthesised rules and the KGE generalise to unseen entities.}
 per-query teacher error rate $\varepsilon$ and measure end-to-end accuracy
 (Figure~\ref{fig:noise}). Counter-intuitively, TACET is \emph{more}
 robust to teacher noise than LLM-only: at $\varepsilon=0.20$ LLM-only's
-accuracy falls to \(0.804\) while TACET holds \(0.872\) (\(+6.8\)
+accuracy falls to \(0.804\) while TACET holds \(0.863\) (\(+5.9\)
 points). The reason is structural: an LLM-only system sends every query
 to the noisy teacher, so its accuracy tracks the teacher's; TACET sends
 only the long tail (${\sim}24\%$ at $\varepsilon=0$), and the symbolic
@@ -998,8 +1002,10 @@ and embedding tiers --- whose answers are not produced by the teacher ---
 are insensitive to teacher noise on the majority of queries. Distillation
 can still propagate teacher errors (a wrong fact written back, or a rule
 mined from inconsistent answers), but the confidence/support thresholds
-reject most spurious rules and the ontology check filters type-violating
-facts. Cost rises slightly with $\varepsilon$ (\$\(3.7\!\to\!4.3\))
+reject most spurious rules, and write-back types each new entity from the
+relation's declared schema so a synthesised rule cannot silently derive an
+untyped fact (a type-inconsistent fact between existing entities is still
+possible and is surfaced by the validator, not silently admitted). Cost rises slightly with $\varepsilon$ (\$\(3.8\!\to\!4.6\))
 because inconsistent teacher answers depress mined-rule confidence below
 threshold, so fewer queries migrate down. In a deployment with a
 genuinely unreliable teacher, gating write-back and synthesis on a
@@ -1026,6 +1032,19 @@ teacher quality, and on noisy real-LLM compositional workloads the cascade
 reduces to a cache. Broader natural-language KGQA benchmarks (WebQSP, CWQ)
 with diverse real teachers remain valuable future work, and the released code
 exposes a single-function teacher interface for them.
+
+\paragraph{Ontology preservation under write-back.} Theorem~\ref{thm:soundness}
+guarantees that the symbolic closure is ontology-consistent \emph{given} that
+the graph and the installed rules are. The engine maintains the rule premise
+by a type-consistency check at \texttt{add\_rule}, and the write-back path
+types each new entity from the relation's declared schema, so a teacher fact
+about a fresh entity keeps the graph well-typed. The residual gap is a teacher
+that asserts a type-inconsistent fact between \emph{existing} entities (a
+mistyped answer in the noisy regime): write-back does not relabel an existing
+node, so such a fact can enter the closure. We treat this as a teacher-quality
+concern rather than a structural one --- it is detectable by the same
+\texttt{ontology.validate} pass used in our audits --- and we report it
+explicitly rather than claim the closure is type-safe unconditionally.
 
 \paragraph{Forward graph dynamics: an honest negative result.}
 \label{sec:layer4}
@@ -1284,10 +1303,9 @@ Hits@10\,$\approx 0.60$} with the NumPy backend
 \texttt{python experiments/kge\_real\_eval.py --dataset synthetic --epochs 70}),
 and \textbf{MRR\,$\approx 0.43$, Hits@10\,$\approx 0.69$} at $\mathrm{dim}=128$
 with the PyTorch backend (\texttt{results/kge\_synthetic\_torch.json}).
-Ranking peaks near MRR\,$0.34$ at the 70-epoch warm-up used by the cascade;
-training the NumPy backend to the 120-epoch standalone default mildly overfits
-this 1{,}162-triple set (MRR\,$\approx 0.30$), so we report the warm-up
-operating point that the cascade actually consolidates from.
+Ranking peaks near MRR\,$0.34$ at the 70-epoch warm-up used by the cascade; we
+report this warm-up operating point that the cascade actually consolidates from
+rather than a longer standalone training run.
 The cascade only \emph{accepts} a Tier-2 prediction above its calibrated
 confidence threshold, so its operating accuracy on the cascade workload is
 substantially higher than the raw top-1 ranking number.
@@ -1572,12 +1590,16 @@ Grok 4.3 was reached at
 \texttt{api.x.ai/v1/chat/completions}.  The full
 200-query workload (synthetic-org, the same benchmark as
 Section~\ref{sec:results}) was run with the
-``run\_grok\_local.ps1'' wrapper:
+``run\_grok\_local.ps1'' wrapper. Here Grok serves the accuracy column with
+real API calls, while the cost column uses the same \emph{simulated} per-tier
+cost model as Section~\ref{sec:results} (not metered Grok tokens); the
+provider-metered Grok dollars are reported separately in
+Section~\ref{sec:realcost}.
 
 \begin{center}\small
 \begin{tabular}{lrrl}
 \toprule
-System (200-query synthetic-org) & Cost (USD) & Accuracy & Tier mix \\
+System (200-query synthetic-org) & Cost (USD, sim.) & Accuracy & Tier mix \\
 \midrule
 Oracle cascade (cost floor) & 2.78  & 0.950 & 130/15/55 \\
 Grok 4.3 cascade            & 4.88  & 0.500 &  86/17/97 \\
@@ -1752,10 +1774,14 @@ contextual-integrity \emph{extraction}; a deployed system would add a separate
 (costly, potentially noisy) extractor from raw text, whose cost and error we do
 not model here (Section~\ref{sec:limitations}).
 
-\paragraph{Arms and control.} We compare four arms under a shared-teacher
-control (one teacher call per distinct case, reused across arms, so verdict
-accuracy is matched by construction --- the same device as
-Section~\ref{sec:realcost}): \textbf{llm\_only} (every case to the teacher),
+\paragraph{Arms and control.} We compare four arms under a shared-cost
+control (one teacher call per distinct case, its verdict and cost reused across
+arms for a like-for-like comparison). Unlike the MetaQA study of
+Section~\ref{sec:realcost}, the compliance graph carries no verdict write-back,
+so the \textbf{full} arm serves rule \emph{inferences} rather than the teacher's
+verdict and per-arm accuracy is matched only \emph{approximately}
+(iso-accuracy; Table~\ref{tab:privaci}), not by construction: \textbf{llm\_only}
+(every case to the teacher),
 \textbf{cache} (exact-match verdict cache + teacher), \textbf{full} (online
 rule distillation + cache + teacher), and \textbf{nl\_strategy}, a faithful
 port of Inter-Cascade~\citep{intercascade2025} that retrieves
@@ -1773,9 +1799,9 @@ arm cost) at matched verdict accuracy. Full online distillation amortises
 measured teacher cost by \privFullGemini$\times$ (gemini-3.5-flash),
 \privFullClaude$\times$ (claude-sonnet-4.6) and \privFullGrok$\times$
 (grok-4.3) --- positive on all three frontier teachers --- against
-${\sim}\privCacheGemini\times$ for the exact-match cache. Crucially, only
-\privDistinct{} of $300$ cases per stream are repeats of a seen pattern
-(a ${\sim}9\%$ ceiling), so the cache is near-useless and the full arm's
+${\sim}\privCacheGemini\times$ for the exact-match cache. Crucially, of the
+$300$ cases per stream \privDistinct{} are \emph{distinct} (only a
+${\sim}9\%$ repeat ceiling), so the cache is near-useless and the full arm's
 lead comes from rules that generalise to \emph{unseen} cases --- the
 distillation-beyond-caching effect the KGQA workload could not exhibit under
 a noisy teacher. This is the positive, real-(non-oracle)-teacher answer to
@@ -2093,8 +2119,10 @@ The Tier-B causal layer only identifies treatment effects whose graph
 admits a back-door, front-door, or instrumental-variable
 identification (Section~\ref{sec:soundness}).  Models with
 unobserved confounders that violate all three conditions return
-``not identifiable'' from \texttt{causal.identify}; the standard
-Tian-Pearl ID algorithm for the general semi-Markovian case is
+``no adjustment set'' from the \texttt{backdoor\_set} /
+\texttt{front\_door\_set} / \texttt{instrumental\_variables} helpers (there is
+no \texttt{identify()} entry point; see Appendix~\ref{sec:extmodules}); the
+standard Tian-Pearl ID algorithm for the general semi-Markovian case is
 documented as future work.  Mitigation: the helper returns a
 diagnostic explanation so the caller knows which condition failed.
 Residual loss: queries against complex semi-Markovian SCMs are not

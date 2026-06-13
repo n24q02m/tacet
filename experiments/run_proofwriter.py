@@ -48,6 +48,9 @@ from tacet.data.proofwriter import load_proofwriter
 from tacet.eval.eval_audit import proof_coverage, proof_validity
 
 _RESULTS = Path(__file__).resolve().parents[1] / "experiments" / "results"
+# Paper-consumed artifacts (\input-ed table + the shared macros file) live under
+# paper/results so a documented run regenerates exactly what the paper reads.
+_PAPER_RESULTS = Path(__file__).resolve().parents[1] / "paper" / "results"
 
 
 @dataclass
@@ -187,10 +190,10 @@ def main() -> None:
         f"proof_cov={overall_cov:.3f} proof_val={overall_val:.3f}"
     )
 
-    _RESULTS.mkdir(parents=True, exist_ok=True)
-    _write_table(_RESULTS / "tab_proofwriter.tex", rows)
+    _PAPER_RESULTS.mkdir(parents=True, exist_ok=True)
+    _write_table(_PAPER_RESULTS / "tab_proofwriter.tex", rows)
     _update_macros(
-        _RESULTS / "macros.tex",
+        _PAPER_RESULTS / "macros.tex",
         {
             r"\pwAccOverall": f"{overall_acc:.3f}",
             r"\pwProofCov": f"{overall_cov:.3f}",
@@ -199,8 +202,8 @@ def main() -> None:
             r"\pwExclPct": f"{overall_excl_frac * 100:.1f}",
         },
     )
-    print(f"wrote {_RESULTS / 'tab_proofwriter.tex'}")
-    print(f"updated {_RESULTS / 'macros.tex'}")
+    print(f"wrote {_PAPER_RESULTS / 'tab_proofwriter.tex'}")
+    print(f"updated {_PAPER_RESULTS / 'macros.tex'}")
 
 
 if __name__ == "__main__":
