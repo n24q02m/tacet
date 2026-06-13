@@ -47,9 +47,9 @@
 \IfFileExists{results/macros.tex}{\input{results/macros.tex}}{}
 \IfFileExists{results/macros_privaci.tex}{\input{results/macros_privaci.tex}}{}
 
-\title{\textbf{Cost-Amortised Knowledge-Graph\\
-Question Answering via Self-Distilling\\
-Neuro-Symbolic Cascades}}
+\title{\textbf{Cost-Amortised Reasoning via Self-Distilling\\
+Neuro-Symbolic Cascades: From Knowledge-Graph QA\\
+to Regulatory-Compliance Checking}}
 \author{Nguyen Quang Minh\thanks{Independent researcher. Correspondence:
 \texttt{quangminh2402.dev@gmail.com}. Code and benchmark:
 \texttt{github.com/n24q02m/tacet}.}}
@@ -216,6 +216,13 @@ Appendix~\ref{sec:extmodules}. We use MetaQA and ProofWriter as
 systems~\citep{saxena2020embedkgqa,tafjord2021proofwriter}, so we make no
 state-of-the-art accuracy claim on either; they are small enough to meter a
 real teacher end-to-end, which is the measurement this paper is about.
+The cascade is a domain-general mechanism, not a KGQA-specific system; to
+show this we evaluate it on a second, non-saturated domain --- regulatory
+\emph{compliance checking} on PrivaCI-Bench~\citep{privacibench2025} (GDPR) ---
+where, unlike on the noisy KGQA teacher, rule distillation amortises a real
+(non-oracle) teacher's cost beyond a cache across three frontier LLMs
+(Section~\ref{sec:compliance}). MetaQA and ProofWriter remain mechanism
+testbeds; compliance is the external-validity domain.
 
 \section{Related Work}
 \label{sec:related}
