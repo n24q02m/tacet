@@ -166,23 +166,48 @@ class TACET:
         ontology-consistent. A teacher write-back can introduce a fresh endpoint;
         left untyped it defaults to the catch-all ``Entity`` type and a valid
         rule then derives a type-violating fact, breaking that premise during
-        normal operation. Assigning the relation's declared *singleton* domain /
-        range type to a **new** endpoint keeps the written-back fact well-typed.
-        Existing nodes and ambiguous positions (``*`` or a multi-type set) are
-        left untouched, so untyped/schema-free relations are unaffected.
+        normal operation. Assigning a **new** endpoint a type the relation's
+        declared domain / range admits keeps the written-back fact well-typed.
+
+        The default schema is ``Ontology.induce``, which learns domain/range as
+        the *set* of observed endpoint types, so a relation spanning more than
+        one type has a multi-type domain/range: any member satisfies the
+        type check, so a representative is chosen deterministically. A self-loop
+        ``r(x, x)`` is the one case where a single endpoint must satisfy both the
+        domain and the range, so it is typed from their intersection. Open
+        positions (``*``) impose no constraint and are left as ``Entity`` (which
+        ``*`` already admits); when constraints are mutually exclusive the node
+        is left untyped so the validator surfaces the genuine ill-typing.
+        Existing nodes are never re-typed.
         """
         rt = self.ontology.relation(relation)
         if rt is None:
             return
-        self._ensure_type(source, rt.domain)
-        self._ensure_type(target, rt.range)
+        if source == target:
+            # self-loop: the lone endpoint must satisfy both domain and range
+            self._ensure_type(source, rt.domain, rt.range)
+        else:
+            self._ensure_type(source, rt.domain)
+            self._ensure_type(target, rt.range)
 
-    def _ensure_type(self, node_id: str, type_set: frozenset[str]) -> None:
+    def _ensure_type(self, node_id: str, *constraints: frozenset[str]) -> None:
+        """Type a new endpoint with a type admitted by every given constraint set.
+
+        Each constraint is a domain or range set; ``*`` means 'any type' and
+        imposes no constraint. The chosen type must lie in the intersection of
+        all non-open constraints; ``None`` (all open) or an empty intersection
+        leaves the node untyped.
+        """
         if self.graph.node(node_id) is not None:
             return
-        concrete = [ty for ty in type_set if ty != "*"]
-        if len(concrete) == 1:
-            self.graph.add_node(node_id, concrete[0])
+        admissible: set[str] | None = None
+        for cset in constraints:
+            if "*" in cset:
+                continue  # open position: no constraint
+            concrete = {ty for ty in cset if ty != "*"}
+            admissible = concrete if admissible is None else (admissible & concrete)
+        if admissible:
+            self.graph.add_node(node_id, sorted(admissible)[0])
 
     def _record(
         self,

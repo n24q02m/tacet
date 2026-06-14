@@ -67,7 +67,20 @@ python experiments/run_audit_eval.py --seed 0 --workload-size 300
 Prints mean proof coverage / validity and writes `paper/results/tab_audit.tex`
 plus the merged `paper/results/macros.tex`.
 
-## 5. Causal-layer demo
+## 5. Rule-mining precision (synthetic workload)
+
+```bash
+python experiments/run_rule_precision.py --seeds 5 --workload-size 300
+```
+
+`--seeds 5` runs seeds `0..4` and reports each count (proposed / installed /
+world-correct rules) as mean +/- std across the seeds. This writes
+`paper/results/tab_rule_precision.tex` and *merges* the rule-precision macros
+(`\ruleProposed`, `\ruleInstalled`, `\ruleWorldCorrect`, `\ruleSeeds`, ...) into
+the shared `paper/results/macros.tex`, so it must be run alongside the other
+macro-contributing runners to keep `main.tex`'s numbers in sync.
+
+## 6. Causal-layer demo
 
 ```bash
 python experiments/run_causal_demo.py --seed 0 --samples 200000
@@ -76,7 +89,7 @@ python experiments/run_causal_demo.py --seed 0 --samples 200000
 Demonstrates `do`-interventions, back-door / front-door identification, IV
 detection, and counterfactual estimation on a structural causal model.
 
-## 6. KGE rotation smoke (Tier 2)
+## 7. KGE rotation smoke (Tier 2)
 
 ```bash
 python experiments/run_rotation_smoke.py --out experiments/results/rotation_smoke.json

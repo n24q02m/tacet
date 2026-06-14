@@ -88,5 +88,105 @@ class TestWriteBackOntologyPreservation(unittest.TestCase):
         self.assertEqual(onto.validate(g), [])
 
 
+class TestWriteBackInducedMultiType(unittest.TestCase):
+    """The default path is a *schema-free* ``Ontology.induce``, which learns
+    domain/range as the SET of observed endpoint types. A relation that connects
+    more than one type (e.g. ``located_in`` over City->Country and
+    Building->City) therefore has a multi-type domain/range. The write-back path
+    must still type a brand-new endpoint from such a set, or it defaults to the
+    catch-all ``Entity`` and the closure becomes ontology-inconsistent — exactly
+    the failure mode the single-type test cannot catch.
+    """
+
+    def _setup_induced(self) -> tuple[TACET, WorldGraph, Ontology]:
+        g = WorldGraph()
+        g.add_node("paris", "City")
+        g.add_node("france", "Country")
+        g.add_node("europe", "Continent")
+        g.add_node("eiffel", "Building")
+        g.add_node("arch", "Building")  # a Building with no located_in yet
+        g.add_edge("paris", "located_in", "france")  # City -> Country
+        g.add_edge("paris", "located_in", "europe")  # City -> Continent (=> non-functional)
+        g.add_edge("eiffel", "located_in", "paris")  # Building -> City
+        onto = Ontology.induce(g)
+        # teacher answers (arch, located_in) with a BRAND-NEW endpoint
+        teacher = CallableTeacher(
+            lambda h, r: ["mystery_place"] if (h, r) == ("arch", "located_in") else []
+        )
+        ak = TACET(
+            g,
+            onto,
+            teacher,
+            config=CascadeConfig(
+                kge=KGEConfig(epochs=1),
+                distillation=True,
+                write_back=True,
+                rule_synthesis=False,
+            ),
+        )
+        return ak, g, onto
+
+    def test_induced_multitype_endpoint_is_typed_from_the_set(self) -> None:
+        ak, g, onto = self._setup_induced()
+        rt = onto.relation("located_in")
+        # precondition: induce really produced a multi-type range (else this test
+        # would silently degenerate to the single-type case).
+        self.assertGreater(len({t for t in rt.range if t != "*"}), 1, "expected multi-type range")
+        ak.ask("arch", "located_in")
+        node = g.node("mystery_place")
+        self.assertIsNotNone(node, "write-back must create the new endpoint")
+        self.assertNotEqual(node.type, "Entity", "must not default to the catch-all type")
+        self.assertIn(
+            node.type,
+            set(rt.range),
+            "new endpoint must take a type the relation's declared range admits",
+        )
+
+    def test_induced_multitype_keeps_graph_consistent(self) -> None:
+        ak, g, onto = self._setup_induced()
+        ak.ask("arch", "located_in")
+        self.assertEqual(
+            onto.validate(g),
+            [],
+            "multi-type write-back must not introduce a type-violating fact",
+        )
+
+
+class TestWriteBackSelfLoop(unittest.TestCase):
+    """A teacher write-back can be a self-loop r(x, x). The single endpoint then
+    has to satisfy BOTH the relation's domain and its range, so it must be typed
+    from their intersection (left untyped only when they are disjoint, which is a
+    genuine ill-typing the validator should surface).
+    """
+
+    def test_self_loop_types_from_domain_range_intersection(self) -> None:
+        onto = (
+            Ontology()
+            .add_node_type(NodeType("A"))
+            .add_node_type(NodeType("B"))
+            .add_node_type(NodeType("C"))
+            .add_relation_type(RelationType("rel", frozenset({"A", "B"}), frozenset({"B", "C"})))
+        )
+        g = WorldGraph()
+        teacher = CallableTeacher(lambda h, r: ["x"] if (h, r) == ("x", "rel") else [])
+        ak = TACET(
+            g,
+            onto,
+            teacher,
+            config=CascadeConfig(
+                kge=KGEConfig(epochs=1),
+                distillation=True,
+                write_back=True,
+                rule_synthesis=False,
+            ),
+        )
+        ak.ask("x", "rel")
+        node = g.node("x")
+        self.assertIsNotNone(node)
+        # {A,B} ∩ {B,C} = {B}: the only type consistent with both ends of r(x,x)
+        self.assertEqual(node.type, "B")
+        self.assertEqual(onto.validate(g), [])
+
+
 if __name__ == "__main__":
     unittest.main()

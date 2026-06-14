@@ -139,5 +139,33 @@ class TestProposedVsInstalled(unittest.TestCase):
         self.assertGreaterEqual(n_proposed, len(rules))
 
 
+class TestLengthOneReflexiveExclusion(unittest.TestCase):
+    def test_length1_confidence_excludes_reflexive_pairs(self) -> None:
+        """The length-1 body must drop reflexive (x, x) pairs from the confidence
+        denominator, mirroring the length-2 branch.
+
+        ``r1`` has 3 non-reflexive pairs, all matching ``target`` (confidence
+        1.0), plus 2 reflexive pairs. The installed rule carries a ``distinct``
+        guard and can never fire on (x, x), so confidence is measured over the 3
+        non-reflexive pairs -> 3/3 = 1.0 and the valid rule installs. If the two
+        reflexive pairs entered the denominator the confidence would be 3/5 = 0.6
+        < 0.95 and the rule would be wrongly rejected.
+        """
+        g = WorldGraph(name="reflexive-toy")
+        for x, y in (("a", "b"), ("b", "c"), ("c", "d")):
+            g.add_edge(x, "r1", y)
+            g.add_edge(x, "target", y)
+        g.add_edge("a", "r1", "a")  # reflexive -- must not enter the denominator
+        g.add_edge("b", "r1", "b")
+        rules = mine_rules(
+            g,
+            teacher_facts=set(),
+            target="target",
+            min_confidence=0.95,
+            min_support=3,
+        )
+        self.assertIn("syn:target<=r1", {m.rule.name for m in rules})
+
+
 if __name__ == "__main__":
     unittest.main()

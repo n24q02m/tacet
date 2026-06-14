@@ -106,6 +106,64 @@ def test_replay_llm_only_sends_every_query_but_pays_per_distinct_pair() -> None:
     assert rep["accuracy"] == 1.0
 
 
+# ----------------------------------------------- engine-hit parity (scored-vs-gold)
+class _FakeBench:
+    """Minimal bench exposing only ``.kg`` (all ``_kg_without`` touches)."""
+
+    def __init__(self, kg: WorldGraph) -> None:
+        self.kg = kg
+
+
+def test_engine_hit_is_free_but_still_scored_against_gold() -> None:
+    """A cascade query served by the engine (Tier-1, cost 0) is scored against
+    gold exactly like a paid teacher answer -- it gets no accuracy free pass.
+
+    The teacher caches a WRONG answer on the first query; the repeat is served
+    for free by the engine. If the free hit were excluded from scoring, accuracy
+    would be 0.5 (only the paid query counted) or 1.0; the parity invariant
+    requires 0.0 (both the paid and the free hit are wrong against gold).
+    """
+    from run_real_kg_controlled import TIER2_OFF, _replay_cascade
+
+    from tacet.core.ontology import NodeType, Ontology, RelationType
+    from tacet.serve.config import CascadeConfig, KGEConfig
+
+    kg = WorldGraph()
+    kg.add_node("alice", "Person")
+    kg.add_node("acme", "Company")
+    kg.add_node("wrong_co", "Company")
+    kg.add_node("bob", "Person")
+    kg.add_edge("bob", "works_at", "acme")  # an un-held-out edge so the KGE has data
+    bench = _FakeBench(kg)
+    onto = (
+        Ontology()
+        .add_node_type(NodeType("Person"))
+        .add_node_type(NodeType("Company"))
+        .add_relation_type(RelationType("works_at", frozenset({"Person"}), frozenset({"Company"})))
+    )
+    metered = FakeMetered({("alice", "works_at"): (["wrong_co"], 0.05)})
+    guard = BudgetGuard(budget_usd=100.0)
+    shared = SharedAnswerCache(metered, guard, kg)
+    gold = frozenset({"acme"})
+    stream = [("alice", "works_at", gold), ("alice", "works_at", gold)]
+    cfg = CascadeConfig(
+        kge=KGEConfig(epochs=1),
+        write_back=True,
+        rule_synthesis=False,
+        kge_augment=False,
+        l2_threshold=TIER2_OFF,  # Tier-2 off: first query must reach the teacher
+    )
+    rep = _replay_cascade("cache_cascade", stream, bench, onto, shared, cfg)
+
+    # the first query paid the teacher (Tier-3); the repeat was served free (Tier-1)
+    assert rep["tier_counts"][3] == 1
+    assert rep["tier_counts"][1] == 1
+    assert metered.calls == 1
+    assert rep["total_cost_usd"] == 0.05  # the free engine hit added no cost
+    # parity: the free hit is scored against gold, not waved through -> both wrong
+    assert rep["accuracy"] == 0.0
+
+
 if __name__ == "__main__":
     import unittest
 

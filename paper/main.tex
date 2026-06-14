@@ -1037,8 +1037,12 @@ exposes a single-function teacher interface for them.
 guarantees that the symbolic closure is ontology-consistent \emph{given} that
 the graph and the installed rules are. The engine maintains the rule premise
 by a type-consistency check at \texttt{add\_rule}, and the write-back path
-types each new entity from the relation's declared schema, so a teacher fact
-about a fresh entity keeps the graph well-typed. The residual gap is a teacher
+types each new entity with a type the relation's declared domain/range admits.
+Under the default \texttt{induce} schema this domain/range is the \emph{set} of
+observed endpoint types, so a multi-type relation contributes a representative
+member of that set and a self-loop is typed from the domain--range intersection;
+either way a teacher fact about a fresh entity keeps the graph well-typed. The
+residual gap is a teacher
 that asserts a type-inconsistent fact between \emph{existing} entities (a
 mistyped answer in the noisy regime): write-back does not relabel an existing
 node, so such a fact can enter the closure. We treat this as a teacher-quality
@@ -1605,7 +1609,9 @@ Oracle cascade (cost floor) & 2.78  & 0.950 & 130/15/55 \\
 Grok 4.3 cascade            & 4.88  & 0.500 &  86/17/97 \\
 Grok 4.3 LLM-only           & 10.00 & 0.000 &     ---   \\
 \bottomrule
-\end{tabular}
+\end{tabular}\\[3pt]
+{\footnotesize Cost column: simulated per-tier cost model (simulated tier cost),
+not metered Grok tokens; metered Grok dollars are in Section~\ref{sec:realcost}.}
 \end{center}
 
 \noindent Cost reduction (Grok cascade vs Grok LLM-only):

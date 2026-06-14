@@ -90,16 +90,22 @@ def _t_critical(df: int) -> float:
 
     With few seeds the normal approximation (1.96) understates the interval:
     for the 8-seed grid here ``df=7`` gives ``t=2.365``, a 1.21x wider bar. We
-    use the t value deliberately and fall back to 1.96 only if SciPy is absent.
+    use the exact t value deliberately. A silent fall-back to 1.96 would
+    misreport a (narrower) normal interval as a Student-t one, so a missing
+    SciPy is raised rather than swallowed -- the harness's ``experiments`` extra
+    pins SciPy precisely so this never degrades a reported error bar unnoticed.
     """
     if df < 1:
         return 0.0
     try:
         from scipy.stats import t as _t
-
-        return float(_t.ppf(0.975, df))
-    except Exception:
-        return 1.96
+    except ImportError as exc:
+        raise RuntimeError(
+            "SciPy is required for the Student-t confidence interval; install "
+            "the 'experiments' extra. Refusing to silently use the narrower "
+            "normal z=1.96 in its place."
+        ) from exc
+    return float(_t.ppf(0.975, df))
 
 
 def _summary(values: list[float]) -> dict[str, float]:
