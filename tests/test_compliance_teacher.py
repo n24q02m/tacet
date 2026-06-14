@@ -1,5 +1,7 @@
 """Compliance prompt plumbing: custom template + verdict/article parsing."""
 
+import pytest
+
 from tacet.llm.teachers.compliance import (
     COMPLIANCE_PROMPT_TEMPLATE,
     parse_compliance_answer,
@@ -66,6 +68,10 @@ def test_parse_compliance_answer_edge_cases():
 
 
 def test_openrouter_teacher_points_at_openrouter():
+    # constructing the teacher pulls in the optional 'openai' SDK (lazy import in
+    # GrokTeacher.__init__); skip without the 'llm' extra, matching the rest of
+    # the suite's optional-dep convention so a no-extras checkout stays green.
+    pytest.importorskip("openai")
     # thin subclass of GrokTeacher: OpenRouter base_url + the model slug, no network
     t = OpenRouterTeacher("k", model="anthropic/claude-sonnet-4.6", prompt_template="{head}")
     assert t._model == "anthropic/claude-sonnet-4.6"
