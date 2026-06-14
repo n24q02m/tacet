@@ -98,6 +98,7 @@ def build_table(matrices):
     body = "\n".join(
         [
             "\\begin{table}[t]\\centering",
+            "\\small",
             f"\\caption{{{caption}}}",
             "\\label{tab:privaci}",
             "\\begin{tabular}{lrrrrr}",
