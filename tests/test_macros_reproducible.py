@@ -16,13 +16,17 @@ out of scope for this self-contained check.
 from __future__ import annotations
 
 import json
+import math
 import re
 import unittest
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 SUMMARY = ROOT / "experiments" / "results" / "summary.json"
 MACROS = ROOT / "paper" / "results" / "macros.tex"
+TAB_MAIN = ROOT / "paper" / "results" / "tab_main.tex"
 
 
 def _macro_values(text: str) -> dict[str, str]:
@@ -51,6 +55,35 @@ class TestMacrosReproducible(unittest.TestCase):
                 value,
                 f"macro \\{name}: committed {committed.get(name)!r} != regen {value!r} "
                 "(re-run experiments/analyze.py --out paper after updating summary.json)",
+            )
+
+    def test_tab_main_ci95_is_student_t_and_matches_summary(self) -> None:
+        # The error bars in tab_main.tex must be the Student-t half-widths the
+        # harness emits, recomputable from the committed summary. This pins both
+        # (a) the stored ci95 IS t(n-1)*sem (not the narrower normal z=1.96), and
+        # (b) the committed table renders exactly that value (no stale regen /
+        # hand-edit). _t_critical needs SciPy, so skip without the extra.
+        pytest.importorskip("scipy")
+        from tacet.eval.experiment import _t_critical
+
+        summary = json.loads(SUMMARY.read_text(encoding="utf-8"))
+        tab = TAB_MAIN.read_text(encoding="utf-8")
+        for sysname, d in summary["E1"].items():
+            cost = d["cost"]
+            n, std, ci95 = cost["n"], cost["std"], cost["ci95"]
+            if n > 1:
+                expected = _t_critical(n - 1) * std / math.sqrt(n)
+                self.assertAlmostEqual(
+                    ci95,
+                    expected,
+                    places=6,
+                    msg=f"E1[{sysname}] cost ci95 is not the Student-t half-width",
+                )
+            self.assertIn(
+                f"{ci95:.3f}",
+                tab,
+                f"E1[{sysname}] cost ci95 {ci95:.3f} not rendered in tab_main.tex "
+                "(re-run experiments/analyze.py --out paper)",
             )
 
 

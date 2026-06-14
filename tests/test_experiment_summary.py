@@ -8,9 +8,17 @@ untested.
 from __future__ import annotations
 
 import math
+import sys
 import unittest
+from unittest import mock
 
-from tacet.eval.experiment import _summary, _t_critical, aggregate, build_jobs
+import pytest
+
+# The harness's error bars are exact Student-t intervals, which require SciPy.
+# Skip (rather than hard-fail) the numeric assertions when SciPy is absent.
+pytest.importorskip("scipy")
+
+from tacet.eval.experiment import _summary, _t_critical, aggregate, build_jobs  # noqa: E402
 
 
 class TestSummary(unittest.TestCase):
@@ -37,6 +45,15 @@ class TestSummary(unittest.TestCase):
         # df=7 (the 8-seed grid): t_{0.975,7} = 2.365, wider than 1.96
         self.assertAlmostEqual(_t_critical(7), 2.365, places=2)
         self.assertGreater(_t_critical(7), 1.96)
+
+    def test_t_critical_raises_without_scipy_instead_of_silent_z(self) -> None:
+        # A missing SciPy must be loud: silently returning the narrower normal
+        # z=1.96 would misreport the paper's Student-t error bars.
+        with (
+            mock.patch.dict(sys.modules, {"scipy": None, "scipy.stats": None}),
+            self.assertRaises(RuntimeError),
+        ):
+            _t_critical(7)
 
 
 class TestBuildJobsAggregate(unittest.TestCase):

@@ -27,34 +27,44 @@ from tacet.core.symbolic import RuleEngine, SymbolicResult, Triple
 _ARROW = "-"
 
 
-def _parse_top_level_triples(proof: list[str]) -> list[Triple]:
-    """Recover the answered (depth-0) triples from a proof string list.
+def _parse_conclusion(line: str) -> Triple | None:
+    """Parse one un-indented proof line ``<KIND><pad>h -r-> t[...]`` into a triple.
 
-    Only un-indented lines are top-level conclusions; each renders as
-    ``<KIND><pad>h -r-> t[...]``. We split on the ``-r->`` arrow so entity names
-    containing other characters survive. Lines that do not parse are skipped
-    entirely (excluded from both the grounded count and the total, rather than
-    crashing); on the clean synthetic / ProofWriter proof strings used here no
-    top-level line fails to parse, so validity is computed over every conclusion.
+    Returns ``None`` when the line does not parse as a conclusion. We split on the
+    ``-r->`` arrow so entity names containing other characters survive.
     """
-    triples: list[Triple] = []
-    for line in proof:
-        if line[:1].isspace() or not line.strip():
-            continue
-        body = line.split(None, 1)
-        if len(body) != 2:
-            continue
-        payload = body[1]
-        # drop a trailing rule annotation "   [rule]" if present
-        if payload.rstrip().endswith("]") and "[" in payload:
-            payload = payload[: payload.rindex("[")]
-        # payload is now "h -r-> t"; the relation is wrapped as "-r->"
-        if f" {_ARROW}" not in payload or f"{_ARROW}> " not in payload:
-            continue
-        head, rest = payload.split(f" {_ARROW}", 1)
-        rel, tail = rest.split(f"{_ARROW}> ", 1)
-        triples.append((head.strip(), rel.strip(), tail.strip()))
-    return triples
+    body = line.split(None, 1)
+    if len(body) != 2:
+        return None
+    payload = body[1]
+    # drop a trailing rule annotation "   [rule]" if present
+    if payload.rstrip().endswith("]") and "[" in payload:
+        payload = payload[: payload.rindex("[")]
+    # payload is now "h -r-> t"; the relation is wrapped as "-r->"
+    if f" {_ARROW}" not in payload or f"{_ARROW}> " not in payload:
+        return None
+    head, rest = payload.split(f" {_ARROW}", 1)
+    rel, tail = rest.split(f"{_ARROW}> ", 1)
+    return (head.strip(), rel.strip(), tail.strip())
+
+
+def _top_level_conclusions(proof: list[str]) -> list[Triple | None]:
+    """Recover every depth-0 conclusion from a proof string list.
+
+    Only un-indented, non-blank lines are top-level conclusions (indented lines
+    are premises). Each entry is the parsed triple, or ``None`` when the line is
+    a top-level conclusion that fails to parse. A non-parsing conclusion is kept
+    as ``None`` rather than dropped, so the validity metric counts it as
+    *ungrounded* (it lands in the denominator but never the numerator): a
+    conclusion the auditor cannot even read is not evidence of soundness, and
+    silently excluding it would let a malformed proof score a perfect 1.0. On the
+    clean synthetic / ProofWriter proofs used here every conclusion parses, so
+    this is invariant on those workloads and only hardens the metric against
+    malformed input.
+    """
+    return [
+        _parse_conclusion(line) for line in proof if not (line[:1].isspace() or not line.strip())
+    ]
 
 
 def proof_validity(engine: RuleEngine, result: SymbolicResult) -> float:
@@ -67,11 +77,13 @@ def proof_validity(engine: RuleEngine, result: SymbolicResult) -> float:
     """
     if not result.answered or not result.proof:
         return 0.0
-    triples = _parse_top_level_triples(result.proof)
-    if not triples:
+    conclusions = _top_level_conclusions(result.proof)
+    if not conclusions:
         return 0.0
-    grounded = sum(1 for t in triples if engine.proof_is_grounded(t))
-    return grounded / len(triples)
+    # the denominator is every top-level conclusion line; a line that fails to
+    # parse (``None``) counts as ungrounded, never as grounded.
+    grounded = sum(1 for t in conclusions if t is not None and engine.proof_is_grounded(t))
+    return grounded / len(conclusions)
 
 
 def proof_coverage(engine: RuleEngine, result: SymbolicResult) -> float:

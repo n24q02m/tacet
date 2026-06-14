@@ -63,6 +63,21 @@ class TestProofValidity(unittest.TestCase):
         self.assertEqual(proof_coverage(engine, result), 1.0)
         self.assertEqual(proof_validity(engine, result), 1.0)
 
+    def test_unparseable_top_level_line_counts_as_ungrounded(self) -> None:
+        # one genuinely grounded conclusion (a base leaf) -> validity 1.0 ...
+        engine, g = _engine([])
+        g.add_node("a", "T")
+        engine.materialise(g)
+        engine.add_fact(("a", "favourite_food", "pho"))
+        result = engine.query("a", "favourite_food")
+        self.assertEqual(proof_validity(engine, result), 1.0)
+        # ... but a malformed top-level conclusion the auditor cannot even read
+        # must drag validity below 1.0: it lands in the denominator (an
+        # unverifiable conclusion) yet never in the grounded numerator. Silently
+        # dropping it would let a malformed proof keep a perfect score.
+        result.proof.append("MANGLED a conclusion with no arrow")
+        self.assertEqual(proof_validity(engine, result), 0.5)
+
 
 if __name__ == "__main__":
     unittest.main()
