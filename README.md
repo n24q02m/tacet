@@ -35,6 +35,17 @@
 </details>
 <!-- END: AUTO-GENERATED-CROSS-PROMO -->
 
+## Table of contents
+
+- [Why it matters](#why-it-matters)
+- [Install](#install)
+- [Run as a service](#run-as-a-service)
+- [Quickstart](#quickstart)
+- [Reproduce the paper](#reproduce-the-paper)
+- [Modules](#modules)
+- [Roadmap status](#roadmap-status)
+- [Limitations](#limitations)
+- [License](#license)
 
 TACET answers knowledge-graph questions through a **three-tier cascade** —
 deterministic rules, a learned graph embedding, and an LLM — and **distils the
@@ -111,6 +122,10 @@ exact repeats. This advantage is teacher-quality-gated — under a noisy teacher
 no installable rule is recovered and the cascade ties the cache (see the paper).
 
 ## Install
+
+| Platform | Command |
+|---|---|
+| Linux / macOS / Windows | `pip install -e .` (Python 3.13+) |
 
 ```bash
 pip install -e .                       # core (numpy only)
