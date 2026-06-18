@@ -15,7 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 experiments = ["matplotlib>=3.10.9", "scipy>=1.17.1", "pyarrow>=21.0.0"]
 service = ["fastapi>=0.136.3", "uvicorn[standard]>=0.48.0", "pydantic>=2.13.4", "pydantic-settings>=2.14.1", "httpx>=0.28.1", "prometheus_client>=0.25.0"]
-torch = ["torch>=2.12.0"]
+torch = ["torch>=2.12.1"]
 llm = ["google-genai>=1.75.0", "openai>=1.109.1"]
 # all-MiniLM-L6-v2 retrieval for the Inter-Cascade-style nl_strategy baseline
 # (experiments/run_privaci_controlled.py); pulled in only for that experiment.
