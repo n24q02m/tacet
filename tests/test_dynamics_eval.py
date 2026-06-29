@@ -276,3 +276,69 @@ class TestEvalLatency(unittest.TestCase):
         )
         self.assertIsNone(result["tier2_ms"])
         self.assertIsNone(result["ratio"])
+
+
+@unittest.skipUnless(HAS_TORCH, "torch missing")
+class TestEvalSingleStepFullRanking(unittest.TestCase):
+    def setUp(self):
+        self.traj, self.event_types = _make_tiny_trajectory()
+        (self.kge, self.state_enc, self.event_enc, self.rssm, self.decoder) = _build_components(
+            self.traj, self.event_types
+        )
+
+    def test_returns_required_keys(self):
+        from tacet.experimental.dynamics.eval import eval_single_step_full_ranking
+
+        result = eval_single_step_full_ranking(
+            self.traj,
+            self.kge,
+            self.state_enc,
+            self.event_enc,
+            self.rssm,
+            self.decoder,
+        )
+        for key in ("MRR", "Hits@1", "Hits@3", "Hits@10", "n"):
+            self.assertIn(key, result, f"Missing key {key!r}")
+
+    def test_mrr_in_unit_interval(self):
+        from tacet.experimental.dynamics.eval import eval_single_step_full_ranking
+
+        result = eval_single_step_full_ranking(
+            self.traj,
+            self.kge,
+            self.state_enc,
+            self.event_enc,
+            self.rssm,
+            self.decoder,
+        )
+        self.assertGreaterEqual(result["MRR"], 0.0)
+        self.assertLessEqual(result["MRR"], 1.0)
+
+    def test_hits_in_unit_interval(self):
+        from tacet.experimental.dynamics.eval import eval_single_step_full_ranking
+
+        result = eval_single_step_full_ranking(
+            self.traj,
+            self.kge,
+            self.state_enc,
+            self.event_enc,
+            self.rssm,
+            self.decoder,
+        )
+        for key in ("Hits@1", "Hits@3", "Hits@10"):
+            self.assertGreaterEqual(result[key], 0.0, f"{key} < 0")
+            self.assertLessEqual(result[key], 1.0, f"{key} > 1")
+
+    def test_n_is_nonneg_int(self):
+        from tacet.experimental.dynamics.eval import eval_single_step_full_ranking
+
+        result = eval_single_step_full_ranking(
+            self.traj,
+            self.kge,
+            self.state_enc,
+            self.event_enc,
+            self.rssm,
+            self.decoder,
+        )
+        self.assertIsInstance(result["n"], int)
+        self.assertGreaterEqual(result["n"], 0)
