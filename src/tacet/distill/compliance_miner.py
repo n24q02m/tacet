@@ -74,15 +74,24 @@ def mine_compliance_rules(
         return []
 
     # ----- candidate patterns: apriori with support pruning ---------------
-    atom_support: dict[Atom, int] = {}
-    for case in labeled:
+    # ----- inverted index for fast subset matching ------------------------
+    inverted_index: dict[Atom, set[int]] = {}
+    for i, case in enumerate(labeled):
         for atom in case.atoms:
-            atom_support[atom] = atom_support.get(atom, 0) + 1
-    frequent_atoms = sorted(a for a, n in atom_support.items() if n >= min_support)
+            inverted_index.setdefault(atom, set()).add(i)
 
     def matches(pattern: tuple[Atom, ...]) -> list[LabeledCase]:
-        pat = set(pattern)
-        return [c for c in labeled if pat <= c.atoms]
+        if not pattern:
+            return labeled
+        # Intersect indices of cases containing each atom in the pattern
+        indices = inverted_index.get(pattern[0], set()).copy()
+        for atom in pattern[1:]:
+            if not indices:
+                break
+            indices &= inverted_index.get(atom, set())
+        return [labeled[i] for i in sorted(indices)]
+
+    frequent_atoms = sorted(a for a, idxs in inverted_index.items() if len(idxs) >= min_support)
 
     levels: list[list[tuple[Atom, ...]]] = [[(a,) for a in frequent_atoms]]
     for _ in range(2, max_atoms + 1):
