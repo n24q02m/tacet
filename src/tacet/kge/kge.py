@@ -335,6 +335,10 @@ class ComplEx:
     ) -> dict[str, float]:
         """Filtered tail-ranking metrics: MRR and Hits@{1,3,10}."""
         filter_triples = filter_triples or set()
+        filter_map: dict[tuple[str, str], list[str]] = {}
+        for fh, fr, ft in filter_triples:
+            filter_map.setdefault((fh, fr), []).append(ft)
+
         all_ent = np.arange(len(self.ent))
         ranks: list[int] = []
         for h, r, t in test:
@@ -342,8 +346,8 @@ class ComplEx:
                 continue
             hi, ri, ti = self.ent[h], self.rel[r], self.ent[t]
             scores = self._phi_idx(np.full(len(all_ent), hi), np.full(len(all_ent), ri), all_ent)
-            for fh, fr, ft in filter_triples:
-                if fh == h and fr == r and ft != t and ft in self.ent:
+            for ft in filter_map.get((h, r), []):
+                if ft != t and ft in self.ent:
                     scores[self.ent[ft]] = -np.inf
             rank = int(np.sum(scores > scores[ti]) + 1)
             ranks.append(rank)

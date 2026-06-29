@@ -457,6 +457,10 @@ class TorchComplEx:
         self, test: list[Triple], filter_triples: set[Triple] | None = None
     ) -> dict[str, float]:
         filter_triples = filter_triples or set()
+        filter_map: dict[tuple[str, str], list[str]] = {}
+        for fh, fr, ft in filter_triples:
+            filter_map.setdefault((fh, fr), []).append(ft)
+
         ne = len(self.ent)
         all_ent_idx = torch.arange(ne, device=self.device)
         ranks: list[int] = []
@@ -468,8 +472,8 @@ class TorchComplEx:
                 hh = torch.full((ne,), hi, device=self.device)
                 rr = torch.full((ne,), ri, device=self.device)
                 scores = self._phi_idx(hh, rr, all_ent_idx).cpu().numpy()
-                for fh, fr, ft in filter_triples:
-                    if fh == h and fr == r and ft != t and ft in self.ent:
+                for ft in filter_map.get((h, r), []):
+                    if ft != t and ft in self.ent:
                         scores[self.ent[ft]] = -np.inf
                 rank = int((scores > scores[ti]).sum() + 1)
                 ranks.append(rank)
