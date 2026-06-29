@@ -13,7 +13,7 @@ from __future__ import annotations
 import unittest
 
 from tacet.core.graph import WorldGraph
-from tacet.llm.metering import MeteredTeacher, PriceTable
+from tacet.llm.metering import MeteredTeacher, PriceTable, _read_usage
 from tacet.llm.teacher import Teacher, TeacherResponse
 from tacet.serve.config import TIER_COST
 
@@ -52,6 +52,29 @@ class PriceTableTest(unittest.TestCase):
         p_in, p_out = table.price("grok-4.3")
         self.assertGreater(p_in, 0.0)
         self.assertGreater(p_out, 0.0)
+
+    def test_price_lookup_fails_loud_for_unpriced_model(self) -> None:
+        table = PriceTable({"grok-test": (2.0, 10.0)})
+        with self.assertRaises(KeyError):
+            table.price("unknown-model")
+
+
+class UsageReaderTest(unittest.TestCase):
+    def test_read_usage_handles_none_or_empty(self) -> None:
+        self.assertEqual(_read_usage(None), (0, 0))
+        self.assertEqual(_read_usage({}), (0, 0))
+
+    def test_read_usage_prefers_openai_style_keys(self) -> None:
+        usage = {"prompt_tokens": 10, "completion_tokens": 20}
+        self.assertEqual(_read_usage(usage), (10, 20))
+
+    def test_read_usage_handles_gemini_style_keys(self) -> None:
+        usage = {"prompt_token_count": 15, "candidates_token_count": 25}
+        self.assertEqual(_read_usage(usage), (15, 25))
+
+    def test_read_usage_includes_reasoning_tokens_in_completion(self) -> None:
+        usage = {"prompt_tokens": 10, "completion_tokens": 20, "reasoning_tokens": 30}
+        self.assertEqual(_read_usage(usage), (10, 50))
 
 
 class MeteredTeacherTest(unittest.TestCase):
