@@ -69,3 +69,8 @@ tag_format = "v{version}"
 
 [tool.semantic_release.branches.main]
 match = "main"
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]
