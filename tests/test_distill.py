@@ -30,6 +30,7 @@ class TestDistillHelpers(unittest.TestCase):
         self.assertEqual(adj["b"], {"d"})
         self.assertNotIn("c", adj)
 
+
 class TestRuleMining(unittest.TestCase):
     def setUp(self):
         self.graph = WorldGraph(name="test-graph")
@@ -81,6 +82,7 @@ class TestRuleMining(unittest.TestCase):
         names = {r.rule.name for r in rules}
         self.assertIn("syn:target<=R1", names)
 
+
 class TestDistiller(unittest.TestCase):
     def test_distiller_flow(self):
         d = Distiller(synth_trigger=3, min_support=2)
@@ -108,6 +110,7 @@ class TestDistiller(unittest.TestCase):
         kge_facts = d.kge_augmentation()
         self.assertEqual(len(kge_facts), 3)
         self.assertIn(("a1", "target", "b1"), kge_facts)
+
 
 if __name__ == "__main__":
     unittest.main()
