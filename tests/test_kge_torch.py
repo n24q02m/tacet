@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import unittest
-import numpy as np
 
 try:
-    import torch
+    import torch  # noqa: F401
+
     HAS_TORCH = True
 except (ImportError, OSError):
     HAS_TORCH = False
@@ -14,6 +14,7 @@ except (ImportError, OSError):
 if HAS_TORCH:
     from tacet.eval.benchmark import BenchmarkConfig, generate
     from tacet.kge.kge_torch import TorchComplEx, TorchKGEConfig
+
 
 @unittest.skipUnless(HAS_TORCH, "PyTorch not installed")
 class TestTorchComplEx(unittest.TestCase):
@@ -74,6 +75,7 @@ class TestTorchComplEx(unittest.TestCase):
         metrics = self.model.evaluate(test, set(self.bench.graph.triples()))
         self.assertGreaterEqual(metrics["MRR"], 0.0)
         self.assertLessEqual(metrics["Hits@10"], 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
