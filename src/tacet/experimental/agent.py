@@ -128,16 +128,15 @@ def _apply(facts: frozenset[Triple], ga: GroundedAction) -> frozenset[Triple]:
 
 
 def _goal_satisfied(facts: set[Triple], goal: Goal) -> bool:
+    bindings: list[dict[str, str]] = [{}]
     for pat in goal.triples:
-        bindings: list[dict[str, str]] = [{}]
-        for atom in (pat,):
-            nxt: list[dict[str, str]] = []
-            for b in bindings:
-                for f in facts:
-                    merged = _unify(atom, f, b)
-                    if merged is not None:
-                        nxt.append(merged)
-            bindings = nxt
+        nxt: list[dict[str, str]] = []
+        for b in bindings:
+            for f in facts:
+                merged = _unify(pat, f, b)
+                if merged is not None:
+                    nxt.append(merged)
+        bindings = nxt
         if not bindings:
             return False
     return True
