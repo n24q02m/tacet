@@ -1,1 +1,3 @@
-<!-- Bolt (performance) review memory for tacet. The Bolt bot appends dated "Learning / Action" entries below after each task; this file seeds the convention used across the n24q02m repos. -->
+## 2026-06-29 - [Optimize Conjunctive Rule Mining Matching]
+**Learning:** In pattern mining algorithms like Apriori, repeatedly evaluating subset constraints (`pattern <= case.atoms`) via list comprehensions involves an $O(N \cdot k)$ linear scan per candidate. Pre-computing an inverted index mapping each atom to a set of case indices reduces this to fast $O(k)$ set intersections. When doing this, one must be careful to copy the set from the index before using in-place operations (`&=`) to avoid mutating the index cache.
+**Action:** Always look for O(N) linear scans inside heavily repeated candidate generation loops. Use inverted indices (e.g. `dict[Atom, set[int]]`) to map elements to collections they appear in to quickly narrow search spaces with `set.intersection`.
