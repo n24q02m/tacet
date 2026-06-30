@@ -352,7 +352,8 @@ def build_app(
         try:
             out = service.ask(req.head, req.relation)
         except Exception as e:  # pragma: no cover
-            raise HTTPException(status_code=500, detail=str(e)) from e
+            logging.error("Operation failed", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
         return AskResponse(**{k: v for k, v in out.items() if k != "episode_id"})
 
     @app.post("/distill", dependencies=[Depends(_require_api_key)])
