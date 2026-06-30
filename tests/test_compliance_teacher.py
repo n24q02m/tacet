@@ -1,11 +1,8 @@
-"""Compliance prompt plumbing: custom template + verdict/article parsing."""
+"""Compliance prompt plumbing: integration tests for real-LLM teachers."""
 
 import pytest
 
-from tacet.llm.teachers.compliance import (
-    COMPLIANCE_PROMPT_TEMPLATE,
-    parse_compliance_answer,
-)
+from tacet.llm.teachers.compliance import COMPLIANCE_PROMPT_TEMPLATE
 from tacet.llm.teachers.llm import GeminiRestTeacher, OpenRouterTeacher
 
 
@@ -52,19 +49,7 @@ def test_custom_prompt_template_used():
     sent = fake.calls[0]["json"]["contents"][0]["parts"][0]["text"]
     assert "Acme stored passwords unencrypted." in sent
     assert "GDPR" in sent
-    verdict, articles = parse_compliance_answer(resp.answers)
-    assert verdict == "prohibit"
-    assert articles == ("art32", "art6")
-
-
-def test_parse_compliance_answer_edge_cases():
-    assert parse_compliance_answer([]) == ("abstain", ())
-    assert parse_compliance_answer(["permit"]) == ("permit", ())
-    assert parse_compliance_answer(["Prohibit", "Article 32", "art6(1)"]) == (
-        "prohibit",
-        ("art32", "art6"),
-    )
-    assert parse_compliance_answer(["weird"]) == ("abstain", ())
+    assert resp.answers == ["prohibit", "art32", "art6"]
 
 
 def test_openrouter_teacher_points_at_openrouter():
