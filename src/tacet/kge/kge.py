@@ -142,16 +142,21 @@ class ComplEx:
         if not self.ent:
             return self.fit(triples, epochs)
         d, scale = self.cfg.dim, 1.0 / np.sqrt(self.cfg.dim)
-        for e in sorted({x for h, _, t in triples for x in (h, t)}):
-            if e not in self.ent:
+        new_ents = sorted({x for h, _, t in triples for x in (h, t) if x not in self.ent})
+        if new_ents:
+            for e in new_ents:
                 self.ent[e] = len(self.ent)
-                self.E_re = np.vstack([self.E_re, self._rng.normal(0, scale, (1, d))])
-                self.E_im = np.vstack([self.E_im, self._rng.normal(0, scale, (1, d))])
-        for r in sorted({r for _, r, _ in triples}):
-            if r not in self.rel:
+            n_new = len(new_ents)
+            self.E_re = np.vstack([self.E_re, self._rng.normal(0, scale, (n_new, d))])
+            self.E_im = np.vstack([self.E_im, self._rng.normal(0, scale, (n_new, d))])
+
+        new_rels = sorted({r for _, r, _ in triples if r not in self.rel})
+        if new_rels:
+            for r in new_rels:
                 self.rel[r] = len(self.rel)
-                self.R_re = np.vstack([self.R_re, self._rng.normal(0, scale, (1, d))])
-                self.R_im = np.vstack([self.R_im, self._rng.normal(0, scale, (1, d))])
+            n_new = len(new_rels)
+            self.R_re = np.vstack([self.R_re, self._rng.normal(0, scale, (n_new, d))])
+            self.R_im = np.vstack([self.R_im, self._rng.normal(0, scale, (n_new, d))])
         self._train(triples, epochs)
         return self
 
