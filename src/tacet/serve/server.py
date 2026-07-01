@@ -316,6 +316,14 @@ def build_app(
             allow_headers=["*"],
         )
 
+    @app.middleware("http")
+    async def add_security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
         """Gate the mutating / cost-incurring endpoints.
 
