@@ -175,14 +175,19 @@ def induce_relations(
     counts: Counter = Counter()
     bodies: dict[str, tuple[tuple[str, str, str], ...]] = {}
     relations = sorted(rel_pairs)
+
+    # Pre-compute forward adjacency maps for all relations to avoid O(N^2) recreation
+    forward_maps: dict[str, dict[str, set[str]]] = {}
+    for r in relations:
+        fwd = defaultdict(set)
+        for s, t in rel_pairs[r]:
+            fwd[s].add(t)
+        forward_maps[r] = fwd
+
     for r1 in relations:
-        forward1 = defaultdict(set)
-        for s, t in rel_pairs[r1]:
-            forward1[s].add(t)
+        forward1 = forward_maps[r1]
         for r2 in relations:
-            forward2 = defaultdict(set)
-            for s, t in rel_pairs[r2]:
-                forward2[s].add(t)
+            forward2 = forward_maps[r2]
             covered: set[tuple[str, str]] = set()
             for x, zs in forward1.items():
                 for z in zs:
