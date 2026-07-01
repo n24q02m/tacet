@@ -1,3 +1,6 @@
 ## 2024-06-30 - Optimize path-mining relation lookup
 **Learning:** Found a performance bottleneck specific to this codebase's architecture in `src/tacet/distill/concepts.py` where `induce_relations` rebuilds forward adjacency structures repeatedly. By pre-computing these maps once, the complexity dropped dramatically from $O(|R|^2 \times \text{pairs})$ to $O(|R| \times \text{pairs})$. The benchmark showed an improvement from 32s to 26s for 20 dense relations.
 **Action:** Always check for repeated graph traversal allocations or rebuilds inside nested loops when dealing with multi-relational graphs.
+## 2024-07-26 - Optimize rule synthesis path-mining lookup
+**Learning:** Found a similar performance bottleneck in `src/tacet/distill/distill.py`'s `mine_rules_with_stats`. It recomputes `_adj(_directed(idx[r2], inv2))` repeatedly inside a nested loop over relations for length-2 body generation. Precomputing `adj_maps` for all `(relation, inverted)` combinations outside the loop avoids O(N^2) dictionary recreation. Benchmark for 100 relations with 100 edges each improved from ~3.5s to ~2.2s.
+**Action:** When performing path mining or pattern finding across KGs, precompute structural indices outside of combinatorial loops.
