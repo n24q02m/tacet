@@ -1028,9 +1028,12 @@ the causal variables, the appropriate first study for a routing/distillation
 mechanism. Section~\ref{sec:realcost} complements it with a real Grok~4.3
 teacher on the real-entity MetaQA KG, confirming the measured cost
 amortisation ($2.8\times$/$5.1\times$ pooled over 3 seeds for TACET). That real-LLM study also surfaces the main
-external-validity caveat: the distillation-over-caching advantage is gated on
-teacher quality, and on noisy real-LLM compositional workloads the cascade
-reduces to a cache. Broader natural-language KGQA benchmarks (WebQSP, CWQ)
+external-validity caveat, which we state precisely: the cost amortisation we
+claim is delivered by the caching tier and survives intact under the real
+teacher ($2.8\times$/$5.1\times$); what is gated on teacher quality is only the
+\emph{additional} rule-generalisation advantage \emph{over} caching, which on
+noisy real-LLM compositional workloads collapses so that the cascade reduces
+to a cache. Broader natural-language KGQA benchmarks (WebQSP, CWQ)
 with diverse real teachers remain valuable future work, and the released code
 exposes a single-function teacher interface for them.
 
@@ -1053,8 +1056,11 @@ explicitly rather than claim the closure is type-safe unconditionally.
 
 \paragraph{Forward graph dynamics: an honest negative result.}
 \label{sec:layer4}
-We extended the engine with a learned forward-dynamics head --- a
-Dreamer-V3-style recurrent latent mounted on the frozen Tier-2 ComplEx
+Forecasting the next graph state is outside the cascade's envelope --- its
+value is sound deductive reasoning and cost amortisation, not entity-level
+prediction --- and we establish that edge with a measurement rather than
+assert it. We extended the engine with a learned forward-dynamics head ---
+a Dreamer-V3-style recurrent latent mounted on the frozen Tier-2 ComplEx
 embeddings --- to forecast the next graph state ($G_{t+1}$) on ICEWS14, the
 standard temporal knowledge-graph benchmark. It is not competitive. The
 released \texttt{layer4\_eval.json} reports three protocols on this head: a
@@ -1098,8 +1104,8 @@ mines rules from the teacher's answers, so a \emph{biased} teacher can
 propagate spurious or socially-biased correlations directly into the
 installed Horn rules. This failure is more insidious than a noisy-teacher
 error, because a biased rule then answers at Tier~1 with a clean, fully
-grounded proof tree (Section~\ref{sec:audit}), lending the unwarranted
-authority of a sound derivation to what is in fact a biased inference. Our
+grounded proof tree (Section~\ref{sec:audit}), so that a biased inference can inherit the surface authority of a sound
+derivation --- a risk we flag, and return to with concrete mitigations below. Our
 existing guards are only partial here: the ontology check rejects
 type-inconsistent rules, and the world-precision evaluation
 (Section~\ref{sec:rule_precision}) catches rules that are wrong about the
@@ -2143,5 +2149,88 @@ The cascade's worst case is the cost ceiling --- an LLM-only
 baseline --- not a wrong answer.  This is the property production
 operators actually care about: TACET cannot get cheaper than
 LLM-only on any workload, but it cannot do worse either.
+
+\section{Beyond Cost-Amortisation: Attempted Extensions and Their Boundary}
+\label{sec:boundary}
+
+This appendix delimits the operating envelope of the cascade. The same
+recipe --- distil verified teacher outputs into cheap checkable tiers ---
+pays off precisely when a domain admits an executable, self-contained
+specification, and not otherwise. We establish that envelope
+constructively, through three extensions beyond cost-amortisation whose
+measured outcomes trace its edge. The mechanisms involved are established
+elsewhere; the contribution here is the boundary that governs when they
+apply.
+
+\subsection{The capability extension: verifier-gated best-of-\texorpdfstring{$N$}{N}}
+The first extension asks whether a sound, gold-free, teacher-independent
+verifier can make the cascade \emph{exceed} its teacher rather than merely
+match it at lower cost: sample $N$ candidates from the frontier teacher,
+keep only those a sound checker accepts, and distil the verified-correct
+outputs. Where an executable checker exists this works. On hard
+competitive-code problems (TACO, checked by input/output tests, a
+grok-4.3 teacher), best-of-$5$ under the sound filter raises accuracy from
+$0.70$ to $0.90$ ($n{=}20$) and from $0.65$ to $0.88$ ($n{=}60$) --- an
+exceed margin of $+20.0$ and $+23.3$ points. The margin is, however,
+exactly the teacher's rate of \emph{recoverable} error, and it vanishes
+when either condition fails. With a weaker teacher there is nothing to
+recover (deepseek and minimax each solve $0/8$ of the same hard set);
+where errors are not recoverable by resampling the margin is zero
+(MATH-500 level-5: single-shot $0.75$, self-consistency $+0.0$, against an
+oracle-selectable $0.83$; synthetic text-to-SQL: single, consensus, and
+oracle accuracy coincide at $0.71$). The cost-down half is sturdier:
+distilling verified parses removes $89$--$91\%$ of teacher calls at equal
+accuracy on a closed-grammar logic-grid task and $12.5\%$ on open-surface
+SQL. Pushed off an executable specification entirely --- streaming GDPR
+compliance cases past the same verifier --- the extension degenerates:
+verdict accuracy drops from the teacher's $0.96$--$0.97$ to $0.80$, the
+verifier accepts none of the $76$ verifiable cases, and the article it
+certifies matches the gold article in about one case in fifty (article
+micro-$F_1$ $0.70 \rightarrow 0.02$) --- a constant-reject predictor, not
+a corrector. This is a \emph{different experiment} from the compliance
+cost-amortisation of Section~\ref{sec:compliance}, which matches the
+teacher's verdict accuracy at lower cost and stands unaffected; what
+degenerates here is only the attempt to \emph{exceed} the teacher's
+verdicts off an executable specification. The exceed mechanism is itself
+established --- repeated sampling with an automatic checker
+\citep{brown2024monkeys} and neurosymbolic rule-learning against real
+environment transitions \citep{zhou2025walle2} --- so the contribution is
+not the mechanism but the boundary it reveals: where it pays, and where it
+collapses.
+
+\subsection{The knowledge extension: verified accumulation}
+The second extension swaps the executable checker for \emph{provenance}: a
+retrieval-grounding component and a persistent memory store that
+accumulate facts and resolve temporal conflicts (supersession) behind a
+replayable audit trail, aiming at the knowledge ceiling rather than the
+capability ceiling. Here the analogue of Tier-1 soundness does not hold.
+Provenance, recency, and cross-source counting each certify an
+\emph{intermediate} --- that a source asserted a claim, or that one record
+post-dates another --- never that the claim is \emph{true}, and a newer
+source is not a truer one. Recent measurement makes the gap concrete:
+deep-research agents can be near-perfect on citation validity while only
+$39$--$77\%$ accurate on the underlying facts, degrading as the number of
+tool calls grows \citep{onweller2026cited}. The supersession mechanism
+such an extension would contribute is, moreover, already occupied by
+concurrent work \citep{joshi2026eywa,patel2026supersede}. The extension
+clears neither its own soundness bar nor an originality bar.
+
+\subsection{The unifying boundary}
+The two extensions --- together with the forward-dynamics forecaster we
+already report as a negative in Section~\ref{sec:layer4}, and the
+world-model variant that would distil a latent predictor's transitions
+into graph rules \citep{zhou2025walle2,liu2026gwmtaxonomy} --- share one
+cause. Tier-1
+soundness certifies the symbol the language model \emph{extracted}, not
+the claim the world makes true. Where an executable, self-contained
+specification exists (an interpreter, a set of unit tests, a Datalog
+closure over a fixed ontology), a sound gold-free teacher-independent
+verifier exists with it, and both the cost-down and --- given recoverable
+error --- the accuracy-up follow. Where it does not (open physical fact,
+free-text truth, real-world physics), the checkable object is the parse,
+the proof is post-hoc, and the guarantee is provenance rather than
+correctness. This is less a defect of the cascade than its operating
+envelope: the results of this paper sit inside it, and this appendix marks
+its edge.
 
 \end{document}
