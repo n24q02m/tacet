@@ -28,7 +28,7 @@ from __future__ import annotations
 import hmac
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 try:
     from fastapi import Depends, FastAPI, Header, HTTPException
@@ -55,10 +55,12 @@ log = logging.getLogger("tacet.serve.server")
 
 # ---- request / response schemas --------------------------------------------
 if _HAS_FASTAPI:
+    # Max length limits to prevent DoS via unbounded payloads
+    MaxStr = Annotated[str, Field(max_length=1000)]
 
     class AskRequest(BaseModel):
-        head: str
-        relation: str
+        head: MaxStr
+        relation: MaxStr
 
     class AskResponse(BaseModel):
         tier: int
@@ -70,14 +72,16 @@ if _HAS_FASTAPI:
         note: str = ""
 
     class DistillRequest(BaseModel):
-        head: str
-        relation: str
-        answers: list[str]
+        head: MaxStr
+        relation: MaxStr
+        answers: list[MaxStr] = Field(max_length=1000)
         correct: bool | None = None
 
     class GraphIngestRequest(BaseModel):
-        triples: list[tuple[str, str, str]] = Field(default_factory=list)
-        nodes: list[tuple[str, str]] = Field(default_factory=list)  # (id, type)
+        triples: list[tuple[MaxStr, MaxStr, MaxStr]] = Field(default_factory=list, max_length=10000)
+        nodes: list[tuple[MaxStr, MaxStr]] = Field(
+            default_factory=list, max_length=10000
+        )  # (id, type)
 
 
 # ---- service ---------------------------------------------------------------
