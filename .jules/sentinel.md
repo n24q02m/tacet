@@ -15,3 +15,8 @@
 **Vulnerability:** The FastAPI application was missing standard security headers (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security), leaving it potentially vulnerable to MIME-type sniffing, clickjacking, and allowing clients to access it over unencrypted HTTP.
 **Learning:** Implementing defense-in-depth is essential; even internal or proxy-protected APIs should implement their own fundamental security headers directly via middleware.
 **Prevention:** An HTTP middleware layer was added in src/tacet/serve/server.py to globally inject standard security headers to all responses.
+
+## 2025-02-27 - [Add Strict Input Length Limits to FastAPI Models]
+**Vulnerability:** Unbounded strings and lists in Pydantic models (e.g. `AskRequest`, `GraphIngestRequest`) exposed the application to Denial of Service (DoS) attacks by allowing excessively large payloads.
+**Learning:** Even internal or API-gated endpoints are vulnerable to DoS. In Pydantic v2 with nested types (e.g., tuples inside a list), `typing.Annotated` combined with `pydantic.Field` is the idiomatic way to constrain sizes securely and elegantly.
+**Prevention:** Always use `Field(max_length=...)` for string values and array sizes in all edge-facing input models. Use `typing.Annotated` to enforce these limits on collection items.
