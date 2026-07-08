@@ -155,23 +155,31 @@ def mine_rules_with_stats(
                 candidates.append(MinedRule(rule, conf, support))
 
     # ---- length-2 body: R1(x,z) & R2(z,y) => target(x,y) ----------------
+    adj_cache = {}
+    for r in relations:
+        for inv in (False, True):
+            adj_cache[(r, inv)] = _adj(_directed(idx[r], inv))
+
     for r1 in relations:
         for inv1 in (False, True):
-            p1 = _adj(_directed(idx[r1], inv1))
+            p1 = adj_cache[(r1, inv1)]
             if not p1:
                 continue
             for r2 in relations:
                 for inv2 in (False, True):
-                    p2 = _adj(_directed(idx[r2], inv2))
+                    p2 = adj_cache[(r2, inv2)]
                     if not p2:
                         continue
-                    raw: set[Pair] = set()
+                    body_pairs: set[Pair] = set()
                     for x, zs in p1.items():
+                        # ⚡ Bolt Optimization: Early skip for invalid heads to avoid exploring
+                        # useless intermediate paths
+                        if complete_heads is not None and x not in complete_heads:
+                            continue
                         for z in zs:
                             for y in p2.get(z, ()):
                                 if x != y:
-                                    raw.add((x, y))
-                    body_pairs = keep(raw)
+                                    body_pairs.add((x, y))
                     if len(body_pairs) < min_support:
                         continue
                     name = f"syn:{target}<={'~' if inv1 else ''}{r1}.{'~' if inv2 else ''}{r2}"
