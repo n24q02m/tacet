@@ -128,6 +128,12 @@ def mine_rules_with_stats(
     def atom(rel: str, inv: bool, a: str, b: str) -> tuple[str, str, str]:
         return (b, rel, a) if inv else (a, rel, b)
 
+    # Pre-compute adjacency maps for length-2 body traversal to avoid O(N^2) recreation
+    forward_maps: dict[tuple[str, bool], dict[str, set[str]]] = {}
+    for r in relations:
+        for inv in (False, True):
+            forward_maps[(r, inv)] = _adj(_directed(idx[r], inv))
+
     # ---- length-1 body: R1(x,y) => target(x,y) --------------------------
     for r1 in relations:
         if r1 == target:
@@ -157,21 +163,23 @@ def mine_rules_with_stats(
     # ---- length-2 body: R1(x,z) & R2(z,y) => target(x,y) ----------------
     for r1 in relations:
         for inv1 in (False, True):
-            p1 = _adj(_directed(idx[r1], inv1))
+            p1 = forward_maps[(r1, inv1)]
             if not p1:
                 continue
             for r2 in relations:
                 for inv2 in (False, True):
-                    p2 = _adj(_directed(idx[r2], inv2))
+                    p2 = forward_maps[(r2, inv2)]
                     if not p2:
                         continue
                     raw: set[Pair] = set()
                     for x, zs in p1.items():
+                        if complete_heads is not None and x not in complete_heads:
+                            continue
                         for z in zs:
                             for y in p2.get(z, ()):
                                 if x != y:
                                     raw.add((x, y))
-                    body_pairs = keep(raw)
+                    body_pairs = raw if complete_heads is not None else keep(raw)
                     if len(body_pairs) < min_support:
                         continue
                     name = f"syn:{target}<={'~' if inv1 else ''}{r1}.{'~' if inv2 else ''}{r2}"
