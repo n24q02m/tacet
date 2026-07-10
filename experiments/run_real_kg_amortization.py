@@ -334,6 +334,20 @@ def _zipf_stream(pool, n, a, rng):  # noqa: ANN001
     return out[:n]
 
 
+def _oracle_gold_from_pool(
+    pool: list[tuple[str, str, frozenset[str]]],
+) -> dict[str, frozenset[str]]:
+    """Ground-truth ``(head, relation) -> gold tails`` map for the oracle teacher.
+
+    Keyed on ``f"{head}\\t{relation}"`` (the key the ``OracleTeacher`` lookup in
+    :func:`_new_metered` expects) over the WHOLE pool -- a superset of the streamed
+    queries -- so the oracle answers seen and UNSEEN held-out heads alike, which is
+    the whole point of the mechanism test. Shared with the controlled runner so both
+    designs build the gold map identically.
+    """
+    return {f"{h}\t{r}": g for h, r, g in pool}
+
+
 def _kg_without(bench, stream) -> WorldGraph:
     """A copy of the MetaQA KB with every queried (head, relation) edge removed.
 
@@ -580,7 +594,7 @@ def main() -> None:  # noqa: PLR0915
     if oracle_mode:
         # Ground truth for every (head, relation) in the pool (a superset of the
         # stream), so the oracle answers seen and UNSEEN held-out heads alike.
-        oracle_gold = {f"{h}\t{r}": g for h, r, g in pool}
+        oracle_gold = _oracle_gold_from_pool(pool)
     distinct = len({(h, r) for h, r, _ in stream})
     print(
         f"  pool={len(pool)} stream={len(stream)} distinct={distinct} "
