@@ -14,6 +14,7 @@ unchanged.
 
 from __future__ import annotations
 
+import hashlib
 import random
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -47,6 +48,21 @@ class OracleTeacher(Teacher):
         modelling LLM hallucination. 0.0 = perfect teacher.
     entity_pool:
         Entities used to fabricate a wrong answer when an error is injected.
+    noise_mode:
+        How the corruption decision is drawn.
+
+        ``"sequential"`` (the default) advances a single per-instance RNG on
+        every call, so whether a given ``(head, relation)`` is corrupted depends
+        on how many teacher calls preceded it. This reproduces the published
+        synthetic-grid numbers bit-for-bit and must stay the default.
+
+        ``"per_key"`` makes corruption a pure function of ``(seed, head,
+        relation)``: the same key always yields the same decision, and the same
+        wrong entity, regardless of call order or call count. It exists because
+        arms of an experiment that call the teacher a different number of times
+        must still see the same teacher answer for the same question; it is also
+        the truer LLM model, since a real teacher repeats its mistake when
+        re-asked the same question.
     """
 
     def __init__(
@@ -55,17 +71,40 @@ class OracleTeacher(Teacher):
         error_rate: float = 0.0,
         entity_pool: list[str] | None = None,
         seed: int = 0,
+        noise_mode: str = "sequential",
     ) -> None:
+        if noise_mode not in ("sequential", "per_key"):
+            raise ValueError(f"noise_mode must be 'sequential' or 'per_key', got {noise_mode!r}")
         self._oracle = oracle
         self.error_rate = error_rate
         self._pool = entity_pool or []
+        self._seed = seed
+        self._noise_mode = noise_mode
         self._rng = random.Random(seed)
+
+    def _corruption_rng(self, head: str, relation: str) -> random.Random:
+        """The RNG the corruption decision is drawn from.
+
+        ``sequential`` returns the shared per-instance RNG (order-dependent).
+        ``per_key`` returns a fresh RNG seeded from a *stable* blake2b digest of
+        ``seed`` + ``head`` + ``relation`` (joined by a tab, which cannot occur
+        in a head/relation), so the decision is reproducible across processes --
+        builtin ``hash()`` of a str is randomised by ``PYTHONHASHSEED`` and would
+        silently break replication, so it is deliberately not used.
+        """
+        if self._noise_mode == "sequential":
+            return self._rng
+        key = f"{self._seed}\t{head}\t{relation}".encode()
+        digest = hashlib.blake2b(key).digest()
+        return random.Random(int.from_bytes(digest, "big"))
 
     def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
         truth = list(self._oracle(head, relation))
-        if self.error_rate > 0 and self._pool and self._rng.random() < self.error_rate:
-            wrong = self._rng.choice(self._pool)
-            return TeacherResponse(answers=[wrong], cost=1.0, correct=(wrong in truth))
+        if self.error_rate > 0 and self._pool:
+            rng = self._corruption_rng(head, relation)
+            if rng.random() < self.error_rate:
+                wrong = rng.choice(self._pool)
+                return TeacherResponse(answers=[wrong], cost=1.0, correct=(wrong in truth))
         return TeacherResponse(answers=truth, cost=1.0, correct=True)
 
 

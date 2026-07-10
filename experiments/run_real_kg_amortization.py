@@ -456,6 +456,11 @@ def _new_metered(
             error_rate=error_rate,
             entity_pool=entity_pool,
             seed=seed,
+            # Arms call the teacher a different number of times (LLM-only every
+            # query, cache/full only on misses); per_key keys corruption on
+            # (seed, head, relation) so the same question gets the same answer
+            # across arms, independent of call order/count.
+            noise_mode="per_key",
         )
         return MeteredTeacher(teacher, PriceTable.default(), model=model)
     teacher = build_teacher_from_settings(settings)
