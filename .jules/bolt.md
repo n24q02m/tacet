@@ -4,3 +4,6 @@
 ## 2024-07-01 - Optimize path-mining for rule synthesis
 **Learning:** In `src/tacet/distill/distill.py`, `mine_rules_with_stats` used to reconstruct adjacency maps $O(|R|^2)$ times within nested loops while proposing length-2 Horn rules. By pre-computing these maps once outside the loop and additionally filtering head entities earlier rather than via a delayed set intersection, the time on a dense benchmark graph decreased from 3.47s to 0.73s.
 **Action:** When evaluating graph combinations ($R_1 \land R_2$) in a combinatorial loop, always lift structural calculations (like direct and inverse adjacency maps) to the top of the loop hierarchy.
+## 2024-07-02 - Optimize edge property updates with O(1) dictionary lookup
+**Learning:** In `src/tacet/core/graph.py`, updating properties on an existing edge during `add_edge` used to perform an O(E) linear scan through all edges via `_triple_set`. By replacing the `set` with a `dict` mapping the triple tuple to the `Edge` object, lookups become O(1), dramatically improving graph construction and update performance for large multi-relational graphs.
+**Action:** When maintaining a set of unique identifiers (like triples) that map directly to mutable objects, always prefer a dictionary `dict[Identifier, Object]` over a `set` paired with a linear search to guarantee O(1) retrieval for updates.
