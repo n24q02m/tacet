@@ -216,12 +216,19 @@ def _build_composed_workload(
     a frontier teacher has a realistic chance of returning the full gold set —
     keeping LLM-only accuracy interpretable (we are testing cost at *matched*
     accuracy, not stress-testing recall on 100-way answers).
+
+    Returns ``(pool, full_gold)``. ``pool`` is that filtered / shuffled / truncated
+    workload; ``full_gold`` is the COMPLETE ``_compose_gold`` map (every head,
+    unfiltered) — the composed relation's TRUE edges over the whole KB, which the
+    controlled runner needs to score installed-rule world precision against ALL
+    entities the rule body fires on, not just the pool's teacher-answered heads.
+    It is returned here so callers do not recompute ``_compose_gold``.
     """
     kg_rel = spec["kg_relation"]
     gold_map = _compose_gold(graph, spec)
     items = [(h, kg_rel, frozenset(ys)) for h, ys in gold_map.items() if 0 < len(ys) <= max_answer]
     rng.shuffle(items)
-    return items[:limit_pool]
+    return items[:limit_pool], gold_map
 
 
 class CompositionTeacher(Teacher):
@@ -573,7 +580,7 @@ def main() -> None:  # noqa: PLR0915
             f"  COMPOSITION {comp_name!r} (hop={args.hop}): target {composed_relation} "
             f":= {legs_desc}{' . (+3rd leg)' if spec.get('hop') == 3 else ''}"
         )
-        pool = _build_composed_workload(bench.kg, spec, limit_pool=max(args.limit, 400), rng=rng)
+        pool, _ = _build_composed_workload(bench.kg, spec, limit_pool=max(args.limit, 400), rng=rng)
         if not pool:
             raise SystemExit(
                 f"composition {comp_name!r} produced an empty pool — check the KB / legs."

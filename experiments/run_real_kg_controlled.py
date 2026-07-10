@@ -237,6 +237,43 @@ def _teacher_answer_accuracy(
     return (round(correct / total, 6) if total else 0.0, correct, total)
 
 
+def _scoring_graph(
+    kg: WorldGraph,
+    hop: int,
+    pool_gold: dict[str, frozenset[str]],
+    composed_gold: dict[str, set[str]] | None,
+    composed_relation: str | None,
+) -> WorldGraph:
+    """Full ground-truth graph for scoring an installed rule's world precision.
+
+    ``rule_world_precision`` fires the rule body over EVERY entity in this graph
+    and checks each ``(x, y)`` against the head relation's edges here, so the head
+    side must be as complete as the body side or the ratio collapses.
+
+    * ``hop == 1``: the head relations are real KB relations, so ``kg`` already
+      holds every ``(head, relation) -> tail`` edge over all entities; the pool
+      ``pool_gold`` is a subset of those edges, so re-adding it is a no-op and the
+      graph is the KB itself (behaviour unchanged from before this fix).
+    * ``hop >= 2``: the composed relation is synthetic (absent from ``kg``), so its
+      edges must be materialised — from the COMPLETE ``composed_gold`` map (every
+      head, the full ``_compose_gold`` output), NOT the pool subset. The pool is a
+      shuffled, ``max_answer``-filtered, truncated slice of heads, so materialising
+      only its composed edges leaves the head side sparse while the body fires
+      across the whole KB, degenerating the precision even for a perfect oracle.
+    """
+    gt = kg.copy()
+    if hop == 1:
+        for key, tails in pool_gold.items():
+            h, r = key.split("\t", 1)
+            for t in tails:
+                gt.add_edge(h, r, t)
+    else:
+        for h, tails in (composed_gold or {}).items():
+            for t in tails:
+                gt.add_edge(h, composed_relation, t)
+    return gt
+
+
 def run_controlled(
     *,
     metaqa_root: str = "data/MetaQA",
@@ -296,6 +333,9 @@ def run_controlled(
 
     nl_template = None
     composed_relation = None
+    # The complete composed-relation gold (every head), materialised into the
+    # scoring graph for hop>=2; None for hop==1 (no composed relation).
+    full_composed_gold: dict[str, set[str]] | None = None
     if hop == 1:
         pool = _build_workload(bench, limit_pool=max(limit, 400), rng=rng)
         ontology = Ontology.induce(bench.kg)
@@ -311,7 +351,9 @@ def run_controlled(
         legs_desc = " . ".join(f"{'~' if inv else ''}{r}" for r, inv in spec["legs"])
         if verbose:
             print(f"  COMPOSITION {comp_name!r} (hop={hop}): {composed_relation} := {legs_desc}")
-        pool = _build_composed_workload(bench.kg, spec, limit_pool=max(limit, 400), rng=rng)
+        pool, full_composed_gold = _build_composed_workload(
+            bench.kg, spec, limit_pool=max(limit, 400), rng=rng
+        )
         if not pool:
             raise SystemExit(f"composition {comp_name!r} produced an empty pool")
         ontology = Ontology.induce(bench.kg)
@@ -332,15 +374,13 @@ def run_controlled(
     # feeds the oracle teacher AND lets us measure the teacher's own answer
     # accuracy; the real-teacher path ignores it inside ``_new_metered``.
     gold_map = _oracle_gold_from_pool(pool)
-    # Full ground-truth graph for scoring installed-rule world precision: the base
-    # KB plus every gold (head, relation) -> tails pair (for hop>=2 this materialises
-    # the composed relation's true edges; for hop=1 the gold relations already live
-    # in the KB). Measured over ALL entities, not just teacher-answered heads.
-    gt_graph = bench.kg.copy()
-    for key, tails in gold_map.items():
-        h, r = key.split("\t", 1)
-        for t in tails:
-            gt_graph.add_edge(h, r, t)
+    # Ground-truth graph for scoring installed-rule world precision. For hop>=2 the
+    # composed relation's edges are materialised for EVERY head from the full
+    # ``_compose_gold`` map (``full_composed_gold``), NOT the pool subset ``gold_map``:
+    # the rule body fires across the whole KB, so scoring against only the pool's
+    # heads would leave the head side sparse and collapse the precision. For hop==1
+    # the gold relations already live in the KB, so this is the KB itself.
+    gt_graph = _scoring_graph(bench.kg, hop, gold_map, full_composed_gold, composed_relation)
     # ONE shared teacher + cache for all arms (LLM-only runs first and populates
     # every distinct pair, so the cascade arms make no further real calls). When
     # ``TACET_TEACHER=oracle`` this single teacher IS the (noisy) oracle.
