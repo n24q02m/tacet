@@ -65,17 +65,32 @@ from run_real_kg_amortization import (  # noqa: E402
     _oracle_gold_from_pool,
     _zipf_stream,
 )
+from run_rule_precision import remine_installed_rules  # noqa: E402
 
 from tacet.cascade.router import TACET  # noqa: E402
 from tacet.core.graph import WorldGraph  # noqa: E402
 from tacet.core.ontology import Ontology, RelationType  # noqa: E402
 from tacet.data.metaqa import load_metaqa  # noqa: E402
+from tacet.eval.rule_precision import rule_world_precision  # noqa: E402
 from tacet.llm.teacher import Teacher, TeacherResponse  # noqa: E402
 from tacet.serve.config import CascadeConfig, KGEConfig  # noqa: E402
 from tacet.serve.settings import load_settings  # noqa: E402
 
 #: Confidence is a probability in [0, 1]; a threshold above 1 disables Tier-2.
 TIER2_OFF = 1.01
+
+
+def _cell_valid(full_accuracy: float, cache_accuracy: float) -> bool:
+    """One-sided E11 validity: the rule (full) arm did NOT make accuracy worse.
+
+    A cell is VALID iff ``full_accuracy >= cache_accuracy - 1e-9``. This is
+    deliberately one-sided (pre-registered): a rule arm that is MORE accurate than
+    the replayed cache — it answers from the Datalog closure and repairs a
+    corrupted teacher answer the cache replays verbatim — is a valid, reportable
+    win, not a mismatch. It is distinct from the symmetric ``accuracy_matched``
+    diagnostic (``abs(full - cache) < 1e-9``), which is kept but no longer gates.
+    """
+    return full_accuracy >= cache_accuracy - 1e-9
 
 
 def _line(r: dict) -> str:
@@ -156,7 +171,7 @@ def _replay_llm_only(stream, shared: SharedAnswerCache) -> dict:  # noqa: ANN001
     }
 
 
-def _replay_cascade(name, stream, bench, ontology, shared, cfg) -> dict:  # noqa: ANN001
+def _replay_cascade(name, stream, bench, ontology, shared, cfg, gt_graph=None) -> dict:  # noqa: ANN001
     replay = ReplayTeacher(shared)
     ak = TACET(_kg_without(bench, stream), ontology, replay, config=cfg)
     ak.warmup()
@@ -168,7 +183,7 @@ def _replay_cascade(name, stream, bench, ontology, shared, cfg) -> dict:  # noqa
         correct += int(_accuracy(gold, ans.answers))
         tiers[ans.tier] = tiers.get(ans.tier, 0) + 1
     n = len(stream)
-    return {
+    result = {
         "arm": name,
         "n": n,
         "total_cost_usd": round(replay.total_cost, 6),
@@ -179,6 +194,17 @@ def _replay_cascade(name, stream, bench, ontology, shared, cfg) -> dict:  # noqa
         "synthesised_rules": list(ak.synthesised_rules),
         "wallclock_s": round(time.time() - t0, 1),
     }
+    # When a ground-truth graph is supplied (the full-distillation arm), score the
+    # installed rules' world precision — re-mining the SAME machinery as
+    # run_rule_precision — so "a lower gamma installs more rules" cannot masquerade
+    # as a win: a spurious rule scores low. ``None`` when no rule installed.
+    if gt_graph is not None:
+        installed, _ = remine_installed_rules(ak)
+        precisions = [rule_world_precision(m.rule, gt_graph) for m in installed]
+        result["rule_world_precision"] = (
+            round(sum(precisions) / len(precisions), 4) if precisions else None
+        )
+    return result
 
 
 def _teacher_answer_accuracy(
@@ -222,6 +248,7 @@ def run_controlled(
     seed: int = 0,
     composition: str | None = None,
     oracle_error_rate: float = 0.0,
+    gamma: float = 0.95,
     settings=None,  # noqa: ANN001
     bench=None,  # noqa: ANN001
     verbose: bool = True,
@@ -236,6 +263,13 @@ def run_controlled(
     ``settings.teacher == "oracle"`` the single teacher feeding the shared cache is
     a free (optionally noisy) ground-truth oracle, so ``TACET_TEACHER=oracle``
     works; ``oracle_error_rate`` is the corruption dial.
+
+    ``gamma`` is the rule-miner confidence threshold (``CascadeConfig.min_confidence``)
+    for the full-distillation arm; its default equals the library default (0.95),
+    so the report is byte-identical to before when left unset. The E11 2-D sweep
+    dials it down to test H2 (the imperfect-teacher cliff tracks gamma). The cache
+    arm has ``rule_synthesis=False``, so gamma is irrelevant there and it is left
+    untouched.
     """
     model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
     rng = np.random.default_rng(seed)
@@ -298,6 +332,15 @@ def run_controlled(
     # feeds the oracle teacher AND lets us measure the teacher's own answer
     # accuracy; the real-teacher path ignores it inside ``_new_metered``.
     gold_map = _oracle_gold_from_pool(pool)
+    # Full ground-truth graph for scoring installed-rule world precision: the base
+    # KB plus every gold (head, relation) -> tails pair (for hop>=2 this materialises
+    # the composed relation's true edges; for hop=1 the gold relations already live
+    # in the KB). Measured over ALL entities, not just teacher-answered heads.
+    gt_graph = bench.kg.copy()
+    for key, tails in gold_map.items():
+        h, r = key.split("\t", 1)
+        for t in tails:
+            gt_graph.add_edge(h, r, t)
     # ONE shared teacher + cache for all arms (LLM-only runs first and populates
     # every distinct pair, so the cascade arms make no further real calls). When
     # ``TACET_TEACHER=oracle`` this single teacher IS the (noisy) oracle.
@@ -338,8 +381,11 @@ def run_controlled(
             kge_augment=True,
             write_back=True,
             l2_threshold=TIER2_OFF,
+            min_confidence=gamma,
         )
-        r_c = _replay_cascade("full_distillation", stream, bench, ontology, shared, cfg_full)
+        r_c = _replay_cascade(
+            "full_distillation", stream, bench, ontology, shared, cfg_full, gt_graph=gt_graph
+        )
         arms.append(r_c)
         if verbose:
             print(_line(r_c))
@@ -383,6 +429,14 @@ def run_controlled(
                 else None
             ),
             "accuracy_matched": abs(cache["accuracy"] - full["accuracy"]) < 1e-9,
+            # E11 amended pre-registration (item 4): accuracy_matched is now a
+            # DIAGNOSTIC, not a gate. A cell is VALID one-sidedly iff the rule arm
+            # did not lose accuracy; the delta and installed-rule world precision
+            # keep "install more rules" from masquerading as a win.
+            "accuracy_delta": round(full["accuracy"] - cache["accuracy"], 6),
+            "cell_valid": _cell_valid(full["accuracy"], cache["accuracy"]),
+            "rule_installed": len(full.get("synthesised_rules", [])) > 0,
+            "rule_world_precision": full.get("rule_world_precision"),
             "synthesised_rules": full.get("synthesised_rules", []),
         }
 
@@ -397,6 +451,7 @@ def run_controlled(
         "real_llm": not oracle_mode,
         "teacher_kind": teacher_kind,
         "oracle_error_rate": oracle_error_rate if oracle_mode else None,
+        "gamma": gamma,
         "noise_mode": "per_key" if oracle_mode else None,
         "teacher_model_called": settings.xai_model,
         "priced_as_model": model,

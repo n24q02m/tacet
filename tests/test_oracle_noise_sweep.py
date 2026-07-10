@@ -18,11 +18,16 @@ from run_oracle_noise_sweep import (  # noqa: E402
     aggregate_error_rate,
     bootstrap_ci,
     classify_verdict,
+    cliff_teacher_accuracy,
+    sweep,
+    sweep_2d,
+    wilson_ci,
 )
 from run_real_kg_amortization import BudgetGuard, _new_metered  # noqa: E402
 from run_real_kg_controlled import (  # noqa: E402
     ReplayTeacher,
     SharedAnswerCache,
+    _cell_valid,
     run_controlled,
 )
 
@@ -72,6 +77,44 @@ def _tiny_bench() -> MetaQABenchmark:
 def _oracle_settings() -> SimpleNamespace:
     return SimpleNamespace(
         teacher="oracle", xai_model="grok-4.3", xai_api_key=None, kge_dim=8, kge_epochs=2
+    )
+
+
+def _latent_composition_bench() -> MetaQABenchmark:
+    """A KG with a latent length-1 rule whose confidence is EXACTLY 0.5.
+
+    ``directed_by`` is the only queried relation (gold: ``Mi -> Di``). A background
+    ``made_by`` relation carries, for every movie, TWO tails: the true director
+    ``Di`` (matching ``directed_by``) and a shared decoy ``W`` (never a director).
+    So over any set of teacher-answered heads the rule ``directed_by <= made_by``
+    has confidence ``k / 2k = 0.5`` exactly, regardless of which/how many heads the
+    Zipfian stream covers. That makes the install contrast deterministic: a LOW
+    gamma (0.5) installs it (``0.5 >= 0.5``), a HIGH gamma (0.99) does not — and no
+    other body reaches even 0.5 (checked in the miner search space). ``has_genre``
+    keeps the held-out graph and KGE warm-up non-empty; 24 movies clear the miner's
+    synthesis trigger (10 complete heads) under a broad Zipfian stream.
+    """
+    kg = WorldGraph(name="latent-comp")
+    questions: list[MetaQAQuestion] = []
+    for i in range(24):
+        m, d = f"M{i}", f"D{i}"
+        kg.add_edge(m, "directed_by", d)  # queried target; gold Mi -> Di
+        kg.add_edge(m, "made_by", d)  # correct body edge (matches directed_by)
+        kg.add_edge(m, "made_by", "W")  # decoy body edge -> confidence 0.5
+        kg.add_edge(m, "has_genre", "drama")  # background: never queried
+        questions.append(
+            MetaQAQuestion(question=f"who directed [{m}]?", head=m, answers=[d], hop=1)
+        )
+    entities = set(kg.entities())
+    relations = kg.relations()
+    return MetaQABenchmark(
+        name="latent-comp",
+        hop=1,
+        split="test",
+        kg=kg,
+        questions=questions,
+        entities=entities,
+        relations=relations,
     )
 
 
@@ -231,6 +274,126 @@ def test_bootstrap_ci_reproducible():
     a1 = aggregate_error_rate(vals, np.random.default_rng(777))
     a2 = aggregate_error_rate(vals, np.random.default_rng(777))
     assert a1 == a2
+
+
+# ----------------------------------------------------- Wilson score interval (E11)
+def test_wilson_ci_known_values():
+    """Wilson interval at the endpoints and the symmetric case (n=20, z=1.96)."""
+    lo0, hi0 = wilson_ci(0, 20)
+    assert lo0 == 0.0  # no successes -> lower bound pinned at 0
+    assert 0.0 < hi0 < 0.2  # upper bound strictly inside (0, 0.2)
+
+    lo1, hi1 = wilson_ci(20, 20)
+    assert hi1 == 1.0  # all successes -> upper bound pinned at 1
+    assert 0.0 < lo1 < 1.0
+
+    loh, hih = wilson_ci(10, 20)
+    assert loh < 0.5 < hih  # symmetric case brackets 0.5
+
+
+def test_wilson_ci_bounds_never_escape_unit_interval():
+    """Bounds stay within [0, 1] across the full grid, incl. the degenerate n=0."""
+    # n == 0 contract: no evidence -> the point interval (0.0, 0.0), never raises.
+    assert wilson_ci(0, 0) == (0.0, 0.0)
+    for n in range(0, 25):
+        for s in range(0, n + 1):
+            lo, hi = wilson_ci(s, n)
+            assert 0.0 <= lo <= 1.0
+            assert 0.0 <= hi <= 1.0
+            assert lo <= hi
+
+
+# ----------------------------------------------- one-sided validity vs. matched
+def test_one_sided_validity_distinct_from_accuracy_matched():
+    """A cell where the rule arm is MORE accurate is VALID (one-sided) even though
+    ``accuracy_matched`` (the symmetric diagnostic) is False; a cell where the rule
+    arm is LESS accurate is INVALID.
+    """
+    # full > cache: cell_valid True, but accuracy_matched (|full-cache|<1e-9) False.
+    assert _cell_valid(0.9933, 0.8933) is True
+    assert (abs(0.9933 - 0.8933) < 1e-9) is False
+    # exactly equal: valid (and matched).
+    assert _cell_valid(0.90, 0.90) is True
+    # full < cache: the rule made things worse -> invalid.
+    assert _cell_valid(0.80, 0.90) is False
+
+
+# ------------------------------------------------ gamma threading (Item 1 + Item 5)
+def test_gamma_threading_high_installs_nothing_low_installs_rule():
+    """On a synthetic KG with a latent 0.5-confidence rule, a HIGH gamma installs
+    nothing while a LOW gamma installs the rule — everything else fixed — and the
+    report's ``gamma`` field round-trips.
+    """
+    bench = _latent_composition_bench()
+    settings = _oracle_settings()
+    common = dict(
+        hop=1,
+        split="test",
+        limit=150,
+        zipf_a=1.2,
+        seed=0,
+        oracle_error_rate=0.0,
+        bench=bench,
+        settings=settings,
+        verbose=False,
+    )
+    high = run_controlled(gamma=0.99, **common)
+    low = run_controlled(gamma=0.5, **common)
+
+    # the gamma field round-trips into the report
+    assert high["gamma"] == 0.99
+    assert low["gamma"] == 0.5
+
+    # high gamma installs NOTHING; low gamma installs a rule
+    assert high["verdict"]["rule_installed"] is False
+    assert high["verdict"]["synthesised_rules"] == []
+    assert low["verdict"]["rule_installed"] is True
+    assert len(low["verdict"]["synthesised_rules"]) >= 1
+
+    # the installed rule's world precision is scored (0.5: half the body is the decoy)
+    assert low["verdict"]["rule_world_precision"] is not None
+    assert high["verdict"]["rule_world_precision"] is None
+
+
+# ------------------------------------------------- 2-D sweep == 1-D sweep (Item 4)
+def test_sweep_2d_single_gamma_matches_1d_sweep():
+    """``sweep_2d`` with gammas=[0.95] produces the SAME cell values as ``sweep``."""
+    bench = _tiny_bench()
+    settings = _oracle_settings()
+    kw = dict(
+        hop=1,
+        seeds=[0, 1],
+        error_rates=[0.0, 0.5],
+        limit=12,
+        zipf_a=1.5,
+        split="test",
+        bench=bench,
+        settings=settings,
+    )
+    one_d = sweep(**kw)
+    two_d = sweep_2d(gammas=[0.95], **kw)
+    assert one_d["cells"] == two_d["cells"]
+
+
+# ---------------------------------------------------- cliff interpolation (Item 5)
+def test_cliff_teacher_accuracy_interpolation():
+    """p_rule_installed = [1.0, 1.0, 0.4] against known accuracies: the crossing of
+    0.5 is linearly interpolated between the last two points.
+    """
+    accs = [1.0, 0.9, 0.8]  # teacher accuracy, ordered by error_rate ascending
+    ps = [1.0, 1.0, 0.4]
+    expected = 0.9 + (0.5 - 1.0) / (0.4 - 1.0) * (0.8 - 0.9)
+    got = cliff_teacher_accuracy(accs, ps)
+    assert got == expected
+
+
+def test_cliff_teacher_accuracy_none_when_no_crossing():
+    """When p_rule_installed never dips through 0.5, there is no cliff."""
+    accs = [1.0, 0.9, 0.8]
+    ps = [1.0, 1.0, 0.9]  # stays above 0.5 the whole way
+    assert cliff_teacher_accuracy(accs, ps) is None
+    # too few usable points -> None
+    assert cliff_teacher_accuracy([0.9], [0.6]) is None
 
 
 if __name__ == "__main__":
