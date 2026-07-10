@@ -44,6 +44,7 @@ import json
 import os
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
@@ -118,6 +119,9 @@ class SharedAnswerCache:
         self.kg = kg
         self.answers: dict[tuple[str, str], list[str]] = {}
         self.cost: dict[tuple[str, str], float] = {}
+        # Raw provider usage per distinct pair (``None`` when the teacher exposes
+        # no ``last_usage``), kept so a recording run can persist it for audit.
+        self.usage: dict[tuple[str, str], dict | None] = {}
         self.real_calls = 0
 
     def answer(self, head: str, relation: str) -> tuple[list[str], float]:
@@ -126,9 +130,154 @@ class SharedAnswerCache:
             resp = self.metered.answer(self.kg, head, relation)
             self.answers[key] = resp.answers
             self.cost[key] = self.metered.last_cost_usd
+            self.usage[key] = getattr(self.metered, "last_usage", None)
             self.real_calls += 1
             self.guard.add(self.metered.last_cost_usd)  # real spend only
         return self.answers[key], self.cost[key]
+
+
+class AnswerRecordError(RuntimeError):
+    """Integrity failure while replaying an on-disk teacher-answer record.
+
+    Base of the two loud-failure modes the record/replay layer exists to force: a
+    provenance mismatch (:class:`ProvenanceMismatchError`) and a missing pair
+    (:class:`MissingRecordedAnswerError`). Both refuse to fall back to a real
+    teacher call — a silent fallback is exactly the failure mode this design
+    prevents (it would pay the API again and make the answers non-identical).
+    """
+
+
+class ProvenanceMismatchError(AnswerRecordError):
+    """The record was made under different stream parameters than this run."""
+
+
+class MissingRecordedAnswerError(AnswerRecordError):
+    """The record lacks a ``(head, relation)`` the current stream requested."""
+
+
+class ReplayAnswerCache(SharedAnswerCache):
+    """A :class:`SharedAnswerCache` pre-populated from a record, teacher-incapable.
+
+    Built from a previously written answers record (see :func:`_build_answers_record`),
+    it serves every ``(head, relation)`` from disk and holds no ``metered`` teacher,
+    so it can NEVER make an API call. To reproduce the recording run's metered bill
+    byte-for-byte it charges the shared :class:`BudgetGuard` the recorded per-pair
+    cost on the FIRST request for each pair — mirroring
+    :meth:`SharedAnswerCache.answer`, which charges once per distinct pair — so the
+    replayed ``total_measured_spend_usd`` equals the recording's exactly. A pair
+    absent from the record raises :class:`MissingRecordedAnswerError` instead of
+    silently escalating to a real teacher call.
+    """
+
+    def __init__(self, guard: BudgetGuard, kg: WorldGraph, answers, cost, usage) -> None:  # noqa: ANN001
+        super().__init__(None, guard, kg)
+        self.answers = answers
+        self.cost = cost
+        self.usage = usage
+        self._served: set[tuple[str, str]] = set()
+
+    @classmethod
+    def from_record(cls, record: dict, guard: BudgetGuard, kg: WorldGraph) -> ReplayAnswerCache:
+        answers: dict[tuple[str, str], list[str]] = {}
+        cost: dict[tuple[str, str], float] = {}
+        usage: dict[tuple[str, str], dict | None] = {}
+        for row in record.get("answers", []):
+            key = (row["head"], row["relation"])
+            answers[key] = list(row["answers"])
+            cost[key] = row["cost_usd"]
+            usage[key] = row.get("usage")
+        return cls(guard, kg, answers, cost, usage)
+
+    def answer(self, head: str, relation: str) -> tuple[list[str], float]:
+        key = (head, relation)
+        if key not in self.answers:
+            raise MissingRecordedAnswerError(
+                f"replayed answers record has no teacher answer for pair "
+                f"(head={head!r}, relation={relation!r}); refusing to fall back to a "
+                f"real teacher call. Re-record with the current stream parameters."
+            )
+        if key not in self._served:
+            self._served.add(key)
+            self.real_calls += 1
+            # Charge the recorded cost once per distinct pair, exactly as the
+            # recording run did, so the guard's measured spend is reproduced.
+            self.guard.add(self.cost[key])
+        return self.answers[key], self.cost[key]
+
+
+#: Version tag stamped into every on-disk answers record; bump on a breaking change
+#: to the record layout so a stale record is rejected loudly on replay.
+ANSWERS_RECORD_SCHEMA = "tacet.controlled.answers/v1"
+
+#: Stream-defining fields that MUST match for a record to be replayable: together
+#: they fix the exact ``(head, relation)`` sequence, so replaying a record made
+#: under different values would silently mismatch pairs.
+_REPLAY_PROVENANCE_FIELDS = ("hop", "split", "limit", "zipf_a", "seed", "composed_relation")
+
+
+def _load_answers_record(path: str) -> dict:
+    """Read and JSON-parse an answers record from disk."""
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _build_answers_record(shared: SharedAnswerCache, *, provenance: dict) -> dict:
+    """Serialise the shared cache's answers + costs + provider usage into a record.
+
+    ``answers`` follows the cache's insertion order (deterministic given the stream).
+    Each row carries the per-pair ``cost_usd`` exactly as the cache recorded it and
+    the raw provider ``usage`` dict when the teacher exposed one, so a replay
+    reproduces the metered bill without re-calling and stays auditable later.
+    """
+    return {
+        "schema": ANSWERS_RECORD_SCHEMA,
+        "provenance": provenance,
+        "answers": [
+            {
+                "head": h,
+                "relation": r,
+                "answers": list(shared.answers[(h, r)]),
+                "cost_usd": shared.cost[(h, r)],
+                "usage": shared.usage.get((h, r)),
+            }
+            for (h, r) in shared.answers
+        ],
+    }
+
+
+def _check_replay_provenance(
+    record: dict,
+    *,
+    hop,
+    split,
+    limit,
+    zipf_a,
+    seed,
+    composed_relation,  # noqa: ANN001
+) -> None:
+    """Refuse to replay a record made under different stream parameters.
+
+    Compares every :data:`_REPLAY_PROVENANCE_FIELDS` value in the record against the
+    current run and raises :class:`ProvenanceMismatchError` naming the FIRST field
+    that differs. These fields fix the exact ``(head, relation)`` stream, so a
+    mismatch would replay the wrong answers against the wrong pairs.
+    """
+    prov = record.get("provenance", {})
+    current = {
+        "hop": hop,
+        "split": split,
+        "limit": limit,
+        "zipf_a": zipf_a,
+        "seed": seed,
+        "composed_relation": composed_relation,
+    }
+    for name in _REPLAY_PROVENANCE_FIELDS:
+        recorded = prov.get(name)
+        if recorded != current[name]:
+            raise ProvenanceMismatchError(
+                f"answers record cannot be replayed: provenance field {name!r} differs "
+                f"(record={recorded!r}, run={current[name]!r}). Re-record for these "
+                f"parameters or rerun with the matching {name}."
+            )
 
 
 class ReplayTeacher(Teacher):
@@ -286,6 +435,8 @@ def run_controlled(
     composition: str | None = None,
     oracle_error_rate: float = 0.0,
     gamma: float = 0.95,
+    answers_path: str | None = None,
+    recorded_at: str | None = None,
     settings=None,  # noqa: ANN001
     bench=None,  # noqa: ANN001
     verbose: bool = True,
@@ -307,8 +458,26 @@ def run_controlled(
     dials it down to test H2 (the imperfect-teacher cliff tracks gamma). The cache
     arm has ``rule_synthesis=False``, so gamma is irrelevant there and it is left
     untouched.
+
+    ``answers_path`` enables an on-disk record/replay of the teacher's answers so a
+    gamma sweep pays the real teacher ONCE and every gamma then replays byte-identical
+    answers at zero cost (so gamma is the only variable). When it names a file that
+    does NOT exist, the run is exactly as today (the teacher is called once per
+    distinct pair) and a JSON record is written on completion. When it names a file
+    that DOES exist, the shared cache is pre-populated from it and made incapable of
+    calling the teacher: a requested pair the record lacks raises
+    :class:`MissingRecordedAnswerError` (never a silent API call), and a
+    stream-parameter mismatch (hop / split / limit / zipf_a / seed / composed_relation)
+    raises :class:`ProvenanceMismatchError`. ``None`` (the default) is exactly the
+    previous behaviour. ``recorded_at`` is stamped verbatim into the record's
+    provenance; it MUST be supplied by the caller (a Modal wrapper) — this function
+    never reads the clock itself.
     """
     model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
+    # Replay when ``answers_path`` names an EXISTING record; record when it names a
+    # not-yet-existing one; behave exactly as before when it is ``None``.
+    replay_mode = answers_path is not None and Path(answers_path).exists()
+    recording = answers_path is not None and not replay_mode
     rng = np.random.default_rng(seed)
     if settings is None:
         settings = load_settings()
@@ -319,7 +488,10 @@ def run_controlled(
         print(f"[cap] {limit} queries; hard budget ${budget_usd:.2f}; Tier-2 DISABLED")
         print(f"  kg stats: {bench.stats()}")
 
-    if oracle_mode:
+    if replay_mode:
+        if verbose:
+            print(f"  teacher=REPLAY (answers served from {answers_path}; no API calls)")
+    elif oracle_mode:
         if verbose:
             print("  teacher=ORACLE (ground-truth, $0, instant) — mechanism/noise test, no cost")
     else:
@@ -383,11 +555,32 @@ def run_controlled(
     gt_graph = _scoring_graph(bench.kg, hop, gold_map, full_composed_gold, composed_relation)
     # ONE shared teacher + cache for all arms (LLM-only runs first and populates
     # every distinct pair, so the cascade arms make no further real calls). When
-    # ``TACET_TEACHER=oracle`` this single teacher IS the (noisy) oracle.
-    metered = _new_metered(
-        settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
-    )
-    shared = SharedAnswerCache(metered, guard, bench.kg)
+    # ``TACET_TEACHER=oracle`` this single teacher IS the (noisy) oracle. In replay
+    # mode the cache is pre-populated from the record and holds NO teacher, so no
+    # credential is touched and no API call is possible.
+    if replay_mode:
+        record = _load_answers_record(answers_path)
+        schema = record.get("schema")
+        if schema != ANSWERS_RECORD_SCHEMA:
+            raise AnswerRecordError(
+                f"answers record schema {schema!r} != expected {ANSWERS_RECORD_SCHEMA!r}; "
+                f"re-record with the current code."
+            )
+        _check_replay_provenance(
+            record,
+            hop=hop,
+            split=split,
+            limit=limit,
+            zipf_a=zipf_a,
+            seed=seed,
+            composed_relation=composed_relation,
+        )
+        shared = ReplayAnswerCache.from_record(record, guard, bench.kg)
+    else:
+        metered = _new_metered(
+            settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
+        )
+        shared = SharedAnswerCache(metered, guard, bench.kg)
 
     arms: list[dict] = []
     truncated = False
@@ -435,6 +628,32 @@ def run_controlled(
             print(f"\n[HARD STOP] {e}")
 
     teacher_acc, teacher_correct, teacher_total = _teacher_answer_accuracy(shared, gold_map)
+
+    if recording:
+        # Persist every distinct teacher answer + its measured per-pair cost so a
+        # gamma sweep can replay them at zero cost with byte-identical behaviour.
+        provenance = {
+            "model": settings.xai_model,
+            "price_key": model,
+            "hop": hop,
+            "split": split,
+            "limit": limit,
+            "zipf_a": zipf_a,
+            "seed": seed,
+            "composed_relation": composed_relation,
+            "teacher_kind": settings.teacher,
+            "recorded_at": recorded_at,
+        }
+        rec = _build_answers_record(shared, provenance=provenance)
+        rec_path = Path(answers_path)
+        rec_path.parent.mkdir(parents=True, exist_ok=True)
+        rec_path.write_text(json.dumps(rec, indent=2), encoding="utf-8")
+        if verbose:
+            print(
+                f"[record] wrote {len(rec['answers'])} teacher answers to {answers_path}: "
+                f"{shared.real_calls} real teacher calls, "
+                f"total measured spend ${guard.spent_usd:.4f}"
+            )
 
     by = {a["arm"]: a for a in arms}
     verdict: dict[str, object] = {}
@@ -537,13 +756,30 @@ def main() -> None:
     ap.add_argument("--zipf-a", type=float, default=1.5)
     ap.add_argument("--budget-usd", type=float, default=1.5)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--gamma",
+        type=float,
+        default=0.95,
+        help="rule-miner confidence threshold for the full-distillation arm",
+    )
     ap.add_argument("--composition", default=None, choices=sorted(COMPOSITIONS))
+    ap.add_argument(
+        "--answers-path",
+        default=None,
+        help=(
+            "record the teacher's answers here on the first run; replay them "
+            "(no API calls, byte-identical) whenever the file already exists"
+        ),
+    )
     ap.add_argument("--out", default="experiments/results/real_kg_controlled.json")
     args = ap.parse_args()
 
     # Oracle-teacher noise dial (fraction of oracle answers corrupted); read the
     # same way the amortization runner does. Ignored by the real-teacher path.
     oracle_error_rate = float(os.environ.get("TACET_ORACLE_ERROR_RATE", "0.0"))
+    # The caller stamps the record's wall-clock time; run_controlled never reads the
+    # clock itself, so a Modal wrapper can stamp it deterministically instead.
+    recorded_at = datetime.now(UTC).isoformat() if args.answers_path else None
     report = run_controlled(
         metaqa_root=args.metaqa_root,
         hop=args.hop,
@@ -554,6 +790,9 @@ def main() -> None:
         seed=args.seed,
         composition=args.composition,
         oracle_error_rate=oracle_error_rate,
+        gamma=args.gamma,
+        answers_path=args.answers_path,
+        recorded_at=recorded_at,
         verbose=True,
     )
     out = Path(args.out)

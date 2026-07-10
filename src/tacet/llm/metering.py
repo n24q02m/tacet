@@ -167,6 +167,7 @@ class MeteredTeacher(Teacher):
         self.total_completion_tokens: int = 0
         self.n_calls: int = 0
         self.last_cost_usd: float = 0.0
+        self.last_usage: dict | None = None
 
     def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
         resp = self.wrapped.answer(graph, head, relation)
@@ -194,6 +195,9 @@ class MeteredTeacher(Teacher):
         self.total_cost_usd += cost
         self.n_calls += 1
         self.last_cost_usd = cost
+        # Re-expose the raw provider usage so a caller (e.g. the record/replay
+        # layer) can persist it for audit without reaching into ``wrapped``.
+        self.last_usage = usage
 
         # Surface the measured USD cost on the response so a metered run can use
         # it directly; the answers/correctness are untouched.
