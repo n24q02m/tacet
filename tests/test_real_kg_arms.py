@@ -12,10 +12,11 @@ No network, no real LLM: a FakeMetered stands in for the metered Grok teacher.
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "experiments"))
 
-from run_real_kg_amortization import BudgetGuard  # noqa: E402
+from run_real_kg_amortization import BudgetGuard, _new_metered  # noqa: E402
 from run_real_kg_controlled import (  # noqa: E402
     ReplayTeacher,
     SharedAnswerCache,
@@ -162,6 +163,31 @@ def test_engine_hit_is_free_but_still_scored_against_gold() -> None:
     assert rep["total_cost_usd"] == 0.05  # the free engine hit added no cost
     # parity: the free hit is scored against gold, not waved through -> both wrong
     assert rep["accuracy"] == 0.0
+
+
+# ----------------------------------------------- oracle noise dial (E11 sweep)
+def test_new_metered_oracle_injects_workload_noise() -> None:
+    """The oracle-teacher path must forward the noise dial + a workload-derived
+    entity pool, so a nonzero error rate actually corrupts answers (the E11
+    imperfect-teacher sweep). With the dial unwired (``error_rate`` defaulting to
+    0.0) the oracle is perfect and this corruption cannot happen.
+    """
+    settings = SimpleNamespace(teacher="oracle")
+    gold = {"alice\tstarred_in": frozenset({"m1", "m2", "m3"})}
+    graph = WorldGraph()
+
+    # error_rate=0.0 -> a perfect oracle returns the exact gold set.
+    perfect = _new_metered(settings, "grok-4.3", None, gold, error_rate=0.0, seed=0)
+    assert perfect.answer(graph, "alice", "starred_in").answers == ["m1", "m2", "m3"]
+
+    # error_rate=1.0 -> every answer is a single corrupted entity drawn from the
+    # workload's own gold tails (a plausible wrong entity), so it is NOT the full
+    # gold set and it comes from the derived pool.
+    noisy = _new_metered(settings, "grok-4.3", None, gold, error_rate=1.0, seed=0)
+    corrupted = noisy.answer(graph, "alice", "starred_in").answers
+    assert corrupted != ["m1", "m2", "m3"]
+    assert len(corrupted) == 1
+    assert corrupted[0] in {"m1", "m2", "m3"}
 
 
 if __name__ == "__main__":

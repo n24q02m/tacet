@@ -285,13 +285,21 @@ class GrokTeacher(Teacher):
             # portion of the prompt may be served from cache
             # (``prompt_tokens_details.cached_tokens``) at a cheaper rate. xAI
             # also returns the authoritative billed cost as
-            # ``cost_in_usd_ticks`` (1 tick = 1e-10 USD). All of these are
-            # surfaced so ``MeteredTeacher`` can meter the real money spent
-            # rather than undercount on the visible completion tokens alone.
+            # ``cost_in_usd_ticks`` (1 tick = 1e-10 USD). OpenRouter (which
+            # reuses this method via ``OpenRouterTeacher``) instead reports its
+            # authoritative billed spend in USD directly under ``cost`` (and the
+            # upstream provider's charge under
+            # ``cost_details.upstream_inference_cost``). The xAI and OpenRouter
+            # cost fields are mutually exclusive per provider, so each is read
+            # defensively and simply degrades to ``None`` on the provider that
+            # does not emit it. All of these are surfaced so ``MeteredTeacher``
+            # can meter the real money spent rather than undercount on the
+            # visible completion tokens alone.
             usage = getattr(resp, "usage", None)
             if usage is not None:
                 comp_details = getattr(usage, "completion_tokens_details", None)
                 prompt_details = getattr(usage, "prompt_tokens_details", None)
+                cost_details = getattr(usage, "cost_details", None)
                 reasoning_tokens = (
                     getattr(comp_details, "reasoning_tokens", 0) if comp_details else 0
                 ) or 0
@@ -305,6 +313,12 @@ class GrokTeacher(Teacher):
                     "reasoning_tokens": reasoning_tokens,
                     "cached_tokens": cached_tokens,
                     "cost_in_usd_ticks": getattr(usage, "cost_in_usd_ticks", None),
+                    "cost": getattr(usage, "cost", None),
+                    "upstream_inference_cost": (
+                        getattr(cost_details, "upstream_inference_cost", None)
+                        if cost_details
+                        else None
+                    ),
                 }
         except Exception as e:  # pragma: no cover - network
             log.warning("grok call failed: %s", e)

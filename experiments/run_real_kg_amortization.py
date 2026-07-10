@@ -422,6 +422,8 @@ def _new_metered(
     model,
     nl_template: str | None = None,
     oracle_gold: dict[str, frozenset[str]] | None = None,
+    error_rate: float = 0.0,
+    seed: int = 0,
 ) -> MeteredTeacher:
     """A fresh per-arm MeteredTeacher (isolated so spend / call-count is per-arm).
 
@@ -431,7 +433,11 @@ def _new_metered(
     UNSEEN heads?) before spending real money on Grok. ``MeteredTeacher`` still
     counts every delegated call (``n_calls``), and the oracle exposes no
     ``last_usage`` so the measured USD stays 0 — the decisive signal is the
-    per-arm *call count*, not the dollar figure.
+    per-arm *call count*, not the dollar figure. ``error_rate`` (from
+    ``TACET_ORACLE_ERROR_RATE``) turns the perfect oracle into a noisy one,
+    corrupting that fraction of answers into a plausible wrong entity drawn from
+    the workload's own gold tails, with ``seed`` making the corruption
+    reproducible — the imperfect-teacher regime the noise sweep needs.
 
     When ``nl_template`` is given (multi-hop composition runs) the real teacher is
     first wrapped in a :class:`CompositionTeacher` so the synthetic
@@ -442,7 +448,15 @@ def _new_metered(
         if oracle_gold is None:
             raise SystemExit("TACET_TEACHER=oracle but no gold map was built for the workload.")
         _gold = oracle_gold
-        teacher: Teacher = OracleTeacher(lambda h, r: sorted(_gold.get(f"{h}\t{r}", ())))
+        # A corrupted answer must be a PLAUSIBLE wrong entity, so draw the noise
+        # pool from the workload's own gold tails (the answer entities).
+        entity_pool = sorted({tail for tails in _gold.values() for tail in tails})
+        teacher: Teacher = OracleTeacher(
+            lambda h, r: sorted(_gold.get(f"{h}\t{r}", ())),
+            error_rate=error_rate,
+            entity_pool=entity_pool,
+            seed=seed,
+        )
         return MeteredTeacher(teacher, PriceTable.default(), model=model)
     teacher = build_teacher_from_settings(settings)
     if teacher is None:
@@ -485,6 +499,9 @@ def main() -> None:  # noqa: PLR0915
 
     # The grok-4.3 price must be the real one for the USD to mean anything.
     model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
+    # Oracle-teacher noise dial: fraction of oracle answers corrupted into a
+    # plausible wrong entity (0.0 = perfect oracle); enables the noise sweep.
+    oracle_error_rate = float(os.environ.get("TACET_ORACLE_ERROR_RATE", "0.0"))
     rng = np.random.default_rng(args.seed)
 
     print(f"[cap] workload capped at {args.limit} queries; hard budget ${args.budget_usd:.2f}")
@@ -582,7 +599,9 @@ def main() -> None:  # noqa: PLR0915
     try:
         # (a) LLM-only — also the accuracy reference.
         print("\narm (a) LLM-only — every query to Grok ...")
-        m_a = _new_metered(settings, model, nl_template, oracle_gold)
+        m_a = _new_metered(
+            settings, model, nl_template, oracle_gold, error_rate=oracle_error_rate, seed=args.seed
+        )
         r_a = _run_llm_only(stream, bench, m_a, guard)
         arms.append(r_a)
         print(
@@ -595,7 +614,9 @@ def main() -> None:  # noqa: PLR0915
         cfg_cache = CascadeConfig(
             kge=kge_cfg, rule_synthesis=False, kge_augment=False, write_back=True
         )
-        m_b = _new_metered(settings, model, nl_template, oracle_gold)
+        m_b = _new_metered(
+            settings, model, nl_template, oracle_gold, error_rate=oracle_error_rate, seed=args.seed
+        )
         r_b = _run_cascade("cache_cascade", stream, bench, ontology, m_b, guard, cfg_cache)
         arms.append(r_b)
         print(
@@ -608,7 +629,9 @@ def main() -> None:  # noqa: PLR0915
         cfg_full = CascadeConfig(
             kge=kge_cfg, rule_synthesis=True, kge_augment=True, write_back=True
         )
-        m_c = _new_metered(settings, model, nl_template, oracle_gold)
+        m_c = _new_metered(
+            settings, model, nl_template, oracle_gold, error_rate=oracle_error_rate, seed=args.seed
+        )
         r_c = _run_cascade("full_distillation", stream, bench, ontology, m_c, guard, cfg_full)
         arms.append(r_c)
         print(

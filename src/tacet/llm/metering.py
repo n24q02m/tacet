@@ -28,9 +28,10 @@ from tacet.llm.teacher import Teacher, TeacherResponse
 
 #: Default per-model prices as ``(usd_per_1k_prompt, usd_per_1k_completion)``.
 #:
-#: These are PLACEHOLDER, published-style figures so the metering math is wired
-#: end-to-end; they are NOT authoritative. Set them to the current provider
-#: pricing before quoting a real cost.
+#: Each entry was verified live against the provider on the date in its source
+#: comment; the metering is only as current as those figures, and a stale entry
+#: silently mis-meters, so re-verify against the provider before quoting a real
+#: cost.
 DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # xAI Grok 4.3: $1.25 / 1M input, $2.50 / 1M output (= per-1k below).
     # Source: https://openrouter.ai/x-ai/grok-4.3 and https://docs.x.ai
@@ -49,6 +50,33 @@ DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # update to current Gemini pricing
     "gemini-2.5-pro": (0.00125, 0.005),
     "gemini-2.5-flash": (0.0003, 0.0025),
+    # xAI Grok 4.5: $2.00 / 1M input, $6.00 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/x-ai/grok-4.5, verified 2026-07-10.
+    "grok-4.5": (0.002, 0.006),
+    # Claude Sonnet 5: $2.00 / 1M input, $10.00 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/anthropic/claude-sonnet-5, verified 2026-07-10.
+    "claude-sonnet-5": (0.002, 0.010),
+    # OpenAI GPT-5.6 Luna: $1.00 / 1M input, $6.00 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/openai/gpt-5.6-luna, verified 2026-07-10.
+    "gpt-5.6-luna": (0.001, 0.006),
+    # Z.ai GLM-5.2: $0.54 / 1M input, $1.76 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/z-ai/glm-5.2, verified 2026-07-10.
+    "glm-5.2": (0.00054, 0.00176),
+    # Qwen3.7-Max: $1.25 / 1M input, $3.75 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/qwen/qwen3.7-max, verified 2026-07-10.
+    "qwen3.7-max": (0.00125, 0.00375),
+    # MiniMax M3: $0.30 / 1M input, $1.20 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/minimax/minimax-m3, verified 2026-07-10.
+    "minimax-m3": (0.0003, 0.0012),
+    # DeepSeek V4 Pro: $0.435 / 1M input, $0.87 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/deepseek/deepseek-v4-pro, verified 2026-07-10.
+    "deepseek-v4-pro": (0.000435, 0.00087),
+    # Moonshot Kimi K2.6: $0.66 / 1M input, $3.41 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/moonshotai/kimi-k2.6, verified 2026-07-10.
+    "kimi-k2.6": (0.00066, 0.00341),
+    # Xiaomi MiMo v2.5 Pro: $0.435 / 1M input, $0.87 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/xiaomi/mimo-v2.5-pro, verified 2026-07-10.
+    "mimo-v2.5-pro": (0.000435, 0.00087),
 }
 
 
@@ -145,12 +173,20 @@ class MeteredTeacher(Teacher):
         usage = getattr(self.wrapped, "last_usage", None)
         prompt_tokens, completion_tokens = _read_usage(usage)
 
-        # Prefer the provider's authoritative billed cost when it is reported
-        # (xAI ``cost_in_usd_ticks``); else fall back to tokens x price table.
+        # Cost precedence, most authoritative first:
+        #   1. ``cost``               -- OpenRouter's billed spend, already in USD.
+        #   2. ``cost_in_usd_ticks``  -- xAI's billed cost in 1e-10-USD ticks.
+        #   3. tokens x PriceTable    -- a token-based estimate.
+        cost_usd_field = (usage or {}).get("cost") if usage else None
         ticks = (usage or {}).get("cost_in_usd_ticks") if usage else None
-        if ticks is not None:
+        if cost_usd_field is not None:
+            cost = float(cost_usd_field)
+        elif ticks is not None:
             cost = float(ticks) * USD_PER_TICK
         else:
+            # Open question: whether OpenRouter's ``completion_tokens`` already
+            # includes reasoning tokens (which ``_read_usage`` adds on) needs one
+            # live calibration call to settle; the token estimate is left as-is.
             cost = self.prices.cost_usd(self.model, prompt_tokens, completion_tokens)
 
         self.total_prompt_tokens += prompt_tokens
