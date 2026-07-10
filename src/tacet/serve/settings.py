@@ -60,7 +60,8 @@ if _HAS_PYDANTIC:
 
         # --- teacher selection ---------------------------------------------
         teacher: str = Field(
-            default="oracle", description="oracle | gemini | grok | fallback | rotating"
+            default="oracle",
+            description="oracle | gemini | grok | openrouter | fallback | rotating",
         )
         gemini_api_key: str | None = None
         gemini_model: str = "gemini-3.5-flash"
@@ -69,6 +70,9 @@ if _HAS_PYDANTIC:
         xai_model: str = "grok-4.3"
         xai_model_fast: str = "grok-4.3"
         xai_base_url: str = "https://api.x.ai/v1"
+        # --- OpenRouter (OpenAI-compatible; first-class E11 ladder path) ----
+        openrouter_api_key: str | None = None
+        openrouter_model: str = "x-ai/grok-4.3"  # published anchor
         # --- free-tier rotation across Gemini / Gemma flash variants -------
         rotating_models: Annotated[list[str] | None, NoDecode] = (
             None  # None => DEFAULT_ROTATING_MODELS
@@ -130,6 +134,8 @@ if _HAS_PYDANTIC:
                 return bool(self.gemini_api_key)
             if self.teacher == "grok":
                 return bool(self.xai_api_key)
+            if self.teacher == "openrouter":
+                return bool(self.openrouter_api_key)
             if self.teacher == "fallback":
                 return bool(self.gemini_api_key) or bool(self.xai_api_key)
             if self.teacher == "rotating":
@@ -150,6 +156,8 @@ else:
         xai_model: str = "grok-4.3"
         xai_model_fast: str = "grok-4.3"
         xai_base_url: str = "https://api.x.ai/v1"
+        openrouter_api_key: str | None = None
+        openrouter_model: str = "x-ai/grok-4.3"  # published anchor
         rotating_models: list[str] | None = None
         rotating_cooldown_s: float = 60.0
         rotating_qps_per_model: float = 9 / 60
@@ -188,6 +196,8 @@ else:
                 xai_model_fast=_env(f"{p}XAI_MODEL_FAST", "grok-4.3") or "grok-4.3",
                 xai_base_url=_env(f"{p}XAI_BASE_URL", "https://api.x.ai/v1")
                 or "https://api.x.ai/v1",
+                openrouter_api_key=_env(f"{p}OPENROUTER_API_KEY"),
+                openrouter_model=_env(f"{p}OPENROUTER_MODEL", "x-ai/grok-4.3") or "x-ai/grok-4.3",
                 rotating_models=rotating,
                 rotating_cooldown_s=_env_float(f"{p}ROTATING_COOLDOWN_S", 60.0),
                 rotating_qps_per_model=_env_float(f"{p}ROTATING_QPS_PER_MODEL", 9 / 60),
@@ -216,6 +226,8 @@ else:
                 return bool(self.gemini_api_key)
             if self.teacher == "grok":
                 return bool(self.xai_api_key)
+            if self.teacher == "openrouter":
+                return bool(self.openrouter_api_key)
             if self.teacher == "fallback":
                 return bool(self.gemini_api_key) or bool(self.xai_api_key)
             if self.teacher == "rotating":

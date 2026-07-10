@@ -10,7 +10,7 @@ returns a scripted response object shaped like each provider's usage.
 
 from types import SimpleNamespace
 
-from tacet.llm.teachers.llm import GrokTeacher
+from tacet.llm.teachers.llm import GrokTeacher, OpenRouterTeacher
 
 
 class _FakeCompletions:
@@ -78,3 +78,27 @@ def test_xai_response_has_no_openrouter_cost_fields() -> None:
     # OpenRouter-only fields absent on an xAI response -> degrade to None.
     assert t.last_usage["cost"] is None
     assert t.last_usage["upstream_inference_cost"] is None
+
+
+def test_reasoning_convention_is_declared_per_adapter() -> None:
+    # The reasoning-token convention is DECLARED by the adapter (not inferred
+    # from the response): direct xAI excludes reasoning from completion_tokens,
+    # OpenRouter includes it. Each stamps that onto last_usage so the meter
+    # honours it.
+    usage = SimpleNamespace(
+        prompt_tokens=100,
+        completion_tokens=20,
+        total_tokens=120,
+        completion_tokens_details=SimpleNamespace(reasoning_tokens=5),
+        prompt_tokens_details=SimpleNamespace(cached_tokens=0),
+        cost_in_usd_ticks=15_000_000,
+    )
+
+    grok = _grok_with_client(_response('["Belgium"]', usage))
+    grok.answer(None, "France", "borders")
+    assert grok.last_usage["reasoning_included_in_completion"] is False
+
+    router = OpenRouterTeacher("test-key", model="deepseek/deepseek-v4-pro")
+    router._client = _FakeClient(_response('["Belgium"]', usage))
+    router.answer(None, "France", "borders")
+    assert router.last_usage["reasoning_included_in_completion"] is True

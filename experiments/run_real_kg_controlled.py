@@ -65,6 +65,7 @@ from run_real_kg_amortization import (  # noqa: E402
     _new_metered,
     _oracle_gold_from_pool,
     _zipf_stream,
+    resolve_price_key,
 )
 from run_rule_precision import remine_installed_rules  # noqa: E402
 
@@ -473,7 +474,6 @@ def run_controlled(
     provenance; it MUST be supplied by the caller (a Modal wrapper) — this function
     never reads the clock itself.
     """
-    model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
     # Replay when ``answers_path`` names an EXISTING record; record when it names a
     # not-yet-existing one; behave exactly as before when it is ``None``.
     replay_mode = answers_path is not None and Path(answers_path).exists()
@@ -484,6 +484,13 @@ def run_controlled(
     if bench is None:
         bench = load_metaqa(metaqa_root, hop=1, split=split)
     oracle_mode = settings.teacher == "oracle"
+    openrouter_mode = getattr(settings, "teacher", None) == "openrouter"
+    # Price key: an explicit TACET_PRICE_MODEL wins; else the OpenRouter teacher
+    # derives it from its slug (so it need not be set by hand); else grok-4.3.
+    model = resolve_price_key(settings)
+    # The model actually called (for logs / provenance / report labels): the
+    # OpenRouter slug for an openrouter run, else the xAI model.
+    called_model = settings.openrouter_model if openrouter_mode else settings.xai_model
     if verbose:
         print(f"[cap] {limit} queries; hard budget ${budget_usd:.2f}; Tier-2 DISABLED")
         print(f"  kg stats: {bench.stats()}")
@@ -495,13 +502,19 @@ def run_controlled(
         if verbose:
             print("  teacher=ORACLE (ground-truth, $0, instant) — mechanism/noise test, no cost")
     else:
-        if not getattr(settings, "xai_api_key", None):
+        key = (
+            getattr(settings, "openrouter_api_key", None)
+            if openrouter_mode
+            else getattr(settings, "xai_api_key", None)
+        )
+        if not key:
             raise SystemExit(
                 "controlled run needs a teacher: TACET_TEACHER=grok + TACET_XAI_API_KEY, "
+                "TACET_TEACHER=openrouter + TACET_OPENROUTER_API_KEY, "
                 "or TACET_TEACHER=oracle for the free (noisy) oracle mode"
             )
         if verbose:
-            print(f"  teacher=grok model={settings.xai_model} (priced as {model})")
+            print(f"  teacher={settings.teacher} model={called_model} (priced as {model})")
 
     nl_template = None
     composed_relation = None
@@ -633,7 +646,7 @@ def run_controlled(
         # Persist every distinct teacher answer + its measured per-pair cost so a
         # gamma sweep can replay them at zero cost with byte-identical behaviour.
         provenance = {
-            "model": settings.xai_model,
+            "model": called_model,
             "price_key": model,
             "hop": hop,
             "split": split,
@@ -699,7 +712,7 @@ def run_controlled(
             "synthesised_rules": full.get("synthesised_rules", []),
         }
 
-    teacher_kind = "oracle" if oracle_mode else settings.xai_model
+    teacher_kind = "oracle" if oracle_mode else called_model
     report = {
         "dataset": f"MetaQA-{hop}hop-{split}",
         "hop": hop,
@@ -712,7 +725,7 @@ def run_controlled(
         "oracle_error_rate": oracle_error_rate if oracle_mode else None,
         "gamma": gamma,
         "noise_mode": "per_key" if oracle_mode else None,
-        "teacher_model_called": settings.xai_model,
+        "teacher_model_called": called_model,
         "priced_as_model": model,
         "composed_relation": composed_relation,
         "workload_cap": limit,

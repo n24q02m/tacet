@@ -245,6 +245,15 @@ class GeminiRestTeacher(Teacher):
 class GrokTeacher(Teacher):
     """Grok via the ``openai`` SDK pointed at xAI's endpoint."""
 
+    #: Whether the provider's ``completion_tokens`` ALREADY INCLUDES the billed
+    #: reasoning tokens. Direct xAI reports a visible completion count that
+    #: EXCLUDES reasoning, so the meter must add them; ``OpenRouterTeacher``
+    #: overrides this to ``True`` because OpenRouter folds reasoning into
+    #: ``completion_tokens`` (verified 2026-07-10 across six vendors). The value
+    #: is stamped onto ``last_usage`` so ``metering._read_usage`` honours it
+    #: instead of guessing from the response shape.
+    reasoning_in_completion: bool = False
+
     def __init__(
         self,
         api_key: str,
@@ -311,6 +320,8 @@ class GrokTeacher(Teacher):
                     "completion_tokens": getattr(usage, "completion_tokens", 0),
                     "total_tokens": getattr(usage, "total_tokens", 0),
                     "reasoning_tokens": reasoning_tokens,
+                    # Adapter-declared: is reasoning already inside completion_tokens?
+                    "reasoning_included_in_completion": self.reasoning_in_completion,
                     "cached_tokens": cached_tokens,
                     "cost_in_usd_ticks": getattr(usage, "cost_in_usd_ticks", None),
                     "cost": getattr(usage, "cost", None),
@@ -337,6 +348,11 @@ class OpenRouterTeacher(GrokTeacher):
     the OpenRouter dashboard, BYOK routing spends that provider's own credit
     first and only then OpenRouter's shared capacity.
     """
+
+    #: OpenRouter's ``completion_tokens`` ALREADY includes reasoning tokens
+    #: (measured 2026-07-10 across six vendors: ``completion == visible +
+    #: reasoning``), so the meter must NOT add them again — unlike direct xAI.
+    reasoning_in_completion = True
 
     def __init__(
         self,
@@ -381,9 +397,13 @@ class RotatingTeacher(Teacher):
         import time
 
         n = len(self._teachers)
+        # Snapshot the rotation head ONCE: the loop below reassigns self._cursor
+        # when it lands on a healthy model, so indexing off the live cursor would
+        # re-visit an already-tried (now-cooling) model and skip the healthy one.
+        start = self._cursor
         for stage in range(2):
             for offset in range(n):
-                idx = (self._cursor + offset) % n
+                idx = (start + offset) % n
                 deadline = self._cooldowns.get(idx, 0.0)
                 if time.time() < deadline:
                     continue
@@ -393,10 +413,15 @@ class RotatingTeacher(Teacher):
                     return resp
                 # empty answer = rate-limit / error from a REST teacher
                 self._cooldowns[idx] = time.time() + self._cooldown_s
-                self._cursor = (idx + 1) % n
-            if stage == 0 and self._cooldowns:
+            # Only wait if EVERY teacher is currently cooling: self._cooldowns
+            # accumulates stale entries whose deadline is already in the past, and
+            # a teacher with a past deadline is NOT cooling, so gating on the dict
+            # being non-empty would stall even while a healthy model is available.
+            now = time.time()
+            all_cooling = all(self._cooldowns.get(i, 0.0) > now for i in range(n))
+            if stage == 0 and all_cooling:
                 # everyone cooled down — wait for the soonest to expire, once.
-                wake = min(self._cooldowns.values()) - time.time()
+                wake = min(self._cooldowns.values()) - now
                 if 0 < wake < self._cooldown_s * 2:
                     time.sleep(wake + 0.1)
                     continue
@@ -461,6 +486,10 @@ def build_teacher_from_settings(settings) -> Teacher | None:  # noqa: ANN001
         if not settings.xai_api_key:
             raise RuntimeError("TACET_XAI_API_KEY not set")
         return GrokTeacher(settings.xai_api_key, settings.xai_model, settings.xai_base_url)
+    if name == "openrouter":
+        if not settings.openrouter_api_key:
+            raise RuntimeError("TACET_OPENROUTER_API_KEY not set")
+        return OpenRouterTeacher(settings.openrouter_api_key, settings.openrouter_model)
     if name == "rotating":
         if not settings.gemini_api_key:
             raise RuntimeError("TACET_GEMINI_API_KEY not set (required for teacher=rotating)")

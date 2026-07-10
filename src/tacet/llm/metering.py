@@ -111,6 +111,24 @@ class PriceTable:
         return prompt_tokens / 1000.0 * p_in + completion_tokens / 1000.0 * p_out
 
 
+def price_key_for_slug(slug: str, prices: dict[str, tuple[float, float]] | None = None) -> str:
+    """Map an OpenRouter model slug to its bare ``DEFAULT_PRICES`` key.
+
+    OpenRouter ids carry a vendor prefix (``anthropic/claude-sonnet-5``), while
+    the price table is keyed on the bare model name (``claude-sonnet-5``). The key
+    is the id after the last ``/``. Raises ``KeyError`` for a model with no price
+    entry, so an unpriced run fails loudly here rather than metering it at $0.
+    """
+    table = DEFAULT_PRICES if prices is None else prices
+    key = slug.rsplit("/", 1)[-1]
+    if key not in table:
+        raise KeyError(
+            f"no price for OpenRouter model {slug!r}: price key {key!r} is absent from "
+            f"the price table; add it to DEFAULT_PRICES before metering this model."
+        )
+    return key
+
+
 #: xAI returns the authoritative billed cost as an integer "ticks" field;
 #: one tick is 1e-10 USD (empirically verified 2026-06-03 against the
 #: per-token rate breakdown). When present this is preferred over the
@@ -127,15 +145,21 @@ def _read_usage(usage: dict | None) -> tuple[int, int]:
     so the meter works whether or not the adapter pre-normalised them. Missing
     usage yields ``(0, 0)``.
 
-    For a reasoning model the visible ``completion_tokens`` EXCLUDES the
-    reasoning tokens that xAI still bills at the output rate; those are added
-    here so the token-based estimate is not a systematic undercount.
+    Whether the reasoning tokens are already part of ``completion_tokens`` is a
+    per-provider convention, so it is NOT inferred from the response shape: the
+    adapter declares it on the usage dict via ``reasoning_included_in_completion``.
+    Direct xAI reports a visible ``completion_tokens`` that EXCLUDES the (billed)
+    reasoning tokens, so they are added; OpenRouter already folds reasoning into
+    ``completion_tokens``, so adding again would double-count. When the flag is
+    absent the historical behaviour is preserved (reasoning is added).
     """
     if not usage:
         return 0, 0
     prompt = usage.get("prompt_tokens", usage.get("prompt_token_count", 0)) or 0
     completion = usage.get("completion_tokens", usage.get("candidates_token_count", 0)) or 0
     reasoning = usage.get("reasoning_tokens", 0) or 0
+    if usage.get("reasoning_included_in_completion"):
+        return int(prompt), int(completion)
     return int(prompt), int(completion) + int(reasoning)
 
 
@@ -185,9 +209,10 @@ class MeteredTeacher(Teacher):
         elif ticks is not None:
             cost = float(ticks) * USD_PER_TICK
         else:
-            # Open question: whether OpenRouter's ``completion_tokens`` already
-            # includes reasoning tokens (which ``_read_usage`` adds on) needs one
-            # live calibration call to settle; the token estimate is left as-is.
+            # ``completion_tokens`` here is already the BILLED output count:
+            # ``_read_usage`` honours the adapter's
+            # ``reasoning_included_in_completion`` declaration, so reasoning is
+            # added for direct xAI (excluded) and not for OpenRouter (included).
             cost = self.prices.cost_usd(self.model, prompt_tokens, completion_tokens)
 
         self.total_prompt_tokens += prompt_tokens
@@ -204,4 +229,10 @@ class MeteredTeacher(Teacher):
         return TeacherResponse(answers=resp.answers, cost=cost, correct=resp.correct)
 
 
-__all__ = ["DEFAULT_PRICES", "USD_PER_TICK", "MeteredTeacher", "PriceTable"]
+__all__ = [
+    "DEFAULT_PRICES",
+    "USD_PER_TICK",
+    "MeteredTeacher",
+    "PriceTable",
+    "price_key_for_slug",
+]

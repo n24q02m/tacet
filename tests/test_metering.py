@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import unittest
 
+import pytest
+
 from tacet.core.graph import WorldGraph
 from tacet.llm.metering import MeteredTeacher, PriceTable, _read_usage
 from tacet.llm.teacher import Teacher, TeacherResponse
@@ -73,8 +75,32 @@ class UsageReaderTest(unittest.TestCase):
         self.assertEqual(_read_usage(usage), (15, 25))
 
     def test_read_usage_includes_reasoning_tokens_in_completion(self) -> None:
+        # No declaration present -> preserve the historical behaviour (add).
         usage = {"prompt_tokens": 10, "completion_tokens": 20, "reasoning_tokens": 30}
         self.assertEqual(_read_usage(usage), (10, 50))
+
+    def test_read_usage_adds_reasoning_when_adapter_declares_excluded(self) -> None:
+        # Direct xAI (GrokTeacher) declares reasoning is NOT part of the visible
+        # completion, so it must be added to reach the billed output count.
+        usage = {
+            "prompt_tokens": 100,
+            "completion_tokens": 20,
+            "reasoning_tokens": 5,
+            "reasoning_included_in_completion": False,
+        }
+        self.assertEqual(_read_usage(usage), (100, 25))
+
+    def test_read_usage_does_not_double_count_when_declared_included(self) -> None:
+        # OpenRouter (OpenRouterTeacher) declares completion ALREADY includes
+        # reasoning, so it must NOT be added again (measured 2026-07-10:
+        # deepseek-v4-pro reported completion 60, reasoning 58 -> billed 60).
+        usage = {
+            "prompt_tokens": 20,
+            "completion_tokens": 60,
+            "reasoning_tokens": 58,
+            "reasoning_included_in_completion": True,
+        }
+        self.assertEqual(_read_usage(usage), (20, 60))
 
 
 class MeteredTeacherTest(unittest.TestCase):
@@ -156,6 +182,35 @@ class MeteredTeacherTest(unittest.TestCase):
         metered.answer(WorldGraph(), "France", "borders")
         # cost = 100/1000*2 + (20+480)/1000*10 = 0.2 + 5.0 = 5.2 USD.
         self.assertAlmostEqual(metered.total_cost_usd, 5.2)
+
+    def test_openrouter_completion_tokens_not_double_counted(self) -> None:
+        """On OpenRouter ``completion_tokens`` already includes reasoning tokens;
+        the adapter declares that, so the meter must bill the completion count as
+        reported rather than adding reasoning on top (which overcounted output by
+        up to ~97% on the measured roster)."""
+
+        class _ORTeacher(Teacher):
+            def __init__(self) -> None:
+                self.last_usage: dict | None = None
+
+            def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
+                # deepseek-v4-pro-shaped row: completion already folds in reasoning.
+                self.last_usage = {
+                    "prompt_tokens": 20,
+                    "completion_tokens": 60,
+                    "reasoning_tokens": 58,
+                    "reasoning_included_in_completion": True,
+                }
+                return TeacherResponse(answers=["Belgium"])
+
+        table = PriceTable({"or-test": (1.0, 2.0)})
+        metered = MeteredTeacher(_ORTeacher(), table, model="or-test")
+        metered.answer(WorldGraph(), "France", "borders")
+        # billed completion = 60 (NOT 60 + 58 = 118)
+        self.assertEqual(metered.total_completion_tokens, 60)
+        self.assertEqual(metered.total_prompt_tokens, 20)
+        # cost = 20/1000*1 + 60/1000*2 = 0.02 + 0.12 = 0.14 USD.
+        self.assertAlmostEqual(metered.total_cost_usd, 0.14)
 
     def test_provider_billed_ticks_preferred_over_token_estimate(self) -> None:
         """When the provider reports an authoritative billed cost (xAI
@@ -252,6 +307,36 @@ class MeteredTeacherTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_price_key_for_slug_maps_the_e11_ladder():
+    """Every E11 ladder OpenRouter slug maps to its bare DEFAULT_PRICES key."""
+    from tacet.llm.metering import DEFAULT_PRICES, price_key_for_slug
+
+    ladder = {
+        "x-ai/grok-4.3": "grok-4.3",
+        "x-ai/grok-4.5": "grok-4.5",
+        "anthropic/claude-sonnet-5": "claude-sonnet-5",
+        "openai/gpt-5.6-luna": "gpt-5.6-luna",
+        "z-ai/glm-5.2": "glm-5.2",
+        "google/gemini-3.5-flash": "gemini-3.5-flash",
+        "qwen/qwen3.7-max": "qwen3.7-max",
+        "minimax/minimax-m3": "minimax-m3",
+        "deepseek/deepseek-v4-pro": "deepseek-v4-pro",
+        "moonshotai/kimi-k2.6": "kimi-k2.6",
+        "xiaomi/mimo-v2.5-pro": "mimo-v2.5-pro",
+    }
+    for slug, key in ladder.items():
+        assert price_key_for_slug(slug) == key
+        assert key in DEFAULT_PRICES  # and the mapped key is actually priced
+
+
+def test_price_key_for_slug_raises_on_unpriced_model():
+    """An unknown slug fails loudly rather than defaulting to a $0 price."""
+    from tacet.llm.metering import price_key_for_slug
+
+    with pytest.raises(KeyError):
+        price_key_for_slug("acme/nonexistent-model")
 
 
 def test_default_prices_cover_phase1_teachers():

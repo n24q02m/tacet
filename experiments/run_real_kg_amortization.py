@@ -67,7 +67,12 @@ from tacet.cascade.router import TACET  # noqa: E402
 from tacet.core.graph import WorldGraph  # noqa: E402
 from tacet.core.ontology import Ontology, RelationType  # noqa: E402
 from tacet.data.metaqa import load_metaqa  # noqa: E402
-from tacet.llm.metering import DEFAULT_PRICES, MeteredTeacher, PriceTable  # noqa: E402
+from tacet.llm.metering import (  # noqa: E402
+    DEFAULT_PRICES,
+    MeteredTeacher,
+    PriceTable,
+    price_key_for_slug,
+)
 from tacet.llm.teacher import OracleTeacher, Teacher, TeacherResponse  # noqa: E402
 from tacet.llm.teachers import build_teacher_from_settings  # noqa: E402
 from tacet.serve.config import CascadeConfig, KGEConfig  # noqa: E402
@@ -497,6 +502,23 @@ def _new_metered(
     return MeteredTeacher(teacher, PriceTable.default(), model=model)
 
 
+def resolve_price_key(settings) -> str:  # noqa: ANN001
+    """The DEFAULT_PRICES key to meter this run's teacher against.
+
+    An explicit ``TACET_PRICE_MODEL`` always wins (unchanged). Otherwise, for the
+    OpenRouter teacher the price key is derived from its model slug via
+    :func:`price_key_for_slug` -- so a run of an E11 ladder model no longer needs
+    ``TACET_PRICE_MODEL`` set by hand -- and every other teacher keeps defaulting
+    to ``grok-4.3``.
+    """
+    explicit = os.environ.get("TACET_PRICE_MODEL")
+    if explicit:
+        return explicit
+    if getattr(settings, "teacher", None) == "openrouter":
+        return price_key_for_slug(settings.openrouter_model)
+    return "grok-4.3"
+
+
 def main() -> None:  # noqa: PLR0915
     ap = argparse.ArgumentParser()
     ap.add_argument("--metaqa-root", default="data/MetaQA")
@@ -523,8 +545,6 @@ def main() -> None:  # noqa: PLR0915
     ap.add_argument("--out", default="experiments/results/real_kg_amortization.json")
     args = ap.parse_args()
 
-    # The grok-4.3 price must be the real one for the USD to mean anything.
-    model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
     # Oracle-teacher noise dial: fraction of oracle answers corrupted into a
     # plausible wrong entity (0.0 = perfect oracle); enables the noise sweep.
     oracle_error_rate = float(os.environ.get("TACET_ORACLE_ERROR_RATE", "0.0"))
@@ -543,13 +563,23 @@ def main() -> None:  # noqa: PLR0915
 
     settings = load_settings()
     oracle_mode = settings.teacher == "oracle"
+    openrouter_mode = settings.teacher == "openrouter"
+    # The price key must be the real one for the USD to mean anything; resolve it
+    # from the teacher (OpenRouter derives it from the slug, so TACET_PRICE_MODEL
+    # need not be set by hand).
+    model = resolve_price_key(settings)
+    called_model = settings.openrouter_model if openrouter_mode else settings.xai_model
     if oracle_mode:
         # Free, instant ground-truth teacher — mechanism test, no API cost.
         print("  teacher=ORACLE (ground-truth, $0, instant) — mechanism test, no Grok cost")
     else:
-        if not settings.xai_api_key:
-            raise SystemExit("TACET_XAI_API_KEY not set — export your xAI API key first.")
-        print(f"  teacher=grok model={settings.xai_model} (priced as {model})")
+        key = settings.openrouter_api_key if openrouter_mode else settings.xai_api_key
+        if not key:
+            raise SystemExit(
+                "no teacher key set — export TACET_XAI_API_KEY (grok) or "
+                "TACET_OPENROUTER_API_KEY (openrouter) first."
+            )
+        print(f"  teacher={settings.teacher} model={called_model} (priced as {model})")
 
     # --- workload: 1-hop (single-relation lookup) vs multi-hop (composition) --
     nl_template: str | None = None
@@ -734,7 +764,7 @@ def main() -> None:  # noqa: PLR0915
         ),
         "kg_stats": bench.stats(),
         "real_llm": True,
-        "teacher_model_called": settings.xai_model,
+        "teacher_model_called": called_model,
         "priced_as_model": model,
         "price_per_1k_usd": {"input": DEFAULT_PRICES[model][0], "output": DEFAULT_PRICES[model][1]},
         "price_source": "https://openrouter.ai/x-ai/grok-4.3 + https://docs.x.ai (2026-06-03)",
