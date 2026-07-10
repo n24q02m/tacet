@@ -320,6 +320,231 @@ def test_answers_path_none_is_unchanged(tmp_path, monkeypatch) -> None:
     } <= set(base)
 
 
+# =====================================================================================
+# Crash-safety / resume suite (kept in this file so it reuses the tiny synthetic bench,
+# oracle settings and ``_common`` above; the record layer's durability is a property of
+# the SAME runner, so co-locating the tests keeps one contract in one place). Everything
+# above is unchanged. These pin that a paid teacher call, once obtained, survives the
+# process being killed mid-record and is never re-bought on resume.
+# =====================================================================================
+
+
+class _RecordingKilledError(RuntimeError):
+    """Stand-in for the container dying mid-recording (a non-budget crash)."""
+
+
+class _CountingTeacher:
+    """A perfect fake teacher that counts calls and can 'die' after ``raise_after`` of them.
+
+    Duck-types the metered-teacher surface :class:`SharedAnswerCache` reads. Returns the
+    workload's own gold at a fixed non-zero cost, records every ``(head, relation)`` it is
+    asked (so a test can assert it is NEVER asked for a warm pair), and — when
+    ``raise_after`` is set — raises :class:`_RecordingKilledError` on the call that WOULD be its
+    ``(raise_after + 1)``-th, so exactly ``raise_after`` answers are produced before the
+    simulated kill.
+    """
+
+    def __init__(self, oracle_gold, counter, *, raise_after=None, cost_per_call: float = 0.01):
+        self._gold = oracle_gold or {}
+        self._counter = counter
+        self._raise_after = raise_after
+        self._cost = cost_per_call
+        self.last_cost_usd = 0.0
+        self.last_usage: dict | None = None
+
+    def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
+        if self._raise_after is not None and self._counter["calls"] >= self._raise_after:
+            raise _RecordingKilledError(f"container died after {self._raise_after} paid calls")
+        self._counter["calls"] += 1
+        self._counter["asked"].append((head, relation))
+        self.last_cost_usd = self._cost
+        self.last_usage = {"prompt_tokens": 4, "completion_tokens": 2}
+        return TeacherResponse(answers=sorted(self._gold.get(f"{head}\t{relation}", ())))
+
+
+def _install_counting_teacher(monkeypatch, counter: dict, *, raise_after=None) -> None:
+    def factory(settings, model, nl_template, oracle_gold=None, error_rate=0.0, seed=0):  # noqa: ANN001
+        return _CountingTeacher(oracle_gold, counter, raise_after=raise_after)
+
+    monkeypatch.setattr(rkc, "_new_metered", factory)
+
+
+def _fresh_counter() -> dict:
+    return {"calls": 0, "asked": []}
+
+
+def _record_no_timing(report: dict) -> dict:
+    """A deep copy of a report with per-arm wall-clock times dropped (non-semantic)."""
+    stripped = json.loads(json.dumps(report))
+    for arm in stripped["arms"]:
+        arm.pop("wallclock_s", None)
+    return stripped
+
+
+# ------------------------------------------------------- 1. a killed run loses no paid call
+def test_killed_run_persists_every_paid_call(tmp_path, monkeypatch) -> None:
+    bench, settings = _tiny_bench(), _oracle_settings()
+
+    # Learn the distinct-pair count from a clean reference run, then kill halfway.
+    ref_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, ref_counter)
+    ref = run_controlled(answers_path=str(tmp_path / "ref.json"), **_common(bench, settings))
+    n_distinct = ref["distinct_queries"]
+    k = n_distinct // 2
+    assert 0 < k < n_distinct
+
+    path = tmp_path / "answers.json"
+    kill_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, kill_counter, raise_after=k)
+    with pytest.raises(_RecordingKilledError):
+        run_controlled(answers_path=str(path), **_common(bench, settings))
+
+    # The run never finished, so the canonical record does NOT exist ...
+    assert not path.exists()
+    # ... but the durable sidecar holds exactly the k paid answers, all readable.
+    partial = rkc._AnswerLog(rkc._partial_log_path(str(path)))
+    assert partial.exists()
+    header, rows = partial.read()
+    assert header["schema"] == rkc.ANSWERS_RECORD_SCHEMA
+    assert len(rows) == k == kill_counter["calls"]
+    for row in rows:
+        assert isinstance(row["answers"], list)
+        assert row["cost_usd"] == 0.01
+
+
+# --------------------------------------------------------------- 2. resume re-bills nothing
+def test_resume_rebills_nothing_and_completes_the_record(tmp_path, monkeypatch) -> None:
+    bench, settings = _tiny_bench(), _oracle_settings()
+
+    ref_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, ref_counter)
+    ref = run_controlled(answers_path=str(tmp_path / "ref.json"), **_common(bench, settings))
+    n_distinct = ref["distinct_queries"]
+    ref_record = json.loads((tmp_path / "ref.json").read_text(encoding="utf-8"))
+    k = n_distinct // 2
+    assert 0 < k < n_distinct
+
+    # Kill after k, then read the pairs the sidecar already holds (the warm set).
+    path = tmp_path / "answers.json"
+    kill_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, kill_counter, raise_after=k)
+    with pytest.raises(_RecordingKilledError):
+        run_controlled(answers_path=str(path), **_common(bench, settings))
+    _, warm_rows = rkc._AnswerLog(rkc._partial_log_path(str(path))).read()
+    warm_pairs = {(r["head"], r["relation"]) for r in warm_rows}
+    assert len(warm_pairs) == k
+
+    # Resume with a FRESH counting teacher.
+    resume_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, resume_counter)
+    res = run_controlled(answers_path=str(path), **_common(bench, settings))
+
+    # THE money assertion: the teacher is called exactly for the still-missing pairs, and
+    # never for a pair already recorded.
+    assert resume_counter["calls"] == n_distinct - k
+    assert set(resume_counter["asked"]).isdisjoint(warm_pairs)
+    assert len(set(resume_counter["asked"])) == n_distinct - k
+
+    # The completed record equals the uninterrupted one (same pairs, answers, costs) ...
+    assert path.exists()
+    resumed_record = json.loads(path.read_text(encoding="utf-8"))
+    assert resumed_record == ref_record
+    # ... the reported call total counts the whole record, and the sidecar is gone.
+    assert res["real_teacher_calls"] == n_distinct
+    assert not rkc._partial_log_path(str(path)).exists()
+
+
+# --------------------------------------------- 3. uninterrupted == interrupted-then-resumed
+def test_uninterrupted_equals_interrupted_then_resumed(tmp_path, monkeypatch) -> None:
+    bench, settings = _tiny_bench(), _oracle_settings()
+
+    # A) one clean uninterrupted recording.
+    clean_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, clean_counter)
+    clean = run_controlled(answers_path=str(tmp_path / "clean.json"), **_common(bench, settings))
+    clean_record = json.loads((tmp_path / "clean.json").read_text(encoding="utf-8"))
+    n_distinct = clean["distinct_queries"]
+    k = n_distinct // 2
+
+    # B) the same recording, killed after k then resumed.
+    path = tmp_path / "resumed.json"
+    kill_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, kill_counter, raise_after=k)
+    with pytest.raises(_RecordingKilledError):
+        run_controlled(answers_path=str(path), **_common(bench, settings))
+    resume_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, resume_counter)
+    resumed = run_controlled(answers_path=str(path), **_common(bench, settings))
+    resumed_record = json.loads(path.read_text(encoding="utf-8"))
+
+    # Identical FINAL RECORDS (timing-free by construction).
+    assert resumed_record == clean_record
+    # Identical REPORTS modulo per-arm wall-clock (a non-semantic nuisance field).
+    assert _record_no_timing(resumed) == _record_no_timing(clean)
+
+    # Spend semantics asserted EXPLICITLY (item 1b): the resumed run's measured spend is
+    # the total cost of ALL answers, equal to the uninterrupted run's, NOT only the
+    # n_distinct - k pairs it personally billed.
+    assert resumed["total_measured_spend_usd"] == clean["total_measured_spend_usd"]
+    assert resumed["real_teacher_calls"] == clean["real_teacher_calls"] == n_distinct
+    # The record self-documents which meaning the number carries.
+    assert resumed_record["spend_semantics"] == rkc.SPEND_SEMANTICS
+
+
+# ------------------------------------------------------ 4. a crash mid-write is survivable
+def test_crash_mid_write_drops_the_damaged_tail_only(tmp_path, monkeypatch) -> None:
+    bench, settings = _tiny_bench(), _oracle_settings()
+
+    clean_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, clean_counter)
+    clean = run_controlled(answers_path=str(tmp_path / "clean.json"), **_common(bench, settings))
+    clean_record = json.loads((tmp_path / "clean.json").read_text(encoding="utf-8"))
+    n_distinct = clean["distinct_queries"]
+    k = n_distinct // 2
+
+    # Kill after k -> a clean k-line sidecar.
+    path = tmp_path / "answers.json"
+    kill_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, kill_counter, raise_after=k)
+    with pytest.raises(_RecordingKilledError):
+        run_controlled(answers_path=str(path), **_common(bench, settings))
+    partial_path = rkc._partial_log_path(str(path))
+
+    # Simulate a crash MID-WRITE of the (k+1)-th answer: a truncated, newline-less partial
+    # JSON line appended after the k durable ones.
+    with partial_path.open("a", encoding="utf-8") as fh:
+        fh.write('{"head": "Mx", "relation": "directed_by", "answers": ["D')
+
+    # The tolerant loader keeps exactly the k intact answers and drops the damaged tail;
+    # the half-written pair is NOT accepted as an answer.
+    header, rows = rkc._AnswerLog(partial_path).read()
+    assert header["schema"] == rkc.ANSWERS_RECORD_SCHEMA
+    assert len(rows) == k
+    assert ("Mx", "directed_by") not in {(r["head"], r["relation"]) for r in rows}
+
+    # Resume: re-buys ONLY the pairs the intact prefix lacks, and the completed record is
+    # byte-identical to the uninterrupted one (no corruption leaked in).
+    resume_counter = _fresh_counter()
+    _install_counting_teacher(monkeypatch, resume_counter)
+    run_controlled(answers_path=str(path), **_common(bench, settings))
+    assert resume_counter["calls"] == n_distinct - k
+    assert json.loads(path.read_text(encoding="utf-8")) == clean_record
+
+
+# --------------------------------- 4b. corruption in the MIDDLE is loud, never silently skipped
+def test_corrupt_middle_line_is_loud_not_silently_skipped(tmp_path) -> None:
+    log = rkc._AnswerLog(rkc._partial_log_path(str(tmp_path / "answers.json")))
+    log.start({"schema": rkc.ANSWERS_RECORD_SCHEMA, "provenance": {"seed": 0}})
+    log.append("M0", "directed_by", ["D0"], 0.01, None)
+    # A corrupt but newline-terminated line BEFORE a valid one is mid-file corruption,
+    # which must fail loudly rather than be dropped like a truncated tail.
+    with log.path.open("a", encoding="utf-8") as fh:
+        fh.write("NOT-JSON\n")
+    log.append("M1", "directed_by", ["D1"], 0.01, None)
+    with pytest.raises(rkc.AnswerRecordError):
+        log.read()
+
+
 if __name__ == "__main__":
     import unittest
 

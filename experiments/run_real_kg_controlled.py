@@ -114,7 +114,9 @@ class SharedAnswerCache:
     only in routing.
     """
 
-    def __init__(self, metered, guard: BudgetGuard, kg: WorldGraph) -> None:  # noqa: ANN001
+    def __init__(
+        self, metered, guard: BudgetGuard, kg: WorldGraph, *, log: _AnswerLog | None = None
+    ) -> None:  # noqa: ANN001
         self.metered = metered
         self.guard = guard
         self.kg = kg
@@ -124,16 +126,54 @@ class SharedAnswerCache:
         # no ``last_usage``), kept so a recording run can persist it for audit.
         self.usage: dict[tuple[str, str], dict | None] = {}
         self.real_calls = 0
+        # Durable append-only log: when set (a recording run), every freshly bought
+        # answer is flushed to disk BEFORE the next teacher call, so a process killed
+        # mid-record keeps every paid call.
+        self._log = log
+        # Pairs whose per-pair cost has already been charged to the shared guard in
+        # THIS process. A pair warm-loaded from a resumed log (paid for in an earlier
+        # process) starts uncharged and is charged on its first service, so a resumed
+        # run's measured spend equals an uninterrupted run's (see SPEND_SEMANTICS).
+        self._charged: set[tuple[str, str]] = set()
+
+    def warm_from_rows(self, rows: list[dict]) -> None:
+        """Pre-load answers recovered from a resumed partial log (a killed run).
+
+        These pairs were bought and paid for in an earlier process, so they are never
+        re-bought here: they populate the cache but stay UNCHARGED until first service,
+        when :meth:`answer` charges the recorded cost once (reproducing the earlier
+        bill) without calling the teacher. Insertion order follows the log, which is
+        the stream's first-appearance order, so a resumed run's final record is
+        byte-identical to an uninterrupted run's.
+        """
+        for row in rows:
+            key = (row["head"], row["relation"])
+            self.answers[key] = list(row["answers"])
+            self.cost[key] = row["cost_usd"]
+            self.usage[key] = row.get("usage")
 
     def answer(self, head: str, relation: str) -> tuple[list[str], float]:
         key = (head, relation)
-        if key not in self.answers:
-            resp = self.metered.answer(self.kg, head, relation)
-            self.answers[key] = resp.answers
-            self.cost[key] = self.metered.last_cost_usd
-            self.usage[key] = getattr(self.metered, "last_usage", None)
-            self.real_calls += 1
-            self.guard.add(self.metered.last_cost_usd)  # real spend only
+        if key in self.answers:
+            # Served earlier in this process, or warm-loaded from a resumed partial
+            # log. Charge its recorded cost to the guard exactly once (mirroring both
+            # a fresh buy and replay) so the measured bill is reproduced, never twice.
+            if key not in self._charged:
+                self._charged.add(key)
+                self.real_calls += 1
+                self.guard.add(self.cost[key])
+            return self.answers[key], self.cost[key]
+        # Cold pair: buy it, persist it durably BEFORE returning (hence before the
+        # next teacher call is issued), then charge the guard for the real spend.
+        resp = self.metered.answer(self.kg, head, relation)
+        self.answers[key] = resp.answers
+        self.cost[key] = self.metered.last_cost_usd
+        self.usage[key] = getattr(self.metered, "last_usage", None)
+        if self._log is not None:
+            self._log.append(head, relation, self.answers[key], self.cost[key], self.usage[key])
+        self._charged.add(key)
+        self.real_calls += 1
+        self.guard.add(self.metered.last_cost_usd)  # real spend only
         return self.answers[key], self.cost[key]
 
 
@@ -210,6 +250,21 @@ class ReplayAnswerCache(SharedAnswerCache):
 #: to the record layout so a stale record is rejected loudly on replay.
 ANSWERS_RECORD_SCHEMA = "tacet.controlled.answers/v1"
 
+#: What ``total_measured_spend_usd`` MEANS on a resumed run (item 1b). It is the total
+#: measured cost of every answer SERVED this run — a pair the teacher was billed for in
+#: THIS process AND a pair warm-loaded from a killed run's partial log (billed in the
+#: earlier process, replayed here at its recorded per-pair cost). So an uninterrupted
+#: run and a killed-then-resumed run that end at the same record report the SAME spend:
+#: the number is "what these answers cost in total", NOT "what this process billed".
+#: This mirrors replay, which likewise re-charges every recorded pair so the replayed
+#: bill equals the recording's. The constant is stamped into the record so the artifact
+#: itself states which meaning the number carries.
+SPEND_SEMANTICS = (
+    "total measured cost of every answer served this run, including pairs warm-loaded "
+    "from a resumed partial log at their recorded per-pair cost (i.e. what these "
+    "answers cost in total, not only what this process billed to the provider)"
+)
+
 #: Stream-defining fields that MUST match for a record to be replayable: together
 #: they fix the exact ``(head, relation)`` sequence, so replaying a record made
 #: under different values would silently mismatch pairs.
@@ -231,6 +286,7 @@ def _build_answers_record(shared: SharedAnswerCache, *, provenance: dict) -> dic
     """
     return {
         "schema": ANSWERS_RECORD_SCHEMA,
+        "spend_semantics": SPEND_SEMANTICS,
         "provenance": provenance,
         "answers": [
             {
@@ -279,6 +335,162 @@ def _check_replay_provenance(
                 f"(record={recorded!r}, run={current[name]!r}). Re-record for these "
                 f"parameters or rerun with the matching {name}."
             )
+
+
+def _partial_log_path(answers_path: str) -> Path:
+    """Sidecar durable-log path for a recording run's ``answers_path``.
+
+    The canonical record at ``answers_path`` is a single JSON object written ONCE, at
+    the end, and only when the run finishes; while a run is in flight the paid answers
+    live in this append-only JSON-Lines sidecar so a killed process keeps them. Its
+    presence WITHOUT the canonical file is exactly the "this run was killed" signal the
+    next run resumes from.
+    """
+    return Path(str(answers_path) + ".partial")
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Write ``text`` to ``path`` crash-safely.
+
+    Writes the whole payload to a temp file, flushes + fsyncs it, then atomically
+    renames it over the destination (``os.replace`` is atomic on POSIX and Windows). A
+    process killed at any instant leaves EITHER the old file or the complete new one —
+    never a half-written record that later parses as valid-but-truncated.
+    """
+    tmp = Path(str(path) + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        fh.write(text)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
+
+
+class _AnswerLog:
+    """Append-only JSON-Lines write-ahead log making each paid answer durable at once.
+
+    Line 0 is a header ``{"schema", "provenance"}`` written BEFORE the first answer, so
+    a killed run's partial log is self-describing and its provenance can be validated on
+    resume. Every later line is one teacher answer, flushed + fsynced (via a fresh open
+    per append — cheap at tens of calls, and no lingering handle to lock the file for a
+    concurrent read) BEFORE the next teacher call is issued.
+
+    Crash-safety: an answer is durable IFF its line is newline-terminated. A process
+    killed mid-append leaves at most a trailing line WITHOUT its newline, which
+    :meth:`read` drops — so that pair is re-bought, never silently accepted corrupted.
+    A newline-terminated line that fails to parse is mid-file corruption and is raised
+    loudly (an intact-prefix log never has one; fsync guarantees each line is whole).
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = Path(path)
+
+    def exists(self) -> bool:
+        return self.path.exists()
+
+    def start(self, header: dict) -> None:
+        """(Re)create the log with just its header line, crash-safely."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(self.path, json.dumps(header) + "\n")
+
+    def append(self, head: str, relation: str, answers, cost, usage) -> None:  # noqa: ANN001
+        row = {
+            "head": head,
+            "relation": relation,
+            "answers": list(answers),
+            "cost_usd": cost,
+            "usage": usage,
+        }
+        with self.path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+
+    def read(self) -> tuple[dict | None, list[dict]]:
+        """Return ``(header, rows)``, dropping a truncated (newline-less) trailing line.
+
+        ``header`` is ``None`` when the log has no complete header line yet (a run
+        killed before even the header was durable); the caller then starts fresh.
+        """
+        lines = self.path.read_text(encoding="utf-8").split("\n")
+        header: dict | None = None
+        rows: list[dict] = []
+        for idx, line in enumerate(lines):
+            if idx == len(lines) - 1:
+                # The final split element is "" for a newline-terminated file, or a
+                # crash-truncated partial line — neither is a durable record.
+                break
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise AnswerRecordError(
+                    f"partial answers log {self.path} has a corrupt complete line {idx}; "
+                    f"refusing to silently drop a mid-file answer — inspect or delete it."
+                ) from exc
+            if header is None:
+                header = obj
+            else:
+                rows.append(obj)
+        return header, rows
+
+    def rewrite(self, header: dict, rows: list[dict]) -> None:
+        """Atomically rewrite the log to its intact prefix (header + ``rows``).
+
+        Used on resume to physically drop a crash-truncated trailing line before new
+        answers are appended, so the continued log never concatenates garbage onto a
+        partial line (which a second kill would otherwise leave as a corrupt full line).
+        """
+        lines = [json.dumps(header), *(json.dumps(r) for r in rows)]
+        _atomic_write_text(self.path, "\n".join(lines) + "\n")
+
+    def discard(self) -> None:
+        self.path.unlink(missing_ok=True)
+
+
+def _resume_or_start_log(
+    log: _AnswerLog,
+    provenance: dict,
+    *,
+    hop,
+    split,
+    limit,
+    zipf_a,
+    seed,
+    composed_relation,  # noqa: ANN001
+) -> list[dict]:
+    """Ready ``log`` for a recording run; return the warm rows to preload (if any).
+
+    Fresh (no sidecar): write the provenance header and return ``[]``. Resume (a killed
+    run's sidecar is present): validate its schema + provenance against this run —
+    refusing loudly on a stream-parameter mismatch, exactly as replay does — then return
+    its intact answer rows so those pairs are never re-bought. A sidecar with no durable
+    header is treated as fresh.
+    """
+    if not log.exists():
+        log.start({"schema": ANSWERS_RECORD_SCHEMA, "provenance": provenance})
+        return []
+    header, rows = log.read()
+    if header is None:
+        log.start({"schema": ANSWERS_RECORD_SCHEMA, "provenance": provenance})
+        return []
+    schema = header.get("schema")
+    if schema != ANSWERS_RECORD_SCHEMA:
+        raise AnswerRecordError(
+            f"partial answers log {log.path} has schema {schema!r} != expected "
+            f"{ANSWERS_RECORD_SCHEMA!r}; delete it to re-record from scratch."
+        )
+    _check_replay_provenance(
+        header,
+        hop=hop,
+        split=split,
+        limit=limit,
+        zipf_a=zipf_a,
+        seed=seed,
+        composed_relation=composed_relation,
+    )
+    # Normalise the sidecar to its intact prefix so continued appends never concatenate
+    # onto a crash-truncated trailing line (a second kill would otherwise corrupt it).
+    log.rewrite(header, rows)
+    return rows
 
 
 class ReplayTeacher(Teacher):
@@ -463,16 +675,25 @@ def run_controlled(
     ``answers_path`` enables an on-disk record/replay of the teacher's answers so a
     gamma sweep pays the real teacher ONCE and every gamma then replays byte-identical
     answers at zero cost (so gamma is the only variable). When it names a file that
-    does NOT exist, the run is exactly as today (the teacher is called once per
-    distinct pair) and a JSON record is written on completion. When it names a file
-    that DOES exist, the shared cache is pre-populated from it and made incapable of
-    calling the teacher: a requested pair the record lacks raises
-    :class:`MissingRecordedAnswerError` (never a silent API call), and a
-    stream-parameter mismatch (hop / split / limit / zipf_a / seed / composed_relation)
-    raises :class:`ProvenanceMismatchError`. ``None`` (the default) is exactly the
-    previous behaviour. ``recorded_at`` is stamped verbatim into the record's
-    provenance; it MUST be supplied by the caller (a Modal wrapper) — this function
-    never reads the clock itself.
+    does NOT exist, the run records: the teacher is called once per distinct pair and
+    each paid answer is flushed to an append-only JSON-Lines sidecar (see
+    :class:`_AnswerLog`) the instant it is obtained, BEFORE the next teacher call, so a
+    process killed mid-record loses no paid call. The canonical single-object record is
+    written once, atomically, only on completion. A later run with the same parameters
+    whose canonical record is still absent RESUMES from that sidecar: it warm-loads the
+    pairs already bought (never re-billing one) and calls the teacher only for the pairs
+    still missing — so a killed recording is resumable, not repeatable. When it names a
+    file that DOES exist (a completed record), the shared cache is pre-populated from it
+    and made incapable of calling the teacher: a requested pair the record lacks raises
+    :class:`MissingRecordedAnswerError` (never a silent API call), and a stream-parameter
+    mismatch (hop / split / limit / zipf_a / seed / composed_relation) raises
+    :class:`ProvenanceMismatchError` — a resumed sidecar is validated the same way.
+    ``None`` (the default) is exactly the previous behaviour. On a resume,
+    ``total_measured_spend_usd`` counts the warm-loaded pairs at their recorded cost too
+    (see :data:`SPEND_SEMANTICS`), so it always means the total cost of the answers
+    served, not merely what this process billed. ``recorded_at`` is stamped verbatim
+    into the record's provenance; it MUST be supplied by the caller (a Modal wrapper) —
+    this function never reads the clock itself.
     """
     # Replay when ``answers_path`` names an EXISTING record; record when it names a
     # not-yet-existing one; behave exactly as before when it is ``None``.
@@ -593,7 +814,45 @@ def run_controlled(
         metered = _new_metered(
             settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
         )
-        shared = SharedAnswerCache(metered, guard, bench.kg)
+        if recording:
+            # Provenance is fixed BEFORE the first teacher call so the durable log's
+            # header is written first and a killed run's partial log is validatable on
+            # resume. It is also stamped verbatim into the canonical record at the end.
+            provenance = {
+                "model": called_model,
+                "price_key": model,
+                "hop": hop,
+                "split": split,
+                "limit": limit,
+                "zipf_a": zipf_a,
+                "seed": seed,
+                "composed_relation": composed_relation,
+                "teacher_kind": settings.teacher,
+                "recorded_at": recorded_at,
+            }
+            # Durable append-only sidecar. If a prior run was killed its partial log is
+            # present: warm-load the pairs it already bought (validated against this
+            # run's provenance) so they are never re-bought, and keep appending the rest.
+            log = _AnswerLog(_partial_log_path(answers_path))
+            warm_rows = _resume_or_start_log(
+                log,
+                provenance,
+                hop=hop,
+                split=split,
+                limit=limit,
+                zipf_a=zipf_a,
+                seed=seed,
+                composed_relation=composed_relation,
+            )
+            shared = SharedAnswerCache(metered, guard, bench.kg, log=log)
+            shared.warm_from_rows(warm_rows)
+            if verbose and warm_rows:
+                print(
+                    f"  RESUME: warm-loaded {len(warm_rows)} recorded answers from "
+                    f"{log.path}; re-buying only the still-missing pairs (no re-billing)"
+                )
+        else:
+            shared = SharedAnswerCache(metered, guard, bench.kg)
 
     arms: list[dict] = []
     truncated = False
@@ -643,28 +902,21 @@ def run_controlled(
     teacher_acc, teacher_correct, teacher_total = _teacher_answer_accuracy(shared, gold_map)
 
     if recording:
-        # Persist every distinct teacher answer + its measured per-pair cost so a
-        # gamma sweep can replay them at zero cost with byte-identical behaviour.
-        provenance = {
-            "model": called_model,
-            "price_key": model,
-            "hop": hop,
-            "split": split,
-            "limit": limit,
-            "zipf_a": zipf_a,
-            "seed": seed,
-            "composed_relation": composed_relation,
-            "teacher_kind": settings.teacher,
-            "recorded_at": recorded_at,
-        }
+        # The run finished: fold every distinct teacher answer + its measured per-pair
+        # cost into the canonical single-object record and write it ONCE, atomically.
+        # Its existence (vs the sidecar's) is the "complete, replayable" signal; until
+        # now each paid answer was already durable in the JSONL sidecar, so a process
+        # killed before this point loses nothing and resumes. Discard the sidecar last,
+        # once the canonical record is on disk.
         rec = _build_answers_record(shared, provenance=provenance)
         rec_path = Path(answers_path)
         rec_path.parent.mkdir(parents=True, exist_ok=True)
-        rec_path.write_text(json.dumps(rec, indent=2), encoding="utf-8")
+        _atomic_write_text(rec_path, json.dumps(rec, indent=2))
+        log.discard()
         if verbose:
             print(
                 f"[record] wrote {len(rec['answers'])} teacher answers to {answers_path}: "
-                f"{shared.real_calls} real teacher calls, "
+                f"{shared.real_calls} distinct pairs, "
                 f"total measured spend ${guard.spent_usd:.4f}"
             )
 
@@ -738,6 +990,9 @@ def run_controlled(
         "teacher_answers_total": teacher_total,
         "real_teacher_calls": shared.real_calls,
         "truncated_by_budget": truncated,
+        # See SPEND_SEMANTICS: the total measured cost of every answer served this run,
+        # so a resumed run reports the same figure as an uninterrupted one — never only
+        # what this process billed.
         "total_measured_spend_usd": round(guard.spent_usd, 6),
         "arms": arms,
         "verdict": verdict,
