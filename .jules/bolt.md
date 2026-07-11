@@ -4,3 +4,6 @@
 ## 2024-07-01 - Optimize path-mining for rule synthesis
 **Learning:** In `src/tacet/distill/distill.py`, `mine_rules_with_stats` used to reconstruct adjacency maps $O(|R|^2)$ times within nested loops while proposing length-2 Horn rules. By pre-computing these maps once outside the loop and additionally filtering head entities earlier rather than via a delayed set intersection, the time on a dense benchmark graph decreased from 3.47s to 0.73s.
 **Action:** When evaluating graph combinations ($R_1 \land R_2$) in a combinatorial loop, always lift structural calculations (like direct and inverse adjacency maps) to the top of the loop hierarchy.
+## 2024-07-11 - [O(N) to O(1) Edge Insertion]
+**Learning:** In `WorldGraph` (src/tacet/core/graph.py), the `add_edge` method iterated linearly over `self._edges` for every new edge when its triple was already in `self._triple_set`. For a large graph or continuous stream of updates to existing edges, this caused O(N^2) insertion times.
+**Action:** Replaced `self._triple_set` with `self._triple_to_edge`, a dictionary mapping a `Triple` to its `Edge` instance, allowing O(1) edge retrieval and updates.
