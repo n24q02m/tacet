@@ -232,8 +232,7 @@ def _print_cliff_table(cliffs: list[dict]) -> None:
 def _print_localisation_table(locs: list[dict]) -> None:
     print("  localisation  (real teacher vs oracle i.i.d.-noise curve at matched accuracy)")
     print(
-        f"    {'slug':>16} {'gamma':>5} {'real_acc':>8} {'real_p':>7} "
-        f"{'oracle_p':>8} {'delta':>8}"
+        f"    {'slug':>16} {'gamma':>5} {'real_acc':>8} {'real_p':>7} {'oracle_p':>8} {'delta':>8}"
     )
     for r in locs:
         d = r["delta"]
