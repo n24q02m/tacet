@@ -326,6 +326,10 @@ def build_app(
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        # Conditionally apply CSP to non-documentation endpoints
+        if not request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
+            csp = "default-src 'none'; frame-ancestors 'none'"
+            response.headers["Content-Security-Policy"] = csp
         return response
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
