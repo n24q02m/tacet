@@ -19,9 +19,21 @@ its *cross-arm accuracy* comparison (the cost comparison was always valid):
    the measured per-pair cost; real API spend is one call per distinct pair
    (so this controlled run is also far cheaper than the original).
 
+A free ``TACET_TEACHER=oracle`` mode reuses the identical controlled design with a
+ground-truth (optionally noisy) oracle instead of Grok: it costs $0, so the
+imperfect-teacher noise sweep (``run_oracle_noise_sweep.py``, research entry E11)
+and the real-teacher measurement now live under ONE design. In oracle mode the
+decisive metric is the per-arm teacher **call count** (measured USD is 0 for
+every arm by construction); ``TACET_ORACLE_ERROR_RATE`` dials the corruption.
+
 Run::
 
+    # real teacher
     export TACET_TEACHER=grok TACET_XAI_API_KEY=<key> TACET_KGE_BACKEND=numpy
+    uv run python experiments/run_real_kg_controlled.py --hop 1 --seed 0
+
+    # free (noisy) oracle
+    export TACET_TEACHER=oracle TACET_ORACLE_ERROR_RATE=0.2
     uv run python experiments/run_real_kg_controlled.py --hop 1 --seed 0
 """
 
@@ -32,6 +44,7 @@ import json
 import os
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
@@ -50,19 +63,36 @@ from run_real_kg_amortization import (  # noqa: E402
     _build_workload,
     _kg_without,
     _new_metered,
+    _oracle_gold_from_pool,
     _zipf_stream,
+    resolve_price_key,
 )
+from run_rule_precision import remine_installed_rules  # noqa: E402
 
 from tacet.cascade.router import TACET  # noqa: E402
 from tacet.core.graph import WorldGraph  # noqa: E402
 from tacet.core.ontology import Ontology, RelationType  # noqa: E402
 from tacet.data.metaqa import load_metaqa  # noqa: E402
+from tacet.eval.rule_precision import rule_world_precision  # noqa: E402
 from tacet.llm.teacher import Teacher, TeacherResponse  # noqa: E402
 from tacet.serve.config import CascadeConfig, KGEConfig  # noqa: E402
 from tacet.serve.settings import load_settings  # noqa: E402
 
 #: Confidence is a probability in [0, 1]; a threshold above 1 disables Tier-2.
 TIER2_OFF = 1.01
+
+
+def _cell_valid(full_accuracy: float, cache_accuracy: float) -> bool:
+    """One-sided E11 validity: the rule (full) arm did NOT make accuracy worse.
+
+    A cell is VALID iff ``full_accuracy >= cache_accuracy - 1e-9``. This is
+    deliberately one-sided (pre-registered): a rule arm that is MORE accurate than
+    the replayed cache — it answers from the Datalog closure and repairs a
+    corrupted teacher answer the cache replays verbatim — is a valid, reportable
+    win, not a mismatch. It is distinct from the symmetric ``accuracy_matched``
+    diagnostic (``abs(full - cache) < 1e-9``), which is kept but no longer gates.
+    """
+    return full_accuracy >= cache_accuracy - 1e-9
 
 
 def _line(r: dict) -> str:
@@ -84,23 +114,383 @@ class SharedAnswerCache:
     only in routing.
     """
 
-    def __init__(self, metered, guard: BudgetGuard, kg: WorldGraph) -> None:  # noqa: ANN001
+    def __init__(
+        self, metered, guard: BudgetGuard, kg: WorldGraph, *, log: _AnswerLog | None = None
+    ) -> None:  # noqa: ANN001
         self.metered = metered
         self.guard = guard
         self.kg = kg
         self.answers: dict[tuple[str, str], list[str]] = {}
         self.cost: dict[tuple[str, str], float] = {}
+        # Raw provider usage per distinct pair (``None`` when the teacher exposes
+        # no ``last_usage``), kept so a recording run can persist it for audit.
+        self.usage: dict[tuple[str, str], dict | None] = {}
         self.real_calls = 0
+        # Durable append-only log: when set (a recording run), every freshly bought
+        # answer is flushed to disk BEFORE the next teacher call, so a process killed
+        # mid-record keeps every paid call.
+        self._log = log
+        # Pairs whose per-pair cost has already been charged to the shared guard in
+        # THIS process. A pair warm-loaded from a resumed log (paid for in an earlier
+        # process) starts uncharged and is charged on its first service, so a resumed
+        # run's measured spend equals an uninterrupted run's (see SPEND_SEMANTICS).
+        self._charged: set[tuple[str, str]] = set()
+
+    def warm_from_rows(self, rows: list[dict]) -> None:
+        """Pre-load answers recovered from a resumed partial log (a killed run).
+
+        These pairs were bought and paid for in an earlier process, so they are never
+        re-bought here: they populate the cache but stay UNCHARGED until first service,
+        when :meth:`answer` charges the recorded cost once (reproducing the earlier
+        bill) without calling the teacher. Insertion order follows the log, which is
+        the stream's first-appearance order, so a resumed run's final record is
+        byte-identical to an uninterrupted run's.
+        """
+        for row in rows:
+            key = (row["head"], row["relation"])
+            self.answers[key] = list(row["answers"])
+            self.cost[key] = row["cost_usd"]
+            self.usage[key] = row.get("usage")
+
+    def answer(self, head: str, relation: str) -> tuple[list[str], float]:
+        key = (head, relation)
+        if key in self.answers:
+            # Served earlier in this process, or warm-loaded from a resumed partial
+            # log. Charge its recorded cost to the guard exactly once (mirroring both
+            # a fresh buy and replay) so the measured bill is reproduced, never twice.
+            if key not in self._charged:
+                self._charged.add(key)
+                self.real_calls += 1
+                self.guard.add(self.cost[key])
+            return self.answers[key], self.cost[key]
+        # Cold pair: buy it, persist it durably BEFORE returning (hence before the
+        # next teacher call is issued), then charge the guard for the real spend.
+        resp = self.metered.answer(self.kg, head, relation)
+        self.answers[key] = resp.answers
+        self.cost[key] = self.metered.last_cost_usd
+        self.usage[key] = getattr(self.metered, "last_usage", None)
+        if self._log is not None:
+            self._log.append(head, relation, self.answers[key], self.cost[key], self.usage[key])
+        self._charged.add(key)
+        self.real_calls += 1
+        self.guard.add(self.metered.last_cost_usd)  # real spend only
+        return self.answers[key], self.cost[key]
+
+
+class AnswerRecordError(RuntimeError):
+    """Integrity failure while replaying an on-disk teacher-answer record.
+
+    Base of the two loud-failure modes the record/replay layer exists to force: a
+    provenance mismatch (:class:`ProvenanceMismatchError`) and a missing pair
+    (:class:`MissingRecordedAnswerError`). Both refuse to fall back to a real
+    teacher call — a silent fallback is exactly the failure mode this design
+    prevents (it would pay the API again and make the answers non-identical).
+    """
+
+
+class ProvenanceMismatchError(AnswerRecordError):
+    """The record was made under different stream parameters than this run."""
+
+
+class MissingRecordedAnswerError(AnswerRecordError):
+    """The record lacks a ``(head, relation)`` the current stream requested."""
+
+
+class ReplayAnswerCache(SharedAnswerCache):
+    """A :class:`SharedAnswerCache` pre-populated from a record, teacher-incapable.
+
+    Built from a previously written answers record (see :func:`_build_answers_record`),
+    it serves every ``(head, relation)`` from disk and holds no ``metered`` teacher,
+    so it can NEVER make an API call. To reproduce the recording run's metered bill
+    byte-for-byte it charges the shared :class:`BudgetGuard` the recorded per-pair
+    cost on the FIRST request for each pair — mirroring
+    :meth:`SharedAnswerCache.answer`, which charges once per distinct pair — so the
+    replayed ``total_measured_spend_usd`` equals the recording's exactly. A pair
+    absent from the record raises :class:`MissingRecordedAnswerError` instead of
+    silently escalating to a real teacher call.
+    """
+
+    def __init__(self, guard: BudgetGuard, kg: WorldGraph, answers, cost, usage) -> None:  # noqa: ANN001
+        super().__init__(None, guard, kg)
+        self.answers = answers
+        self.cost = cost
+        self.usage = usage
+        self._served: set[tuple[str, str]] = set()
+
+    @classmethod
+    def from_record(cls, record: dict, guard: BudgetGuard, kg: WorldGraph) -> ReplayAnswerCache:
+        answers: dict[tuple[str, str], list[str]] = {}
+        cost: dict[tuple[str, str], float] = {}
+        usage: dict[tuple[str, str], dict | None] = {}
+        for row in record.get("answers", []):
+            key = (row["head"], row["relation"])
+            answers[key] = list(row["answers"])
+            cost[key] = row["cost_usd"]
+            usage[key] = row.get("usage")
+        return cls(guard, kg, answers, cost, usage)
 
     def answer(self, head: str, relation: str) -> tuple[list[str], float]:
         key = (head, relation)
         if key not in self.answers:
-            resp = self.metered.answer(self.kg, head, relation)
-            self.answers[key] = resp.answers
-            self.cost[key] = self.metered.last_cost_usd
+            raise MissingRecordedAnswerError(
+                f"replayed answers record has no teacher answer for pair "
+                f"(head={head!r}, relation={relation!r}); refusing to fall back to a "
+                f"real teacher call. Re-record with the current stream parameters."
+            )
+        if key not in self._served:
+            self._served.add(key)
             self.real_calls += 1
-            self.guard.add(self.metered.last_cost_usd)  # real spend only
+            # Charge the recorded cost once per distinct pair, exactly as the
+            # recording run did, so the guard's measured spend is reproduced.
+            self.guard.add(self.cost[key])
         return self.answers[key], self.cost[key]
+
+
+#: Version tag stamped into every on-disk answers record; bump on a breaking change
+#: to the record layout so a stale record is rejected loudly on replay.
+ANSWERS_RECORD_SCHEMA = "tacet.controlled.answers/v1"
+
+#: What ``total_measured_spend_usd`` MEANS on a resumed run (item 1b). It is the total
+#: measured cost of every answer SERVED this run — a pair the teacher was billed for in
+#: THIS process AND a pair warm-loaded from a killed run's partial log (billed in the
+#: earlier process, replayed here at its recorded per-pair cost). So an uninterrupted
+#: run and a killed-then-resumed run that end at the same record report the SAME spend:
+#: the number is "what these answers cost in total", NOT "what this process billed".
+#: This mirrors replay, which likewise re-charges every recorded pair so the replayed
+#: bill equals the recording's. The constant is stamped into the record so the artifact
+#: itself states which meaning the number carries.
+SPEND_SEMANTICS = (
+    "total measured cost of every answer served this run, including pairs warm-loaded "
+    "from a resumed partial log at their recorded per-pair cost (i.e. what these "
+    "answers cost in total, not only what this process billed to the provider)"
+)
+
+#: Stream-defining fields that MUST match for a record to be replayable: together
+#: they fix the exact ``(head, relation)`` sequence, so replaying a record made
+#: under different values would silently mismatch pairs.
+_REPLAY_PROVENANCE_FIELDS = ("hop", "split", "limit", "zipf_a", "seed", "composed_relation")
+
+
+def _load_answers_record(path: str) -> dict:
+    """Read and JSON-parse an answers record from disk."""
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _build_answers_record(shared: SharedAnswerCache, *, provenance: dict) -> dict:
+    """Serialise the shared cache's answers + costs + provider usage into a record.
+
+    ``answers`` follows the cache's insertion order (deterministic given the stream).
+    Each row carries the per-pair ``cost_usd`` exactly as the cache recorded it and
+    the raw provider ``usage`` dict when the teacher exposed one, so a replay
+    reproduces the metered bill without re-calling and stays auditable later.
+    """
+    return {
+        "schema": ANSWERS_RECORD_SCHEMA,
+        "spend_semantics": SPEND_SEMANTICS,
+        "provenance": provenance,
+        "answers": [
+            {
+                "head": h,
+                "relation": r,
+                "answers": list(shared.answers[(h, r)]),
+                "cost_usd": shared.cost[(h, r)],
+                "usage": shared.usage.get((h, r)),
+            }
+            for (h, r) in shared.answers
+        ],
+    }
+
+
+def _check_replay_provenance(
+    record: dict,
+    *,
+    hop,
+    split,
+    limit,
+    zipf_a,
+    seed,
+    composed_relation,  # noqa: ANN001
+) -> None:
+    """Refuse to replay a record made under different stream parameters.
+
+    Compares every :data:`_REPLAY_PROVENANCE_FIELDS` value in the record against the
+    current run and raises :class:`ProvenanceMismatchError` naming the FIRST field
+    that differs. These fields fix the exact ``(head, relation)`` stream, so a
+    mismatch would replay the wrong answers against the wrong pairs.
+    """
+    prov = record.get("provenance", {})
+    current = {
+        "hop": hop,
+        "split": split,
+        "limit": limit,
+        "zipf_a": zipf_a,
+        "seed": seed,
+        "composed_relation": composed_relation,
+    }
+    for name in _REPLAY_PROVENANCE_FIELDS:
+        recorded = prov.get(name)
+        if recorded != current[name]:
+            raise ProvenanceMismatchError(
+                f"answers record cannot be replayed: provenance field {name!r} differs "
+                f"(record={recorded!r}, run={current[name]!r}). Re-record for these "
+                f"parameters or rerun with the matching {name}."
+            )
+
+
+def _partial_log_path(answers_path: str) -> Path:
+    """Sidecar durable-log path for a recording run's ``answers_path``.
+
+    The canonical record at ``answers_path`` is a single JSON object written ONCE, at
+    the end, and only when the run finishes; while a run is in flight the paid answers
+    live in this append-only JSON-Lines sidecar so a killed process keeps them. Its
+    presence WITHOUT the canonical file is exactly the "this run was killed" signal the
+    next run resumes from.
+    """
+    return Path(str(answers_path) + ".partial")
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Write ``text`` to ``path`` crash-safely.
+
+    Writes the whole payload to a temp file, flushes + fsyncs it, then atomically
+    renames it over the destination (``os.replace`` is atomic on POSIX and Windows). A
+    process killed at any instant leaves EITHER the old file or the complete new one —
+    never a half-written record that later parses as valid-but-truncated.
+    """
+    tmp = Path(str(path) + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        fh.write(text)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
+
+
+class _AnswerLog:
+    """Append-only JSON-Lines write-ahead log making each paid answer durable at once.
+
+    Line 0 is a header ``{"schema", "provenance"}`` written BEFORE the first answer, so
+    a killed run's partial log is self-describing and its provenance can be validated on
+    resume. Every later line is one teacher answer, flushed + fsynced (via a fresh open
+    per append — cheap at tens of calls, and no lingering handle to lock the file for a
+    concurrent read) BEFORE the next teacher call is issued.
+
+    Crash-safety: an answer is durable IFF its line is newline-terminated. A process
+    killed mid-append leaves at most a trailing line WITHOUT its newline, which
+    :meth:`read` drops — so that pair is re-bought, never silently accepted corrupted.
+    A newline-terminated line that fails to parse is mid-file corruption and is raised
+    loudly (an intact-prefix log never has one; fsync guarantees each line is whole).
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = Path(path)
+
+    def exists(self) -> bool:
+        return self.path.exists()
+
+    def start(self, header: dict) -> None:
+        """(Re)create the log with just its header line, crash-safely."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(self.path, json.dumps(header) + "\n")
+
+    def append(self, head: str, relation: str, answers, cost, usage) -> None:  # noqa: ANN001
+        row = {
+            "head": head,
+            "relation": relation,
+            "answers": list(answers),
+            "cost_usd": cost,
+            "usage": usage,
+        }
+        with self.path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+
+    def read(self) -> tuple[dict | None, list[dict]]:
+        """Return ``(header, rows)``, dropping a truncated (newline-less) trailing line.
+
+        ``header`` is ``None`` when the log has no complete header line yet (a run
+        killed before even the header was durable); the caller then starts fresh.
+        """
+        lines = self.path.read_text(encoding="utf-8").split("\n")
+        header: dict | None = None
+        rows: list[dict] = []
+        for idx, line in enumerate(lines):
+            if idx == len(lines) - 1:
+                # The final split element is "" for a newline-terminated file, or a
+                # crash-truncated partial line — neither is a durable record.
+                break
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise AnswerRecordError(
+                    f"partial answers log {self.path} has a corrupt complete line {idx}; "
+                    f"refusing to silently drop a mid-file answer — inspect or delete it."
+                ) from exc
+            if header is None:
+                header = obj
+            else:
+                rows.append(obj)
+        return header, rows
+
+    def rewrite(self, header: dict, rows: list[dict]) -> None:
+        """Atomically rewrite the log to its intact prefix (header + ``rows``).
+
+        Used on resume to physically drop a crash-truncated trailing line before new
+        answers are appended, so the continued log never concatenates garbage onto a
+        partial line (which a second kill would otherwise leave as a corrupt full line).
+        """
+        lines = [json.dumps(header), *(json.dumps(r) for r in rows)]
+        _atomic_write_text(self.path, "\n".join(lines) + "\n")
+
+    def discard(self) -> None:
+        self.path.unlink(missing_ok=True)
+
+
+def _resume_or_start_log(
+    log: _AnswerLog,
+    provenance: dict,
+    *,
+    hop,
+    split,
+    limit,
+    zipf_a,
+    seed,
+    composed_relation,  # noqa: ANN001
+) -> list[dict]:
+    """Ready ``log`` for a recording run; return the warm rows to preload (if any).
+
+    Fresh (no sidecar): write the provenance header and return ``[]``. Resume (a killed
+    run's sidecar is present): validate its schema + provenance against this run —
+    refusing loudly on a stream-parameter mismatch, exactly as replay does — then return
+    its intact answer rows so those pairs are never re-bought. A sidecar with no durable
+    header is treated as fresh.
+    """
+    if not log.exists():
+        log.start({"schema": ANSWERS_RECORD_SCHEMA, "provenance": provenance})
+        return []
+    header, rows = log.read()
+    if header is None:
+        log.start({"schema": ANSWERS_RECORD_SCHEMA, "provenance": provenance})
+        return []
+    schema = header.get("schema")
+    if schema != ANSWERS_RECORD_SCHEMA:
+        raise AnswerRecordError(
+            f"partial answers log {log.path} has schema {schema!r} != expected "
+            f"{ANSWERS_RECORD_SCHEMA!r}; delete it to re-record from scratch."
+        )
+    _check_replay_provenance(
+        header,
+        hop=hop,
+        split=split,
+        limit=limit,
+        zipf_a=zipf_a,
+        seed=seed,
+        composed_relation=composed_relation,
+    )
+    # Normalise the sidecar to its intact prefix so continued appends never concatenate
+    # onto a crash-truncated trailing line (a second kill would otherwise corrupt it).
+    log.rewrite(header, rows)
+    return rows
 
 
 class ReplayTeacher(Teacher):
@@ -143,7 +533,7 @@ def _replay_llm_only(stream, shared: SharedAnswerCache) -> dict:  # noqa: ANN001
     }
 
 
-def _replay_cascade(name, stream, bench, ontology, shared, cfg) -> dict:  # noqa: ANN001
+def _replay_cascade(name, stream, bench, ontology, shared, cfg, gt_graph=None) -> dict:  # noqa: ANN001
     replay = ReplayTeacher(shared)
     ak = TACET(_kg_without(bench, stream), ontology, replay, config=cfg)
     ak.warmup()
@@ -155,7 +545,7 @@ def _replay_cascade(name, stream, bench, ontology, shared, cfg) -> dict:  # noqa
         correct += int(_accuracy(gold, ans.answers))
         tiers[ans.tier] = tiers.get(ans.tier, 0) + 1
     n = len(stream)
-    return {
+    result = {
         "arm": name,
         "n": n,
         "total_cost_usd": round(replay.total_cost, 6),
@@ -166,51 +556,210 @@ def _replay_cascade(name, stream, bench, ontology, shared, cfg) -> dict:  # noqa
         "synthesised_rules": list(ak.synthesised_rules),
         "wallclock_s": round(time.time() - t0, 1),
     }
-
-
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--metaqa-root", default="data/MetaQA")
-    ap.add_argument("--hop", type=int, default=1)
-    ap.add_argument("--split", default="test")
-    ap.add_argument("--limit", type=int, default=300)
-    ap.add_argument("--zipf-a", type=float, default=1.5)
-    ap.add_argument("--budget-usd", type=float, default=1.5)
-    ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--composition", default=None, choices=sorted(COMPOSITIONS))
-    ap.add_argument("--out", default="experiments/results/real_kg_controlled.json")
-    args = ap.parse_args()
-
-    model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
-    rng = np.random.default_rng(args.seed)
-    print(f"[cap] {args.limit} queries; hard budget ${args.budget_usd:.2f}; Tier-2 DISABLED")
-    bench = load_metaqa(args.metaqa_root, hop=1, split=args.split)
-    print(f"  kg stats: {bench.stats()}")
-
-    settings = load_settings()
-    if settings.teacher == "oracle" or not settings.xai_api_key:
-        raise SystemExit(
-            "controlled run needs a real teacher: TACET_TEACHER=grok + TACET_XAI_API_KEY"
+    # When a ground-truth graph is supplied (the full-distillation arm), score the
+    # installed rules' world precision — re-mining the SAME machinery as
+    # run_rule_precision — so "a lower gamma installs more rules" cannot masquerade
+    # as a win: a spurious rule scores low. ``None`` when no rule installed.
+    if gt_graph is not None:
+        installed, _ = remine_installed_rules(ak)
+        precisions = [rule_world_precision(m.rule, gt_graph) for m in installed]
+        result["rule_world_precision"] = (
+            round(sum(precisions) / len(precisions), 4) if precisions else None
         )
-    print(f"  teacher=grok model={settings.xai_model} (priced as {model})")
+    return result
+
+
+def _teacher_answer_accuracy(
+    shared: SharedAnswerCache, gold_map: dict[str, frozenset[str]]
+) -> tuple[float, int, int]:
+    """The teacher's OWN answer accuracy over the distinct pairs it answered.
+
+    Computed exactly from the shared cache and the known gold: a cached answer is
+    correct iff it is non-empty and every entity it returned is a true gold tail
+    (``set(answer) <= gold``). That reproduces :class:`OracleTeacher`'s ``correct``
+    bookkeeping (an uncorrupted answer is the full gold set; a corrupted answer is
+    a single entity, correct only if it happens to be in gold) WITHOUT touching the
+    teacher's RNG. It is the curve's x-axis for the E11 noise sweep and is NOT
+    ``1 - error_rate``: ``error_rate`` is a per-key corruption *probability* (the
+    realised fraction differs on a finite workload), and a corrupted answer can
+    coincidentally still be a real gold tail, so it counts as correct here.
+
+    Returns ``(accuracy, n_correct, n_pairs)``.
+    """
+    correct = 0
+    total = 0
+    for (h, r), ans in shared.answers.items():
+        gold = gold_map.get(f"{h}\t{r}")
+        if not gold:
+            continue
+        total += 1
+        aset = set(ans)
+        if aset and aset <= set(gold):
+            correct += 1
+    return (round(correct / total, 6) if total else 0.0, correct, total)
+
+
+def _scoring_graph(
+    kg: WorldGraph,
+    hop: int,
+    pool_gold: dict[str, frozenset[str]],
+    composed_gold: dict[str, set[str]] | None,
+    composed_relation: str | None,
+) -> WorldGraph:
+    """Full ground-truth graph for scoring an installed rule's world precision.
+
+    ``rule_world_precision`` fires the rule body over EVERY entity in this graph
+    and checks each ``(x, y)`` against the head relation's edges here, so the head
+    side must be as complete as the body side or the ratio collapses.
+
+    * ``hop == 1``: the head relations are real KB relations, so ``kg`` already
+      holds every ``(head, relation) -> tail`` edge over all entities; the pool
+      ``pool_gold`` is a subset of those edges, so re-adding it is a no-op and the
+      graph is the KB itself (behaviour unchanged from before this fix).
+    * ``hop >= 2``: the composed relation is synthetic (absent from ``kg``), so its
+      edges must be materialised — from the COMPLETE ``composed_gold`` map (every
+      head, the full ``_compose_gold`` output), NOT the pool subset. The pool is a
+      shuffled, ``max_answer``-filtered, truncated slice of heads, so materialising
+      only its composed edges leaves the head side sparse while the body fires
+      across the whole KB, degenerating the precision even for a perfect oracle.
+    """
+    gt = kg.copy()
+    if hop == 1:
+        for key, tails in pool_gold.items():
+            h, r = key.split("\t", 1)
+            for t in tails:
+                gt.add_edge(h, r, t)
+    else:
+        for h, tails in (composed_gold or {}).items():
+            for t in tails:
+                gt.add_edge(h, composed_relation, t)
+    return gt
+
+
+def run_controlled(
+    *,
+    metaqa_root: str = "data/MetaQA",
+    hop: int = 1,
+    split: str = "test",
+    limit: int = 300,
+    zipf_a: float = 1.5,
+    budget_usd: float = 1.5,
+    seed: int = 0,
+    composition: str | None = None,
+    oracle_error_rate: float = 0.0,
+    gamma: float = 0.95,
+    answers_path: str | None = None,
+    recorded_at: str | None = None,
+    settings=None,  # noqa: ANN001
+    bench=None,  # noqa: ANN001
+    verbose: bool = True,
+) -> dict:
+    """Run the controlled cost-at-matched-accuracy pipeline and return its report.
+
+    The importable core of this module: ``main()`` is a thin argparse wrapper over
+    it, and ``run_oracle_noise_sweep.sweep`` calls it once per (error_rate, seed)
+    cell (loading the MetaQA bench ONCE and passing it in via ``bench``). ``bench``
+    and ``settings`` are injectable so the sweep can share them and the tests can
+    drive the pipeline on a tiny synthetic KG without MetaQA. With
+    ``settings.teacher == "oracle"`` the single teacher feeding the shared cache is
+    a free (optionally noisy) ground-truth oracle, so ``TACET_TEACHER=oracle``
+    works; ``oracle_error_rate`` is the corruption dial.
+
+    ``gamma`` is the rule-miner confidence threshold (``CascadeConfig.min_confidence``)
+    for the full-distillation arm; its default equals the library default (0.95),
+    so the report is byte-identical to before when left unset. The E11 2-D sweep
+    dials it down to test H2 (the imperfect-teacher cliff tracks gamma). The cache
+    arm has ``rule_synthesis=False``, so gamma is irrelevant there and it is left
+    untouched.
+
+    ``answers_path`` enables an on-disk record/replay of the teacher's answers so a
+    gamma sweep pays the real teacher ONCE and every gamma then replays byte-identical
+    answers at zero cost (so gamma is the only variable). When it names a file that
+    does NOT exist, the run records: the teacher is called once per distinct pair and
+    each paid answer is flushed to an append-only JSON-Lines sidecar (see
+    :class:`_AnswerLog`) the instant it is obtained, BEFORE the next teacher call, so a
+    process killed mid-record loses no paid call. The canonical single-object record is
+    written once, atomically, only on completion. A later run with the same parameters
+    whose canonical record is still absent RESUMES from that sidecar: it warm-loads the
+    pairs already bought (never re-billing one) and calls the teacher only for the pairs
+    still missing — so a killed recording is resumable, not repeatable. When it names a
+    file that DOES exist (a completed record), the shared cache is pre-populated from it
+    and made incapable of calling the teacher: a requested pair the record lacks raises
+    :class:`MissingRecordedAnswerError` (never a silent API call), and a stream-parameter
+    mismatch (hop / split / limit / zipf_a / seed / composed_relation) raises
+    :class:`ProvenanceMismatchError` — a resumed sidecar is validated the same way.
+    ``None`` (the default) is exactly the previous behaviour. On a resume,
+    ``total_measured_spend_usd`` counts the warm-loaded pairs at their recorded cost too
+    (see :data:`SPEND_SEMANTICS`), so it always means the total cost of the answers
+    served, not merely what this process billed. ``recorded_at`` is stamped verbatim
+    into the record's provenance; it MUST be supplied by the caller (a Modal wrapper) —
+    this function never reads the clock itself.
+    """
+    # Replay when ``answers_path`` names an EXISTING record; record when it names a
+    # not-yet-existing one; behave exactly as before when it is ``None``.
+    replay_mode = answers_path is not None and Path(answers_path).exists()
+    recording = answers_path is not None and not replay_mode
+    rng = np.random.default_rng(seed)
+    if settings is None:
+        settings = load_settings()
+    if bench is None:
+        bench = load_metaqa(metaqa_root, hop=1, split=split)
+    oracle_mode = settings.teacher == "oracle"
+    openrouter_mode = getattr(settings, "teacher", None) == "openrouter"
+    # Price key: an explicit TACET_PRICE_MODEL wins; else the OpenRouter teacher
+    # derives it from its slug (so it need not be set by hand); else grok-4.3.
+    model = resolve_price_key(settings)
+    # The model actually called (for logs / provenance / report labels): the
+    # OpenRouter slug for an openrouter run, else the xAI model.
+    called_model = settings.openrouter_model if openrouter_mode else settings.xai_model
+    if verbose:
+        print(f"[cap] {limit} queries; hard budget ${budget_usd:.2f}; Tier-2 DISABLED")
+        print(f"  kg stats: {bench.stats()}")
+
+    if replay_mode:
+        if verbose:
+            print(f"  teacher=REPLAY (answers served from {answers_path}; no API calls)")
+    elif oracle_mode:
+        if verbose:
+            print("  teacher=ORACLE (ground-truth, $0, instant) — mechanism/noise test, no cost")
+    else:
+        key = (
+            getattr(settings, "openrouter_api_key", None)
+            if openrouter_mode
+            else getattr(settings, "xai_api_key", None)
+        )
+        if not key:
+            raise SystemExit(
+                "controlled run needs a teacher: TACET_TEACHER=grok + TACET_XAI_API_KEY, "
+                "TACET_TEACHER=openrouter + TACET_OPENROUTER_API_KEY, "
+                "or TACET_TEACHER=oracle for the free (noisy) oracle mode"
+            )
+        if verbose:
+            print(f"  teacher={settings.teacher} model={called_model} (priced as {model})")
 
     nl_template = None
     composed_relation = None
-    if args.hop == 1:
-        pool = _build_workload(bench, limit_pool=max(args.limit, 400), rng=rng)
+    # The complete composed-relation gold (every head), materialised into the
+    # scoring graph for hop>=2; None for hop==1 (no composed relation).
+    full_composed_gold: dict[str, set[str]] | None = None
+    if hop == 1:
+        pool = _build_workload(bench, limit_pool=max(limit, 400), rng=rng)
         ontology = Ontology.induce(bench.kg)
     else:
-        comp_name = args.composition or next(
-            (k for k, v in COMPOSITIONS.items() if v.get("hop") == args.hop), None
+        comp_name = composition or next(
+            (k for k, v in COMPOSITIONS.items() if v.get("hop") == hop), None
         )
         if comp_name is None:
-            raise SystemExit(f"no composition for hop={args.hop}")
+            raise SystemExit(f"no composition for hop={hop}")
         spec = COMPOSITIONS[comp_name]
         nl_template = spec["nl"]
         composed_relation = spec["kg_relation"]
         legs_desc = " . ".join(f"{'~' if inv else ''}{r}" for r, inv in spec["legs"])
-        print(f"  COMPOSITION {comp_name!r} (hop={args.hop}): {composed_relation} := {legs_desc}")
-        pool = _build_composed_workload(bench.kg, spec, limit_pool=max(args.limit, 400), rng=rng)
+        if verbose:
+            print(f"  COMPOSITION {comp_name!r} (hop={hop}): {composed_relation} := {legs_desc}")
+        pool, full_composed_gold = _build_composed_workload(
+            bench.kg, spec, limit_pool=max(limit, 400), rng=rng
+        )
         if not pool:
             raise SystemExit(f"composition {comp_name!r} produced an empty pool")
         ontology = Ontology.induce(bench.kg)
@@ -218,28 +767,105 @@ def main() -> None:
             RelationType(composed_relation, frozenset({"Entity"}), frozenset({"Entity"}))
         )
 
-    stream = _zipf_stream(pool, args.limit, args.zipf_a, rng)
+    stream = _zipf_stream(pool, limit, zipf_a, rng)
     distinct = len({(h, r) for h, r, _ in stream})
-    print(f"  pool={len(pool)} stream={len(stream)} distinct={distinct}")
+    if verbose:
+        print(f"  pool={len(pool)} stream={len(stream)} distinct={distinct}")
 
     kge_cfg = KGEConfig(
         dim=min(settings.kge_dim, 32), epochs=min(settings.kge_epochs, 15), batch_size=4096
     )
-    guard = BudgetGuard(args.budget_usd)
+    guard = BudgetGuard(budget_usd)
+    # Ground-truth gold map over the whole pool (a superset of the stream). It
+    # feeds the oracle teacher AND lets us measure the teacher's own answer
+    # accuracy; the real-teacher path ignores it inside ``_new_metered``.
+    gold_map = _oracle_gold_from_pool(pool)
+    # Ground-truth graph for scoring installed-rule world precision. For hop>=2 the
+    # composed relation's edges are materialised for EVERY head from the full
+    # ``_compose_gold`` map (``full_composed_gold``), NOT the pool subset ``gold_map``:
+    # the rule body fires across the whole KB, so scoring against only the pool's
+    # heads would leave the head side sparse and collapse the precision. For hop==1
+    # the gold relations already live in the KB, so this is the KB itself.
+    gt_graph = _scoring_graph(bench.kg, hop, gold_map, full_composed_gold, composed_relation)
     # ONE shared teacher + cache for all arms (LLM-only runs first and populates
-    # every distinct pair, so the cascade arms make no further real calls).
-    metered = _new_metered(settings, model, nl_template, None)
-    shared = SharedAnswerCache(metered, guard, bench.kg)
+    # every distinct pair, so the cascade arms make no further real calls). When
+    # ``TACET_TEACHER=oracle`` this single teacher IS the (noisy) oracle. In replay
+    # mode the cache is pre-populated from the record and holds NO teacher, so no
+    # credential is touched and no API call is possible.
+    if replay_mode:
+        record = _load_answers_record(answers_path)
+        schema = record.get("schema")
+        if schema != ANSWERS_RECORD_SCHEMA:
+            raise AnswerRecordError(
+                f"answers record schema {schema!r} != expected {ANSWERS_RECORD_SCHEMA!r}; "
+                f"re-record with the current code."
+            )
+        _check_replay_provenance(
+            record,
+            hop=hop,
+            split=split,
+            limit=limit,
+            zipf_a=zipf_a,
+            seed=seed,
+            composed_relation=composed_relation,
+        )
+        shared = ReplayAnswerCache.from_record(record, guard, bench.kg)
+    else:
+        metered = _new_metered(
+            settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
+        )
+        if recording:
+            # Provenance is fixed BEFORE the first teacher call so the durable log's
+            # header is written first and a killed run's partial log is validatable on
+            # resume. It is also stamped verbatim into the canonical record at the end.
+            provenance = {
+                "model": called_model,
+                "price_key": model,
+                "hop": hop,
+                "split": split,
+                "limit": limit,
+                "zipf_a": zipf_a,
+                "seed": seed,
+                "composed_relation": composed_relation,
+                "teacher_kind": settings.teacher,
+                "recorded_at": recorded_at,
+            }
+            # Durable append-only sidecar. If a prior run was killed its partial log is
+            # present: warm-load the pairs it already bought (validated against this
+            # run's provenance) so they are never re-bought, and keep appending the rest.
+            log = _AnswerLog(_partial_log_path(answers_path))
+            warm_rows = _resume_or_start_log(
+                log,
+                provenance,
+                hop=hop,
+                split=split,
+                limit=limit,
+                zipf_a=zipf_a,
+                seed=seed,
+                composed_relation=composed_relation,
+            )
+            shared = SharedAnswerCache(metered, guard, bench.kg, log=log)
+            shared.warm_from_rows(warm_rows)
+            if verbose and warm_rows:
+                print(
+                    f"  RESUME: warm-loaded {len(warm_rows)} recorded answers from "
+                    f"{log.path}; re-buying only the still-missing pairs (no re-billing)"
+                )
+        else:
+            shared = SharedAnswerCache(metered, guard, bench.kg)
 
     arms: list[dict] = []
     truncated = False
     try:
-        print("\narm (a) LLM-only (shared deterministic answers) ...")
+        if verbose:
+            print("\narm (a) LLM-only (shared deterministic answers) ...")
         r_a = _replay_llm_only(stream, shared)
         arms.append(r_a)
-        print(_line(r_a))
+        if verbose:
+            print(_line(r_a))
 
-        print("\narm (b) cache-cascade — write-back only, Tier-2 off ...")
+        if verbose:
+            print("\narm (b) cache-cascade — write-back only, Tier-2 off ...")
         cfg_cache = CascadeConfig(
             kge=kge_cfg,
             rule_synthesis=False,
@@ -249,27 +875,57 @@ def main() -> None:
         )
         r_b = _replay_cascade("cache_cascade", stream, bench, ontology, shared, cfg_cache)
         arms.append(r_b)
-        print(_line(r_b))
+        if verbose:
+            print(_line(r_b))
 
-        print("\narm (c) full distillation — write-back + rule synthesis, Tier-2 off ...")
+        if verbose:
+            print("\narm (c) full distillation — write-back + rule synthesis, Tier-2 off ...")
         cfg_full = CascadeConfig(
             kge=kge_cfg,
             rule_synthesis=True,
             kge_augment=True,
             write_back=True,
             l2_threshold=TIER2_OFF,
+            min_confidence=gamma,
         )
-        r_c = _replay_cascade("full_distillation", stream, bench, ontology, shared, cfg_full)
+        r_c = _replay_cascade(
+            "full_distillation", stream, bench, ontology, shared, cfg_full, gt_graph=gt_graph
+        )
         arms.append(r_c)
-        print(_line(r_c))
+        if verbose:
+            print(_line(r_c))
     except BudgetExceededError as e:
         truncated = True
-        print(f"\n[HARD STOP] {e}")
+        if verbose:
+            print(f"\n[HARD STOP] {e}")
+
+    teacher_acc, teacher_correct, teacher_total = _teacher_answer_accuracy(shared, gold_map)
+
+    if recording:
+        # The run finished: fold every distinct teacher answer + its measured per-pair
+        # cost into the canonical single-object record and write it ONCE, atomically.
+        # Its existence (vs the sidecar's) is the "complete, replayable" signal; until
+        # now each paid answer was already durable in the JSONL sidecar, so a process
+        # killed before this point loses nothing and resumes. Discard the sidecar last,
+        # once the canonical record is on disk.
+        rec = _build_answers_record(shared, provenance=provenance)
+        rec_path = Path(answers_path)
+        rec_path.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(rec_path, json.dumps(rec, indent=2))
+        log.discard()
+        if verbose:
+            print(
+                f"[record] wrote {len(rec['answers'])} teacher answers to {answers_path}: "
+                f"{shared.real_calls} distinct pairs, "
+                f"total measured spend ${guard.spent_usd:.4f}"
+            )
 
     by = {a["arm"]: a for a in arms}
     verdict: dict[str, object] = {}
     if "cache_cascade" in by and "full_distillation" in by and "llm_only" in by:
         llm, cache, full = by["llm_only"], by["cache_cascade"], by["full_distillation"]
+        cache_calls = cache["teacher_calls"]
+        full_calls = full["teacher_calls"]
         verdict = {
             "llm_cost_usd": llm["total_cost_usd"],
             "cache_cost_usd": cache["total_cost_usd"],
@@ -284,46 +940,133 @@ def main() -> None:
             "accuracy_cache": cache["accuracy"],
             "accuracy_full": full["accuracy"],
             "accuracy_matched_full_vs_llm": abs(full["accuracy"] - llm["accuracy"]) < 1e-9,
-            "full_teacher_calls": full["teacher_calls"],
-            "cache_teacher_calls": cache["teacher_calls"],
+            "full_teacher_calls": full_calls,
+            "cache_teacher_calls": cache_calls,
+            # E11 rule-vs-cache metric: relative reduction in teacher calls of the
+            # rule arm (full) vs the cache arm on structurally unseen heads, at
+            # matched accuracy. This is the sweep's decisive, price-independent
+            # signal (with a free oracle every arm reads USD=0).
+            "calls_saved_vs_cache": cache_calls - full_calls,
+            "calls_saved_pct": (
+                round(100.0 * (cache_calls - full_calls) / cache_calls, 2)
+                if cache_calls > 0
+                else None
+            ),
+            "accuracy_matched": abs(cache["accuracy"] - full["accuracy"]) < 1e-9,
+            # E11 amended pre-registration (item 4): accuracy_matched is now a
+            # DIAGNOSTIC, not a gate. A cell is VALID one-sidedly iff the rule arm
+            # did not lose accuracy; the delta and installed-rule world precision
+            # keep "install more rules" from masquerading as a win.
+            "accuracy_delta": round(full["accuracy"] - cache["accuracy"], 6),
+            "cell_valid": _cell_valid(full["accuracy"], cache["accuracy"]),
+            "rule_installed": len(full.get("synthesised_rules", [])) > 0,
+            "rule_world_precision": full.get("rule_world_precision"),
             "synthesised_rules": full.get("synthesised_rules", []),
         }
 
+    teacher_kind = "oracle" if oracle_mode else called_model
     report = {
-        "dataset": f"MetaQA-{args.hop}hop-{args.split}",
-        "hop": args.hop,
+        "dataset": f"MetaQA-{hop}hop-{split}",
+        "hop": hop,
         "design": "controlled: Tier-2 disabled + shared teacher answers across arms",
         "tier2_disabled": True,
         "shared_teacher_answers": True,
         "kg_stats": bench.stats(),
-        "real_llm": True,
-        "teacher_model_called": settings.xai_model,
+        "real_llm": not oracle_mode,
+        "teacher_kind": teacher_kind,
+        "oracle_error_rate": oracle_error_rate if oracle_mode else None,
+        "gamma": gamma,
+        "noise_mode": "per_key" if oracle_mode else None,
+        "teacher_model_called": called_model,
         "priced_as_model": model,
         "composed_relation": composed_relation,
-        "workload_cap": args.limit,
-        "zipf_a": args.zipf_a,
-        "seed": args.seed,
+        "workload_cap": limit,
+        "zipf_a": zipf_a,
+        "seed": seed,
         "stream_len": len(stream),
         "distinct_queries": distinct,
+        "teacher_answer_accuracy": teacher_acc,
+        "teacher_answers_correct": teacher_correct,
+        "teacher_answers_total": teacher_total,
         "real_teacher_calls": shared.real_calls,
         "truncated_by_budget": truncated,
+        # See SPEND_SEMANTICS: the total measured cost of every answer served this run,
+        # so a resumed run reports the same figure as an uninterrupted one — never only
+        # what this process billed.
         "total_measured_spend_usd": round(guard.spent_usd, 6),
         "arms": arms,
         "verdict": verdict,
     }
+    if verbose:
+        print(
+            f"\n[spend] measured: ${guard.spent_usd:.4f} ({shared.real_calls} distinct calls); "
+            f"teacher answer accuracy={teacher_acc} ({teacher_correct}/{teacher_total})"
+        )
+        if verdict:
+            print(
+                f"VERDICT (matched accuracy, Tier-2 off): full "
+                f"{verdict['amortisation_full_vs_llm']}x, cache "
+                f"{verdict['amortisation_cache_vs_llm']}x vs LLM-only; "
+                f"calls full={verdict['full_teacher_calls']} vs cache="
+                f"{verdict['cache_teacher_calls']} ({verdict['calls_saved_pct']}% saved); "
+                f"acc llm={verdict['accuracy_llm']} cache={verdict['accuracy_cache']} "
+                f"full={verdict['accuracy_full']}; rules={verdict['synthesised_rules']}"
+            )
+    return report
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--metaqa-root", default="data/MetaQA")
+    ap.add_argument("--hop", type=int, default=1)
+    ap.add_argument("--split", default="test")
+    ap.add_argument("--limit", type=int, default=300)
+    ap.add_argument("--zipf-a", type=float, default=1.5)
+    ap.add_argument("--budget-usd", type=float, default=1.5)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--gamma",
+        type=float,
+        default=0.95,
+        help="rule-miner confidence threshold for the full-distillation arm",
+    )
+    ap.add_argument("--composition", default=None, choices=sorted(COMPOSITIONS))
+    ap.add_argument(
+        "--answers-path",
+        default=None,
+        help=(
+            "record the teacher's answers here on the first run; replay them "
+            "(no API calls, byte-identical) whenever the file already exists"
+        ),
+    )
+    ap.add_argument("--out", default="experiments/results/real_kg_controlled.json")
+    args = ap.parse_args()
+
+    # Oracle-teacher noise dial (fraction of oracle answers corrupted); read the
+    # same way the amortization runner does. Ignored by the real-teacher path.
+    oracle_error_rate = float(os.environ.get("TACET_ORACLE_ERROR_RATE", "0.0"))
+    # The caller stamps the record's wall-clock time; run_controlled never reads the
+    # clock itself, so a Modal wrapper can stamp it deterministically instead.
+    recorded_at = datetime.now(UTC).isoformat() if args.answers_path else None
+    report = run_controlled(
+        metaqa_root=args.metaqa_root,
+        hop=args.hop,
+        split=args.split,
+        limit=args.limit,
+        zipf_a=args.zipf_a,
+        budget_usd=args.budget_usd,
+        seed=args.seed,
+        composition=args.composition,
+        oracle_error_rate=oracle_error_rate,
+        gamma=args.gamma,
+        answers_path=args.answers_path,
+        recorded_at=recorded_at,
+        verbose=True,
+    )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(f"\n[spend] real measured: ${guard.spent_usd:.4f} ({shared.real_calls} distinct calls)")
     print(f"wrote {out}")
-    if verdict:
-        print(
-            f"VERDICT (matched accuracy, Tier-2 off): full "
-            f"{verdict['amortisation_full_vs_llm']}x, cache "
-            f"{verdict['amortisation_cache_vs_llm']}x vs LLM-only; "
-            f"acc llm={verdict['accuracy_llm']} cache={verdict['accuracy_cache']} "
-            f"full={verdict['accuracy_full']}; rules={verdict['synthesised_rules']}"
-        )
 
 
 if __name__ == "__main__":

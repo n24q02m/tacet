@@ -68,6 +68,46 @@ def _ground_truth_graph(bench: benchmark.Benchmark) -> WorldGraph:
     return g
 
 
+def remine_installed_rules(ak: TACET) -> tuple[list, int]:
+    """Re-mine a run cascade's installed rules from its FINAL distiller state.
+
+    Returns ``(installed_rules, n_proposed)`` where ``installed_rules`` is the
+    list of :class:`~tacet.distill.distill.MinedRule` the confidence/support
+    filter would install for every synthesised relation and ``n_proposed`` is the
+    total candidate-body count before the cut. Re-mines from the end-of-run graph
+    / complete_heads, which can differ from the intermediate state at the
+    consolidation step where a rule was originally installed; the scored set is
+    the re-mined set, not the exact per-step cascade-installed rules (they
+    coincide on the reported seed).
+
+    Factored out of :func:`_evaluate_synthetic` so the E11 oracle-noise sweep can
+    score the SAME re-mined set against its own ground-truth graph (the miner's
+    ``min_confidence`` is read from the cascade's distiller, so a gamma-swept run
+    is scored at its own gamma).
+    """
+    distiller = ak.distiller
+    # ak.synthesised_rules are full names like "syn:superior_of<=manages"; the
+    # relation is the token between "syn:" and "<=".
+    synth_relations = sorted(
+        {n[len("syn:") :].split("<=")[0] for n in ak.synthesised_rules if n.startswith("syn:")}
+    )
+    n_proposed = 0
+    installed_rules = []
+    for relation in synth_relations:
+        rules, proposed = mine_rules_with_stats(
+            ak.graph,
+            distiller.teacher_facts,
+            relation,
+            min_confidence=distiller.min_confidence,
+            min_support=distiller.min_support,
+            complete_heads=distiller._complete_heads.get(relation, set()),
+            allowed_body=distiller.base_relations or None,
+        )
+        n_proposed += proposed
+        installed_rules.extend(rules)
+    return installed_rules, n_proposed
+
+
 def _evaluate_synthetic(seed: int, workload_size: int) -> dict:
     """Run the distillation cascade and score the mined rules."""
     cfg = BenchmarkConfig(seed=seed, workload_size=workload_size)
@@ -86,35 +126,14 @@ def _evaluate_synthetic(seed: int, workload_size: int) -> dict:
         if (idx + 1) % 100 == 0:
             ak.consolidate()
 
-    # Re-mine each synthesised relation from the cascade's *final* accumulated
-    # distiller state to recover the PROPOSED candidate count, then score every
-    # installed rule's world precision. Note: this re-mines from the end-of-run
-    # graph / complete_heads, which can differ from the intermediate state at the
-    # consolidation step where a rule was originally installed; the scored set is
-    # the re-mined set, not the exact per-step cascade-installed rules (they
-    # coincide on the reported seed).
-    distiller = ak.distiller
     # ak.synthesised_rules are full names like "syn:superior_of<=manages"; the
     # relation is the token between "syn:" and "<=".
     synth_relations = sorted(
         {n[len("syn:") :].split("<=")[0] for n in ak.synthesised_rules if n.startswith("syn:")}
     )
-
-    n_proposed = 0
-    installed_rules = []
-    for relation in synth_relations:
-        rules, proposed = mine_rules_with_stats(
-            ak.graph,
-            distiller.teacher_facts,
-            relation,
-            min_confidence=distiller.min_confidence,
-            min_support=distiller.min_support,
-            complete_heads=distiller._complete_heads.get(relation, set()),
-            allowed_body=distiller.base_relations or None,
-        )
-        n_proposed += proposed
-        installed_rules.extend(rules)
-
+    # Re-mine from the cascade's final distiller state (see remine_installed_rules)
+    # to recover the proposed count, then score every installed rule's precision.
+    installed_rules, n_proposed = remine_installed_rules(ak)
     precisions = [rule_world_precision(m.rule, gt_graph) for m in installed_rules]
     n_installed = len(installed_rules)
     n_world_correct = sum(1 for p in precisions if p >= 0.9)

@@ -81,6 +81,31 @@ class TestSettings(unittest.TestCase):
         self.assertEqual(s.teacher, "grok")
         self.assertTrue(s.has_real_teacher())
 
+    def test_openrouter_env_configures_first_class_teacher(self) -> None:
+        keys = {
+            "TACET_TEACHER": "openrouter",
+            "TACET_OPENROUTER_API_KEY": "or-secret",
+            "TACET_OPENROUTER_MODEL": "deepseek/deepseek-v4-pro",
+        }
+        for k, v in keys.items():
+            os.environ[k] = v
+        try:
+            s = load_settings()
+            self.assertEqual(s.teacher, "openrouter")
+            self.assertEqual(s.openrouter_api_key, "or-secret")
+            self.assertEqual(s.openrouter_model, "deepseek/deepseek-v4-pro")
+            self.assertTrue(s.has_real_teacher())
+        finally:
+            for k in keys:
+                os.environ.pop(k, None)
+
+    def test_openrouter_model_defaults_to_published_anchor(self) -> None:
+        os.environ.pop("TACET_OPENROUTER_MODEL", None)
+        s = load_settings()
+        self.assertEqual(s.openrouter_model, "x-ai/grok-4.3")
+        # no key -> not a usable teacher unless one is configured
+        self.assertIsNone(s.openrouter_api_key)
+
     def test_env_override(self) -> None:
         keys = {
             "TACET_TEACHER": "gemini",
@@ -119,6 +144,38 @@ class TestLLMTeachers(unittest.TestCase):
         s.teacher = "qwen"
         with self.assertRaises(ValueError):
             build_teacher_from_settings(s)
+
+    def test_build_teacher_openrouter_missing_key_raises(self) -> None:
+        s = Settings()
+        s.teacher = "openrouter"
+        s.openrouter_api_key = None
+        with self.assertRaises(RuntimeError):
+            build_teacher_from_settings(s)
+
+    def test_build_teacher_openrouter_targets_openrouter(self) -> None:
+        if not _HAS_OPENAI:
+            self.skipTest("openai not installed")
+        from tacet.llm.teachers.llm import OpenRouterTeacher
+
+        s = Settings()
+        s.teacher = "openrouter"
+        s.openrouter_api_key = "or-key"
+        s.openrouter_model = "deepseek/deepseek-v4-pro"
+        teacher = build_teacher_from_settings(s)
+        self.assertIsInstance(teacher, OpenRouterTeacher)
+        self.assertEqual(teacher._model, "deepseek/deepseek-v4-pro")
+        # base_url points at OpenRouter, not xAI (do not call it).
+        self.assertIn("openrouter.ai", str(teacher._client.base_url))
+
+    def test_build_teacher_grok_still_targets_xai(self) -> None:
+        if not _HAS_OPENAI:
+            self.skipTest("openai not installed")
+        s = Settings()
+        s.teacher = "grok"
+        s.xai_api_key = "xai-key"
+        teacher = build_teacher_from_settings(s)
+        self.assertIsInstance(teacher, GrokTeacher)
+        self.assertIn("api.x.ai", str(teacher._client.base_url))
 
     def test_gemini_teacher_missing_sdk_raises_at_construction(self) -> None:
         if _HAS_GENAI:
@@ -168,7 +225,18 @@ class TestLLMTeachers(unittest.TestCase):
         self.assertEqual(out, ["x", "y", "z", "x", "y"])
 
     def test_rotating_teacher_cools_down_failed_models(self) -> None:
-        """A teacher that returns empty answers is parked on cooldown."""
+        """A teacher that returns empty answers is parked on cooldown -- and a
+        single empty response must NOT stall a whole cooldown while a healthy
+        model is available.
+
+        Regression guard: the router indexed a cursor it reassigned mid-loop, so
+        after the empty model it re-hit the same (now-cooling) model instead of
+        the healthy one, then slept the full cooldown. ``time.sleep`` is patched
+        to a no-op recorder, so this runs instantly on the buggy code too and
+        fails on the recorded sleep rather than by taking a real minute.
+        """
+        from unittest import mock
+
         from tacet.llm.teacher import Teacher, TeacherResponse
         from tacet.llm.teachers import RotatingTeacher
 
@@ -186,13 +254,64 @@ class TestLLMTeachers(unittest.TestCase):
 
         empty, good = _Empty(), _Good()
         rot = RotatingTeacher([empty, good], cooldown_s=60.0)
-        # First call: empty fires (returns nothing), router falls to good.
-        r1 = rot.answer(None, "_", "_")
-        self.assertEqual(r1.answers, ["ok"])
-        # Second call: empty is on cooldown, router goes straight to good.
-        r2 = rot.answer(None, "_", "_")
-        self.assertEqual(r2.answers, ["ok"])
+        slept: list[float] = []
+        with mock.patch("time.sleep", side_effect=lambda s: slept.append(s)):
+            # First call: empty fires (returns nothing), router falls STRAIGHT to
+            # good in the same call -- no cooldown wait.
+            r1 = rot.answer(None, "_", "_")
+            self.assertEqual(r1.answers, ["ok"])
+            # Second call: empty is on cooldown, router goes straight to good.
+            r2 = rot.answer(None, "_", "_")
+            self.assertEqual(r2.answers, ["ok"])
         self.assertEqual(good.calls, 2)
+        # A healthy model was available on every call, so the router NEVER slept.
+        # The unfixed code slept a full cooldown on the first call.
+        self.assertEqual(slept, [])
+
+    def test_rotating_teacher_waits_once_when_all_models_cooling(self) -> None:
+        """When EVERY model is cooling the router waits out the soonest cooldown
+        exactly once, retries the round, and then gives up.
+
+        Uses a fake clock the patched ``sleep`` advances, so no real time passes.
+        """
+        from unittest import mock
+
+        from tacet.llm.teacher import Teacher, TeacherResponse
+        from tacet.llm.teachers import RotatingTeacher
+
+        class _Empty(Teacher):
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def answer(self, _g, _h, _r) -> TeacherResponse:
+                self.calls += 1
+                return TeacherResponse(answers=[])
+
+        e1, e2 = _Empty(), _Empty()
+        rot = RotatingTeacher([e1, e2], cooldown_s=30.0)
+
+        clock = {"t": 1000.0}
+        slept: list[float] = []
+
+        def _sleep(s: float) -> None:
+            slept.append(s)
+            clock["t"] += s  # advance the virtual clock so the cooldown expires
+
+        with (
+            mock.patch("time.time", side_effect=lambda: clock["t"]),
+            mock.patch("time.sleep", side_effect=_sleep),
+        ):
+            resp = rot.answer(None, "_", "_")
+
+        # gave up after one wait -> empty result
+        self.assertEqual(resp.answers, [])
+        # waited exactly once, for the soonest cooldown (+0.1 slack)
+        self.assertEqual(len(slept), 1)
+        self.assertAlmostEqual(slept[0], 30.1)
+        # each model tried once per stage: stage 0 sets the cooldown, stage 1
+        # retries after the single wait.
+        self.assertEqual(e1.calls, 2)
+        self.assertEqual(e2.calls, 2)
 
     def test_rotating_teacher_requires_at_least_one(self) -> None:
         from tacet.llm.teachers import RotatingTeacher

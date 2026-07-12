@@ -67,7 +67,12 @@ from tacet.cascade.router import TACET  # noqa: E402
 from tacet.core.graph import WorldGraph  # noqa: E402
 from tacet.core.ontology import Ontology, RelationType  # noqa: E402
 from tacet.data.metaqa import load_metaqa  # noqa: E402
-from tacet.llm.metering import DEFAULT_PRICES, MeteredTeacher, PriceTable  # noqa: E402
+from tacet.llm.metering import (  # noqa: E402
+    DEFAULT_PRICES,
+    MeteredTeacher,
+    PriceTable,
+    price_key_for_slug,
+)
 from tacet.llm.teacher import OracleTeacher, Teacher, TeacherResponse  # noqa: E402
 from tacet.llm.teachers import build_teacher_from_settings  # noqa: E402
 from tacet.serve.config import CascadeConfig, KGEConfig  # noqa: E402
@@ -216,12 +221,19 @@ def _build_composed_workload(
     a frontier teacher has a realistic chance of returning the full gold set —
     keeping LLM-only accuracy interpretable (we are testing cost at *matched*
     accuracy, not stress-testing recall on 100-way answers).
+
+    Returns ``(pool, full_gold)``. ``pool`` is that filtered / shuffled / truncated
+    workload; ``full_gold`` is the COMPLETE ``_compose_gold`` map (every head,
+    unfiltered) — the composed relation's TRUE edges over the whole KB, which the
+    controlled runner needs to score installed-rule world precision against ALL
+    entities the rule body fires on, not just the pool's teacher-answered heads.
+    It is returned here so callers do not recompute ``_compose_gold``.
     """
     kg_rel = spec["kg_relation"]
     gold_map = _compose_gold(graph, spec)
     items = [(h, kg_rel, frozenset(ys)) for h, ys in gold_map.items() if 0 < len(ys) <= max_answer]
     rng.shuffle(items)
-    return items[:limit_pool]
+    return items[:limit_pool], gold_map
 
 
 class CompositionTeacher(Teacher):
@@ -334,6 +346,20 @@ def _zipf_stream(pool, n, a, rng):  # noqa: ANN001
     return out[:n]
 
 
+def _oracle_gold_from_pool(
+    pool: list[tuple[str, str, frozenset[str]]],
+) -> dict[str, frozenset[str]]:
+    """Ground-truth ``(head, relation) -> gold tails`` map for the oracle teacher.
+
+    Keyed on ``f"{head}\\t{relation}"`` (the key the ``OracleTeacher`` lookup in
+    :func:`_new_metered` expects) over the WHOLE pool -- a superset of the streamed
+    queries -- so the oracle answers seen and UNSEEN held-out heads alike, which is
+    the whole point of the mechanism test. Shared with the controlled runner so both
+    designs build the gold map identically.
+    """
+    return {f"{h}\t{r}": g for h, r, g in pool}
+
+
 def _kg_without(bench, stream) -> WorldGraph:
     """A copy of the MetaQA KB with every queried (head, relation) edge removed.
 
@@ -422,6 +448,8 @@ def _new_metered(
     model,
     nl_template: str | None = None,
     oracle_gold: dict[str, frozenset[str]] | None = None,
+    error_rate: float = 0.0,
+    seed: int = 0,
 ) -> MeteredTeacher:
     """A fresh per-arm MeteredTeacher (isolated so spend / call-count is per-arm).
 
@@ -431,7 +459,11 @@ def _new_metered(
     UNSEEN heads?) before spending real money on Grok. ``MeteredTeacher`` still
     counts every delegated call (``n_calls``), and the oracle exposes no
     ``last_usage`` so the measured USD stays 0 — the decisive signal is the
-    per-arm *call count*, not the dollar figure.
+    per-arm *call count*, not the dollar figure. ``error_rate`` (from
+    ``TACET_ORACLE_ERROR_RATE``) turns the perfect oracle into a noisy one,
+    corrupting that fraction of answers into a plausible wrong entity drawn from
+    the workload's own gold tails, with ``seed`` making the corruption
+    reproducible — the imperfect-teacher regime the noise sweep needs.
 
     When ``nl_template`` is given (multi-hop composition runs) the real teacher is
     first wrapped in a :class:`CompositionTeacher` so the synthetic
@@ -442,7 +474,20 @@ def _new_metered(
         if oracle_gold is None:
             raise SystemExit("TACET_TEACHER=oracle but no gold map was built for the workload.")
         _gold = oracle_gold
-        teacher: Teacher = OracleTeacher(lambda h, r: sorted(_gold.get(f"{h}\t{r}", ())))
+        # A corrupted answer must be a PLAUSIBLE wrong entity, so draw the noise
+        # pool from the workload's own gold tails (the answer entities).
+        entity_pool = sorted({tail for tails in _gold.values() for tail in tails})
+        teacher: Teacher = OracleTeacher(
+            lambda h, r: sorted(_gold.get(f"{h}\t{r}", ())),
+            error_rate=error_rate,
+            entity_pool=entity_pool,
+            seed=seed,
+            # Arms call the teacher a different number of times (LLM-only every
+            # query, cache/full only on misses); per_key keys corruption on
+            # (seed, head, relation) so the same question gets the same answer
+            # across arms, independent of call order/count.
+            noise_mode="per_key",
+        )
         return MeteredTeacher(teacher, PriceTable.default(), model=model)
     teacher = build_teacher_from_settings(settings)
     if teacher is None:
@@ -455,6 +500,23 @@ def _new_metered(
     if nl_template is not None:
         teacher = CompositionTeacher(teacher, nl_template)
     return MeteredTeacher(teacher, PriceTable.default(), model=model)
+
+
+def resolve_price_key(settings) -> str:  # noqa: ANN001
+    """The DEFAULT_PRICES key to meter this run's teacher against.
+
+    An explicit ``TACET_PRICE_MODEL`` always wins (unchanged). Otherwise, for the
+    OpenRouter teacher the price key is derived from its model slug via
+    :func:`price_key_for_slug` -- so a run of an E11 ladder model no longer needs
+    ``TACET_PRICE_MODEL`` set by hand -- and every other teacher keeps defaulting
+    to ``grok-4.3``.
+    """
+    explicit = os.environ.get("TACET_PRICE_MODEL")
+    if explicit:
+        return explicit
+    if getattr(settings, "teacher", None) == "openrouter":
+        return price_key_for_slug(settings.openrouter_model)
+    return "grok-4.3"
 
 
 def main() -> None:  # noqa: PLR0915
@@ -483,8 +545,9 @@ def main() -> None:  # noqa: PLR0915
     ap.add_argument("--out", default="experiments/results/real_kg_amortization.json")
     args = ap.parse_args()
 
-    # The grok-4.3 price must be the real one for the USD to mean anything.
-    model = os.environ.get("TACET_PRICE_MODEL", "grok-4.3")
+    # Oracle-teacher noise dial: fraction of oracle answers corrupted into a
+    # plausible wrong entity (0.0 = perfect oracle); enables the noise sweep.
+    oracle_error_rate = float(os.environ.get("TACET_ORACLE_ERROR_RATE", "0.0"))
     rng = np.random.default_rng(args.seed)
 
     print(f"[cap] workload capped at {args.limit} queries; hard budget ${args.budget_usd:.2f}")
@@ -500,13 +563,23 @@ def main() -> None:  # noqa: PLR0915
 
     settings = load_settings()
     oracle_mode = settings.teacher == "oracle"
+    openrouter_mode = settings.teacher == "openrouter"
+    # The price key must be the real one for the USD to mean anything; resolve it
+    # from the teacher (OpenRouter derives it from the slug, so TACET_PRICE_MODEL
+    # need not be set by hand).
+    model = resolve_price_key(settings)
+    called_model = settings.openrouter_model if openrouter_mode else settings.xai_model
     if oracle_mode:
         # Free, instant ground-truth teacher — mechanism test, no API cost.
         print("  teacher=ORACLE (ground-truth, $0, instant) — mechanism test, no Grok cost")
     else:
-        if not settings.xai_api_key:
-            raise SystemExit("TACET_XAI_API_KEY not set — export your xAI API key first.")
-        print(f"  teacher=grok model={settings.xai_model} (priced as {model})")
+        key = settings.openrouter_api_key if openrouter_mode else settings.xai_api_key
+        if not key:
+            raise SystemExit(
+                "no teacher key set — export TACET_XAI_API_KEY (grok) or "
+                "TACET_OPENROUTER_API_KEY (openrouter) first."
+            )
+        print(f"  teacher={settings.teacher} model={called_model} (priced as {model})")
 
     # --- workload: 1-hop (single-relation lookup) vs multi-hop (composition) --
     nl_template: str | None = None
@@ -537,7 +610,7 @@ def main() -> None:  # noqa: PLR0915
             f"  COMPOSITION {comp_name!r} (hop={args.hop}): target {composed_relation} "
             f":= {legs_desc}{' . (+3rd leg)' if spec.get('hop') == 3 else ''}"
         )
-        pool = _build_composed_workload(bench.kg, spec, limit_pool=max(args.limit, 400), rng=rng)
+        pool, _ = _build_composed_workload(bench.kg, spec, limit_pool=max(args.limit, 400), rng=rng)
         if not pool:
             raise SystemExit(
                 f"composition {comp_name!r} produced an empty pool — check the KB / legs."
@@ -558,7 +631,7 @@ def main() -> None:  # noqa: PLR0915
     if oracle_mode:
         # Ground truth for every (head, relation) in the pool (a superset of the
         # stream), so the oracle answers seen and UNSEEN held-out heads alike.
-        oracle_gold = {f"{h}\t{r}": g for h, r, g in pool}
+        oracle_gold = _oracle_gold_from_pool(pool)
     distinct = len({(h, r) for h, r, _ in stream})
     print(
         f"  pool={len(pool)} stream={len(stream)} distinct={distinct} "
@@ -582,7 +655,9 @@ def main() -> None:  # noqa: PLR0915
     try:
         # (a) LLM-only — also the accuracy reference.
         print("\narm (a) LLM-only — every query to Grok ...")
-        m_a = _new_metered(settings, model, nl_template, oracle_gold)
+        m_a = _new_metered(
+            settings, model, nl_template, oracle_gold, error_rate=oracle_error_rate, seed=args.seed
+        )
         r_a = _run_llm_only(stream, bench, m_a, guard)
         arms.append(r_a)
         print(
@@ -595,7 +670,9 @@ def main() -> None:  # noqa: PLR0915
         cfg_cache = CascadeConfig(
             kge=kge_cfg, rule_synthesis=False, kge_augment=False, write_back=True
         )
-        m_b = _new_metered(settings, model, nl_template, oracle_gold)
+        m_b = _new_metered(
+            settings, model, nl_template, oracle_gold, error_rate=oracle_error_rate, seed=args.seed
+        )
         r_b = _run_cascade("cache_cascade", stream, bench, ontology, m_b, guard, cfg_cache)
         arms.append(r_b)
         print(
@@ -608,7 +685,9 @@ def main() -> None:  # noqa: PLR0915
         cfg_full = CascadeConfig(
             kge=kge_cfg, rule_synthesis=True, kge_augment=True, write_back=True
         )
-        m_c = _new_metered(settings, model, nl_template, oracle_gold)
+        m_c = _new_metered(
+            settings, model, nl_template, oracle_gold, error_rate=oracle_error_rate, seed=args.seed
+        )
         r_c = _run_cascade("full_distillation", stream, bench, ontology, m_c, guard, cfg_full)
         arms.append(r_c)
         print(
@@ -685,7 +764,7 @@ def main() -> None:  # noqa: PLR0915
         ),
         "kg_stats": bench.stats(),
         "real_llm": True,
-        "teacher_model_called": settings.xai_model,
+        "teacher_model_called": called_model,
         "priced_as_model": model,
         "price_per_1k_usd": {"input": DEFAULT_PRICES[model][0], "output": DEFAULT_PRICES[model][1]},
         "price_source": "https://openrouter.ai/x-ai/grok-4.3 + https://docs.x.ai (2026-06-03)",
