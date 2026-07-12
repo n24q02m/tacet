@@ -10,21 +10,37 @@ DEMOTES permanently on the first disagreement. A junk self-referential rule only
 reproduces already-written-back facts, so on unseen heads it predicts nothing,
 is never checked, and is rejected without any gold label.
 
-All fixtures are TINY and SYNTHETIC: MetaQA is never loaded or run here. Streams
-are injected directly so the head order (and thus the mining trigger and the
-unseen checks) is fully deterministic.
+The 1-hop cases exercise a length-1 latent rule; the 2-hop cases exercise the
+composed relation the E11 recorded ladder actually runs on (its true rule is a
+two-atom join and its junk pathology is a self-rule on the composed relation).
+
+All fixtures are TINY and SYNTHETIC: MetaQA is never loaded or run here, and no
+private path is read -- the replay record used to check the provenance guard is
+constructed in-test with the same provenance shape as a real record. Streams are
+injected directly so the head order (and thus the mining trigger and the unseen
+checks) is fully deterministic.
 """
 
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "experiments"))
 
+from run_real_kg_controlled import (  # noqa: E402
+    ANSWERS_RECORD_SCHEMA,
+    ProvenanceMismatchError,
+)
 from run_shadow_validation import shadow_report  # noqa: E402
 
 from tacet.core.graph import WorldGraph  # noqa: E402
 from tacet.data.metaqa import MetaQABenchmark  # noqa: E402
+
+#: The composed relation the E11 hop-2 recorded ladder queries (q2 pattern).
+Q2 = "q2_directors_of_movies_acted_in_by"
 
 
 # ------------------------------------------------------------- shared helpers
@@ -187,3 +203,151 @@ def test_k_sensitivity_changes_promotion_latency() -> None:
     assert k5["shadow_checks_used"] == 5
     assert k2["net_calls_saved_pct"] >= k5["net_calls_saved_pct"]
     assert k2["promoted_rules"] == k5["promoted_rules"] == ["syn:directed_by<=made_by"]
+
+
+# ============================================================= 2-hop composed
+# The E11 recorded ladder runs at hop 2 on the q2 composed relation, so the
+# harness must promote a two-atom composed rule and reject a self-rule on that
+# same composed relation.
+def _hop2_true_bench(n: int) -> MetaQABenchmark:
+    """A KG whose composed rule ``q2 <= ~starred_actors . directed_by`` is exact.
+
+    Each actor ``Ai`` starred in one movie ``Mi`` directed by one director ``Di``,
+    so the composed answer for ``Ai`` is exactly ``{Di}`` and the two-atom join
+    predicts precisely the teacher's answer on unseen actor heads.
+    """
+    kg = WorldGraph(name="hop2-true")
+    for i in range(n):
+        a, m, d = f"A{i}", f"M{i}", f"D{i}"
+        kg.add_edge(m, "starred_actors", a)  # ~starred_actors walks actor -> movie
+        kg.add_edge(m, "directed_by", d)  # movie -> director
+        kg.add_edge(m, "has_genre", "drama")  # background, never queried
+    return _bench(kg)
+
+
+def _hop2_junk_bench(n: int) -> MetaQABenchmark:
+    """A KG where the only minable rule on q2 is self-referential (junk).
+
+    There is no ``starred_actors`` / ``directed_by`` path to compose, so the true
+    rule cannot form; an ``same_as`` identity self-loop lets the miner induce
+    ``q2 <= same_as . q2``, whose body uses the composed target and therefore
+    predicts nothing on unseen heads.
+    """
+    kg = WorldGraph(name="hop2-junk")
+    for i in range(n):
+        a = f"A{i}"
+        kg.add_edge(a, "same_as", a)  # identity self-loop
+        kg.add_edge(a, "has_genre", "drama")
+    return _bench(kg)
+
+
+def _hop2_stream(n: int):
+    """A stream of n distinct actor heads on the composed relation, each once."""
+    return [(f"A{i}", Q2, frozenset({f"D{i}"})) for i in range(n)]
+
+
+def test_hop2_true_composed_rule_promotes_and_saves() -> None:
+    bench = _hop2_true_bench(16)
+    rep = _run(bench, _hop2_stream(16), k=3, hop=2, composed_relation=Q2)
+
+    assert rep["hop"] == 2
+    assert rep["promoted_rules"] == [f"syn:{Q2}<=~starred_actors.directed_by"]
+    assert rep["demoted_rules"] == []
+    assert rep["shadow_checks_used"] == 3
+    assert rep["net_calls_saved_pct"] > 0.0
+    assert rep["shadow_teacher_calls"] < rep["cache_teacher_calls"]
+    assert rep["shadow_accuracy"] == rep["cache_accuracy"] == 1.0
+    assert rep["junk_promoted"] is False
+
+
+def test_hop2_junk_self_rule_on_composed_relation_never_promotes() -> None:
+    bench = _hop2_junk_bench(16)
+    rep = _run(bench, _hop2_stream(16), k=3, hop=2, composed_relation=Q2)
+
+    assert rep["shadow_rules_mined"], "expected a self-rule on the composed relation"
+    assert rep["promoted_rules"] == []
+    assert rep["junk_promoted"] is False
+    assert rep["shadow_checks_used"] == 0
+    assert rep["net_calls_saved_pct"] == 0.0
+
+
+# ------------------------------------------------ replay accepts a real record shape
+def _hop2_record(stream, provenance: dict) -> dict:
+    """A record with the same shape run_real_kg_controlled writes, over ``stream``."""
+    return {
+        "schema": ANSWERS_RECORD_SCHEMA,
+        "spend_semantics": "measured cost of every answer served",
+        "provenance": provenance,
+        "answers": [
+            {"head": h, "relation": r, "answers": sorted(g), "cost_usd": 0.001, "usage": None}
+            for h, r, g in stream
+        ],
+    }
+
+
+def _real_hop2_provenance(seed: int) -> dict:
+    """Provenance mirroring a real hop-2 ladder record (q2 relation, openrouter)."""
+    return {
+        "model": "x-ai/grok-4.3",
+        "price_key": "grok-4.3",
+        "hop": 2,
+        "split": "test",
+        "limit": 300,
+        "zipf_a": 1.5,
+        "seed": seed,
+        "composed_relation": Q2,
+        "teacher_kind": "openrouter",
+        "recorded_at": "2026-01-01T00:00:00+00:00",
+    }
+
+
+def test_replay_accepts_real_hop2_provenance_shape(tmp_path) -> None:
+    stream = _hop2_stream(4)
+    record = _hop2_record(stream, _real_hop2_provenance(seed=0))
+    path = tmp_path / "grok-4.3_seed0.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+    rep = shadow_report(
+        "grok-4.3",
+        0,
+        hop=2,
+        split="test",
+        limit=300,
+        zipf_a=1.5,
+        composed_relation=Q2,
+        answers_path=str(path),
+        bench=_hop2_true_bench(4),
+        settings=_oracle_settings(),
+        stream=stream,
+        budget_usd=1e9,
+        verbose=False,
+    )
+    # the guard accepts the real hop-2 provenance and the run completes.
+    assert rep["hop"] == 2
+    assert rep["composed_relation"] == Q2
+    assert rep["cache_teacher_calls"] == rep["shadow_teacher_calls"] == 4
+
+
+def test_replay_rejects_mismatched_composed_relation(tmp_path) -> None:
+    stream = _hop2_stream(4)
+    record = _hop2_record(stream, _real_hop2_provenance(seed=0))
+    path = tmp_path / "grok-4.3_seed0.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+    # a run declaring a different composed relation must be refused, not replayed.
+    with pytest.raises(ProvenanceMismatchError):
+        shadow_report(
+            "grok-4.3",
+            0,
+            hop=2,
+            split="test",
+            limit=300,
+            zipf_a=1.5,
+            composed_relation="q2_WRONG_relation",
+            answers_path=str(path),
+            bench=_hop2_true_bench(4),
+            settings=_oracle_settings(),
+            stream=stream,
+            budget_usd=1e9,
+            verbose=False,
+        )

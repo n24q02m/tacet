@@ -57,8 +57,10 @@ import numpy as np  # noqa: E402
 sys.path.insert(0, str(Path(__file__).parent))
 
 from run_real_kg_amortization import (  # noqa: E402
+    COMPOSITIONS,
     BudgetGuard,
     _accuracy,
+    _build_composed_workload,
     _build_workload,
     _kg_without,
     _new_metered,
@@ -80,7 +82,7 @@ from run_real_kg_controlled import (  # noqa: E402
 
 from tacet.cascade.router import TACET  # noqa: E402
 from tacet.core.graph import WorldGraph  # noqa: E402
-from tacet.core.ontology import Ontology  # noqa: E402
+from tacet.core.ontology import Ontology, RelationType  # noqa: E402
 from tacet.core.symbolic import Rule  # noqa: E402
 from tacet.data.metaqa import load_metaqa  # noqa: E402
 from tacet.distill.distill import MinedRule, mine_rules  # noqa: E402
@@ -282,6 +284,7 @@ def _build_shared(
     answers_path: str | None,
     settings,  # noqa: ANN001
     model: str,
+    nl_template: str | None,
     gold_map: dict[str, frozenset[str]],
     guard: BudgetGuard,
     kg: WorldGraph,
@@ -291,8 +294,14 @@ def _build_shared(
     split: str,
     limit: int,
     zipf_a: float,
+    composed_relation: str | None,
 ) -> SharedAnswerCache:
-    """The one teacher-answer cache both arms share (replay record or oracle)."""
+    """The one teacher-answer cache both arms share (replay record or oracle).
+
+    In replay mode the record's provenance is validated against this run's stream
+    parameters -- including ``composed_relation`` for a hop>=2 ladder -- so a
+    record made for a different stream is refused, never silently mis-served.
+    """
     if replay_mode:
         record = _load_answers_record(answers_path)
         schema = record.get("schema")
@@ -308,11 +317,23 @@ def _build_shared(
             limit=limit,
             zipf_a=zipf_a,
             seed=seed,
-            composed_relation=None,
+            composed_relation=composed_relation,
         )
         return ReplayAnswerCache.from_record(record, guard, kg)
-    metered = _new_metered(settings, model, None, gold_map, error_rate=oracle_error_rate, seed=seed)
+    metered = _new_metered(
+        settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
+    )
     return SharedAnswerCache(metered, guard, kg)
+
+
+def _resolve_composition(composition: str | None, hop: int) -> tuple[dict, str]:
+    """The controlled runner's composition lookup: an explicit name, else by hop."""
+    comp_name = composition or next(
+        (name for name, spec in COMPOSITIONS.items() if spec.get("hop") == hop), None
+    )
+    if comp_name is None:
+        raise SystemExit(f"no composition for hop={hop}")
+    return COMPOSITIONS[comp_name], comp_name
 
 
 def shadow_report(
@@ -328,6 +349,8 @@ def shadow_report(
     gamma_candidate: float = GAMMA_CANDIDATE,
     oracle_error_rate: float = 0.0,
     answers_path: str | None = None,
+    composition: str | None = None,
+    composed_relation: str | None = None,
     metaqa_root: str = "data/MetaQA",
     settings=None,  # noqa: ANN001
     bench=None,  # noqa: ANN001
@@ -343,16 +366,27 @@ def shadow_report(
     arm over the full stream; it is non-negative by construction (a shadow rule
     only ever adds Tier-1 coverage, never removes it).
 
+    ``hop`` selects the workload. ``hop == 1`` streams real 1-hop relations;
+    ``hop >= 2`` streams a synthetic COMPOSED relation built exactly as the
+    controlled runner does -- resolved from :data:`COMPOSITIONS` (or an explicit
+    ``composition`` name), its edges materialised by ``_build_composed_workload``,
+    and its type added to the induced ontology so a mined composed rule can
+    install. The E11 recorded ladder is hop 2 on the ``q2`` composed relation, so
+    this path is what replays those records. ``composed_relation`` names that
+    relation for the replay provenance guard; on the default (non-injected) path
+    it is taken from the composition spec.
+
     ``bench`` and ``settings`` are injectable so tests can drive a tiny synthetic
     KG without MetaQA, and ``stream`` (a list of ``(head, relation, gold)``) can
-    be supplied directly to pin the exact query order. In the default path the
-    stream is built by the shared ``_build_workload`` / ``_zipf_stream``
-    machinery. With ``settings.teacher == 'oracle'`` a free ground-truth oracle
-    feeds the shared cache; when ``answers_path`` names an existing record the
-    teacher answers are replayed from it (no API calls, provenance-checked).
-    ``k`` is the promotion threshold (registered default 3; 2 and 5 are the
-    descriptive sensitivity values). The returned dict carries, among context
-    fields, the aggregation keys ``net_calls_saved_pct``, ``promoted_rules``,
+    be supplied directly to pin the exact query order; an injected stream whose
+    relation is absent from the induced ontology (a synthetic composed relation)
+    has an ``Entity -> Entity`` type added for it, mirroring the default path.
+    With ``settings.teacher == 'oracle'`` a free ground-truth oracle feeds the
+    shared cache; when ``answers_path`` names an existing record the teacher
+    answers are replayed from it (no API calls, provenance-checked). ``k`` is the
+    promotion threshold (registered default 3; 2 and 5 are the descriptive
+    sensitivity values). The returned dict carries, among context fields, the
+    aggregation keys ``net_calls_saved_pct``, ``promoted_rules``,
     ``demoted_rules``, ``shadow_checks_used``, ``cache_accuracy``,
     ``shadow_accuracy`` and ``junk_promoted``.
     """
@@ -360,20 +394,41 @@ def shadow_report(
         settings = load_settings()
     if bench is None:
         bench = load_metaqa(metaqa_root, hop=1, split=split)
-    if hop != 1:
-        raise SystemExit("run_shadow_validation currently supports hop==1 only")
 
     replay_mode = answers_path is not None and Path(answers_path).exists()
     rng = np.random.default_rng(seed)
     ontology = Ontology.induce(bench.kg)
+    nl_template: str | None = None
 
     if stream is None:
-        pool = _build_workload(bench, limit_pool=max(limit, 400), rng=rng)
+        if hop == 1:
+            pool = _build_workload(bench, limit_pool=max(limit, 400), rng=rng)
+        else:
+            spec, comp_name = _resolve_composition(composition, hop)
+            nl_template = spec["nl"]
+            composed_relation = spec["kg_relation"]
+            pool, _full_gold = _build_composed_workload(
+                bench.kg, spec, limit_pool=max(limit, 400), rng=rng
+            )
+            if not pool:
+                raise SystemExit(f"composition {comp_name!r} produced an empty pool")
+            ontology.add_relation_type(
+                RelationType(composed_relation, frozenset({"Entity"}), frozenset({"Entity"}))
+            )
         stream = _zipf_stream(pool, limit, zipf_a, rng)
         gold_map = _oracle_gold_from_pool(pool)
     else:
         stream = list(stream)
         gold_map = {f"{h}\t{r}": g for h, r, g in stream}
+        # Give any streamed relation the induced ontology does not know (a synthetic
+        # composed relation) an open Entity->Entity type, exactly as the default
+        # hop>=2 path adds the composition's kg_relation, so a mined rule on it can
+        # pass the engine's ontology-consistency check when it promotes.
+        for rel in sorted({r for _, r, _ in stream}):
+            if ontology.relation(rel) is None:
+                ontology.add_relation_type(
+                    RelationType(rel, frozenset({"Entity"}), frozenset({"Entity"}))
+                )
 
     distinct = len({(h, r) for h, r, _ in stream})
     kge_cfg = KGEConfig(
@@ -388,6 +443,7 @@ def shadow_report(
         answers_path=answers_path,
         settings=settings,
         model=model,
+        nl_template=nl_template,
         gold_map=gold_map,
         guard=guard,
         kg=bench.kg,
@@ -397,6 +453,7 @@ def shadow_report(
         split=split,
         limit=limit,
         zipf_a=zipf_a,
+        composed_relation=composed_relation,
     )
 
     if verbose:
@@ -425,9 +482,14 @@ def shadow_report(
         "seed": seed,
         "hop": hop,
         "dataset": bench.name if bench is not None else f"MetaQA-{hop}hop-{split}",
+        "composed_relation": composed_relation,
         "k": k,
         "gamma_candidate": gamma_candidate,
-        "teacher_kind": "oracle" if getattr(settings, "teacher", None) == "oracle" else model,
+        "teacher_kind": (
+            "replay"
+            if replay_mode
+            else ("oracle" if getattr(settings, "teacher", None) == "oracle" else model)
+        ),
         "stream_len": len(stream),
         "distinct_queries": distinct,
         "cache_teacher_calls": cache_calls,
@@ -485,6 +547,12 @@ def main() -> None:
         help="confidence the shadow miner runs at (pre-registered 0.50)",
     )
     ap.add_argument(
+        "--composition",
+        default=None,
+        choices=sorted(COMPOSITIONS),
+        help="composition name for hop>=2 (default: the first matching the --hop value)",
+    )
+    ap.add_argument(
         "--answers",
         default=None,
         help=(
@@ -509,6 +577,7 @@ def main() -> None:
         gamma_candidate=args.gamma_candidate,
         oracle_error_rate=oracle_error_rate,
         answers_path=answers_path,
+        composition=args.composition,
         metaqa_root=args.metaqa_root,
         verbose=True,
     )
