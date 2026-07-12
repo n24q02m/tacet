@@ -261,6 +261,7 @@ class GrokTeacher(Teacher):
         base_url: str = "https://api.x.ai/v1",
         cost: float = 0.05,
         prompt_template: str | None = None,
+        response_format: dict | None = None,
     ) -> None:
         try:
             from openai import OpenAI  # type: ignore[import-not-found]
@@ -273,6 +274,11 @@ class GrokTeacher(Teacher):
         self._cost = cost
         #: Domain prompt; must contain ``{head}`` (and optionally ``{relation}``).
         self._prompt_template = prompt_template or _PROMPT_TEMPLATE
+        #: Optional OpenAI-style ``response_format`` (e.g. a ``json_schema``
+        #: constraint). ``None`` reproduces today's prompt-JSON + permissive-parse
+        #: behaviour byte-for-byte, so every recorded artifact stays reproducible
+        #: unless a caller opts in.
+        self._response_format = response_format
         #: xAI/OpenAI-style token usage from the most recent call
         #: (``prompt_tokens`` / ``completion_tokens`` / ``total_tokens``).
         #: ``None`` until the first successful call. Read by
@@ -281,11 +287,14 @@ class GrokTeacher(Teacher):
 
     def answer(self, graph: WorldGraph, head: str, relation: str) -> TeacherResponse:
         prompt = self._prompt_template.format(head=head, relation=relation)
+        kwargs: dict = {
+            "model": self._model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if self._response_format is not None:
+            kwargs["response_format"] = self._response_format
         try:
-            resp = self._client.chat.completions.create(
-                model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            resp = self._client.chat.completions.create(**kwargs)
             text = resp.choices[0].message.content or ""
             # xAI returns OpenAI-style ``usage`` with prompt/completion/total.
             # For *reasoning* Grok models (grok-4.x) the visible
@@ -359,12 +368,14 @@ class OpenRouterTeacher(GrokTeacher):
         api_key: str,
         model: str = "anthropic/claude-sonnet-4.6",
         prompt_template: str | None = None,
+        response_format: dict | None = None,
     ) -> None:
         super().__init__(
             api_key,
             model=model,
             base_url="https://openrouter.ai/api/v1",
             prompt_template=prompt_template,
+            response_format=response_format,
         )
 
 

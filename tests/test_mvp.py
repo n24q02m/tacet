@@ -177,6 +177,46 @@ class TestLLMTeachers(unittest.TestCase):
         self.assertIsInstance(teacher, GrokTeacher)
         self.assertIn("api.x.ai", str(teacher._client.base_url))
 
+    def test_openrouter_response_format_passthrough(self) -> None:
+        if not _HAS_OPENAI:
+            self.skipTest("openai not installed")
+        from types import SimpleNamespace
+
+        from tacet.llm.teachers.llm import OpenRouterTeacher
+
+        class _FakeCompletions:
+            def __init__(self) -> None:
+                self.calls: list[dict] = []
+
+            def create(self, **kwargs):  # noqa: ANN003, ANN201
+                self.calls.append(kwargs)
+                return SimpleNamespace(
+                    choices=[SimpleNamespace(message=SimpleNamespace(content='["Belgium"]'))],
+                    usage=None,
+                )
+
+        class _FakeClient:
+            def __init__(self, completions: _FakeCompletions) -> None:
+                self.chat = SimpleNamespace(completions=completions)
+
+        schema = {
+            "type": "json_schema",
+            "json_schema": {"name": "answer", "schema": {"type": "array", "maxItems": 5}},
+        }
+        with_schema = _FakeCompletions()
+        t = OpenRouterTeacher("test-key", response_format=schema)
+        t._client = _FakeClient(with_schema)
+        t.answer(None, "France", "borders")
+        self.assertEqual(with_schema.calls[0]["response_format"], schema)
+
+        # Default (no response_format passed) must leave every recorded artifact
+        # byte-identical to today: the key must be absent, not merely None.
+        no_schema = _FakeCompletions()
+        default_teacher = OpenRouterTeacher("test-key")
+        default_teacher._client = _FakeClient(no_schema)
+        default_teacher.answer(None, "France", "borders")
+        self.assertNotIn("response_format", no_schema.calls[0])
+
     def test_gemini_teacher_missing_sdk_raises_at_construction(self) -> None:
         if _HAS_GENAI:
             self.skipTest("google-genai installed; cannot test missing-SDK path")
