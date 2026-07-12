@@ -269,7 +269,11 @@ def _replay_shadow_arm(
     n = len(stream)
     return {
         "teacher_calls": replay.n_calls,
-        "accuracy": round(correct / n, 6) if n else 0.0,
+        # Rounded to the same precision as the cache arm's accuracy
+        # (run_real_kg_controlled._replay_cascade), so two arms that behave
+        # identically report identical accuracy instead of diverging on the
+        # rounding alone.
+        "accuracy": round(correct / n, 4) if n else 0.0,
         "promoted_rules": promoted,
         "demoted_rules": demoted,
         "shadow_rules_mined": sorted(shadow),

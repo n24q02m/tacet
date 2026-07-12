@@ -156,7 +156,12 @@ def test_true_rule_promotes_after_k_and_saves_calls() -> None:
 # ------------------------------------------------ (b) a junk self-rule never promotes
 def test_junk_self_rule_is_rejected_without_gold() -> None:
     bench = _junk_rule_bench(16)
-    rep = _run(bench, _stream(16), k=3)
+    # A repeat of M0's pair with a different declared gold (the oracle's answer
+    # is keyed on the LAST occurrence of a (head, relation) pair in the stream)
+    # makes the run's true accuracy the repeating decimal 16/17, so a rounding
+    # mismatch between the two arms' accuracy fields would actually manifest.
+    stream = _stream(16) + [("M0", "directed_by", frozenset({"D5"}))]
+    rep = _run(bench, stream, k=3)
 
     # a self-referential rule WAS mined (so the test is not vacuous) ...
     assert rep["shadow_rules_mined"], "expected the miner to install a self-rule"
@@ -168,6 +173,9 @@ def test_junk_self_rule_is_rejected_without_gold() -> None:
     # with nothing promoted the shadow arm degrades to pure cache behaviour.
     assert rep["net_calls_saved_pct"] == 0.0
     assert rep["shadow_teacher_calls"] == rep["cache_teacher_calls"]
+    # the two arms replay the identical stream through the identical shared
+    # teacher and neither routes a rule, so their accuracy must match exactly.
+    assert rep["cache_accuracy"] == rep["shadow_accuracy"]
 
 
 # ------------------------------------------------ (c) a disagreeing rule is demoted
