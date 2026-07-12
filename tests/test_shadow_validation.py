@@ -251,6 +251,8 @@ def test_hop2_true_composed_rule_promotes_and_saves() -> None:
     rep = _run(bench, _hop2_stream(16), k=3, hop=2, composed_relation=Q2)
 
     assert rep["hop"] == 2
+    # the dataset label must reflect the actual workload hop, not the KB load hop.
+    assert rep["dataset"] == "MetaQA-2hop-test"
     assert rep["promoted_rules"] == [f"syn:{Q2}<=~starred_actors.directed_by"]
     assert rep["demoted_rules"] == []
     assert rep["shadow_checks_used"] == 3

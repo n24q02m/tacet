@@ -481,7 +481,9 @@ def shadow_report(
         "slug": slug,
         "seed": seed,
         "hop": hop,
-        "dataset": bench.name if bench is not None else f"MetaQA-{hop}hop-{split}",
+        # Label the actual workload hop, matching run_real_kg_controlled: the bench is
+        # loaded at hop=1 for its KB even on a hop-2 run, so bench.name would say 1hop.
+        "dataset": f"MetaQA-{hop}hop-{split}",
         "composed_relation": composed_relation,
         "k": k,
         "gamma_candidate": gamma_candidate,
