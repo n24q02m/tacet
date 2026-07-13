@@ -135,6 +135,18 @@ class TestLLMTeachers(unittest.TestCase):
         self.assertEqual(_parse_json_list('answer is ["x", "y"] yes'), ["x", "y"])
         self.assertEqual(_parse_json_list("nothing useful"), [])
 
+    def test_parse_json_list_unwraps_object_root(self) -> None:
+        # A strict json_schema response must have an OBJECT root (arrays are
+        # forbidden as the root), so the answer list arrives wrapped as
+        # {"answers": [...]}. The parser unwraps the single list-of-strings value,
+        # bare or inside a markdown fence.
+        self.assertEqual(_parse_json_list('{"answers": ["a", "b"]}'), ["a", "b"])
+        self.assertEqual(_parse_json_list('```json\n{"answers": ["x"]}\n```'), ["x"])
+        # An object with no list value, or an ambiguous second list-of-strings, is
+        # NOT coerced into an answer set.
+        self.assertEqual(_parse_json_list('{"foo": "bar"}'), [])
+        self.assertEqual(_parse_json_list('{"a": ["x"], "b": ["y"]}'), [])
+
     def test_build_teacher_oracle_returns_none(self) -> None:
         s = Settings()  # default teacher="oracle"
         self.assertIsNone(build_teacher_from_settings(s))

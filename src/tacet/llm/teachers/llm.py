@@ -64,6 +64,16 @@ def _parse_json_list(raw: str) -> list[str]:
             data = json.loads(m.group(0))
         except json.JSONDecodeError:
             return []
+    if isinstance(data, dict):
+        # A strict json_schema response must have an OBJECT root (a bare array root
+        # is forbidden), so a structured-output answer arrives wrapped, e.g.
+        # {"answers": [...]}. Unwrap it when the object has exactly one
+        # list-of-strings value; an object with none, or an ambiguous second such
+        # list, is not coerced into an answer set.
+        str_lists = [
+            v for v in data.values() if isinstance(v, list) and all(isinstance(x, str) for x in v)
+        ]
+        return list(str_lists[0]) if len(str_lists) == 1 else []
     if not isinstance(data, list):
         return []
     return [str(x) for x in data]
@@ -480,9 +490,15 @@ DEFAULT_ROTATING_MODELS: tuple[str, ...] = (
 )
 
 
-def build_teacher_from_settings(settings) -> Teacher | None:  # noqa: ANN001
+def build_teacher_from_settings(settings, response_format: dict | None = None) -> Teacher | None:  # noqa: ANN001
     """Build the configured teacher; returns None for ``teacher=oracle`` so
-    the caller can wire in its own ``OracleTeacher`` from a benchmark."""
+    the caller can wire in its own ``OracleTeacher`` from a benchmark.
+
+    ``response_format`` is an optional OpenAI-style structured-output constraint
+    (e.g. a ``json_schema``). Only the OpenRouter teacher honours it (it is the
+    E11 ladder path); every other teacher kind ignores it, so passing ``None`` (the
+    default) reproduces today's behaviour for all of them byte-for-byte.
+    """
     name = settings.teacher
     gemini_endpoint = getattr(settings, "gemini_endpoint", "generativelanguage")
     if name == "oracle":
@@ -500,7 +516,11 @@ def build_teacher_from_settings(settings) -> Teacher | None:  # noqa: ANN001
     if name == "openrouter":
         if not settings.openrouter_api_key:
             raise RuntimeError("TACET_OPENROUTER_API_KEY not set")
-        return OpenRouterTeacher(settings.openrouter_api_key, settings.openrouter_model)
+        return OpenRouterTeacher(
+            settings.openrouter_api_key,
+            settings.openrouter_model,
+            response_format=response_format,
+        )
     if name == "rotating":
         if not settings.gemini_api_key:
             raise RuntimeError("TACET_GEMINI_API_KEY not set (required for teacher=rotating)")

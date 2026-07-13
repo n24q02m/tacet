@@ -65,7 +65,9 @@ def _install_fake_teacher(monkeypatch, counter: dict) -> None:
     is never constructed and the counter cannot move.
     """
 
-    def factory(settings, model, nl_template, oracle_gold=None, error_rate=0.0, seed=0):  # noqa: ANN001
+    def factory(  # noqa: ANN001
+        settings, model, nl_template, oracle_gold=None, error_rate=0.0, seed=0, response_format=None
+    ):
         return _FakeMeteredTeacher(oracle_gold, counter)
 
     monkeypatch.setattr(rkc, "_new_metered", factory)
@@ -363,7 +365,9 @@ class _CountingTeacher:
 
 
 def _install_counting_teacher(monkeypatch, counter: dict, *, raise_after=None) -> None:
-    def factory(settings, model, nl_template, oracle_gold=None, error_rate=0.0, seed=0):  # noqa: ANN001
+    def factory(  # noqa: ANN001
+        settings, model, nl_template, oracle_gold=None, error_rate=0.0, seed=0, response_format=None
+    ):
         return _CountingTeacher(oracle_gold, counter, raise_after=raise_after)
 
     monkeypatch.setattr(rkc, "_new_metered", factory)
