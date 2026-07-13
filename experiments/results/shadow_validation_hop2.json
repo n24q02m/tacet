@@ -1,0 +1,1237 @@
+{
+ "experiment": "E12-shadow-validation",
+ "design": "replayed E11 ladder, hop2, gamma_candidate=0.5, shadow promotion",
+ "pre_registration": {
+  "locked": "2026-07-12",
+  "k_decision": 3,
+  "gamma_candidate": 0.5,
+  "positive_iff": "mean net teacher-call reduction >= 20% across the grid AND shadow_accuracy >= cache_accuracy - 1e-9 in every cell AND junk self-rule promoted in 0 cells",
+  "agreement_criterion": "benchmark accuracy criterion with the teacher answer in the gold role: teacher answer non-empty and a subset of the rule prediction (disambiguation recorded in the ledger before the first run)"
+ },
+ "n_cells": 22,
+ "fail_by_resource": [
+  "anthropic__claude-sonnet-5_hop2_lim300_s1.json",
+  "deepseek__deepseek-v4-pro_hop2_lim300_s0.json",
+  "deepseek__deepseek-v4-pro_hop2_lim300_s1.json",
+  "moonshotai__kimi-k2.6_hop2_lim300_s0.json",
+  "moonshotai__kimi-k2.6_hop2_lim300_s1.json",
+  "openai__gpt-5.6-luna_hop2_lim300_s0.json",
+  "openai__gpt-5.6-luna_hop2_lim300_s1.json",
+  "qwen__qwen3.7-max_hop2_lim300_s0.json",
+  "qwen__qwen3.7-max_hop2_lim300_s1.json",
+  "x-ai__grok-4.5_hop2_lim300_s0.json",
+  "x-ai__grok-4.5_hop2_lim300_s1.json"
+ ],
+ "grid_k3": {
+  "mean_net_calls_saved_pct": 0.0,
+  "cells_with_accuracy_loss": [],
+  "cells_with_junk_promoted": [],
+  "cells_promoted_any_rule": [],
+  "cells_demoted_any_rule": [
+   "anthropic/claude-sonnet-5_s2",
+   "deepseek/deepseek-v4-pro_s2",
+   "google/gemini-3.5-flash_s1",
+   "google/gemini-3.5-flash_s2",
+   "minimax/minimax-m3_s2",
+   "moonshotai/kimi-k2.6_s2",
+   "openai/gpt-5.6-luna_s2",
+   "qwen/qwen3.7-max_s2",
+   "x-ai/grok-4.3_s0",
+   "x-ai/grok-4.5_s2",
+   "z-ai/glm-5.2_s0",
+   "z-ai/glm-5.2_s2"
+  ]
+ },
+ "verdict": "NEUTRAL",
+ "cells_k3": [
+  {
+   "slug": "anthropic/claude-sonnet-5",
+   "seed": 0,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.5233,
+   "shadow_accuracy": 0.5233,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "anthropic/claude-sonnet-5",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.11,
+   "shadow_accuracy": 0.11,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "deepseek/deepseek-v4-pro",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.7067,
+   "shadow_accuracy": 0.7067,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 0,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.5167,
+   "shadow_accuracy": 0.5167,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 1,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.53,
+   "shadow_accuracy": 0.53,
+   "junk_promoted": false,
+   "cache_teacher_calls": 58,
+   "shadow_teacher_calls": 58
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.17,
+   "shadow_accuracy": 0.17,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 0,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.5,
+   "shadow_accuracy": 0.5,
+   "junk_promoted": false,
+   "cache_teacher_calls": 57,
+   "shadow_teacher_calls": 57
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 1,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.08,
+   "shadow_accuracy": 0.08,
+   "junk_promoted": false,
+   "cache_teacher_calls": 65,
+   "shadow_teacher_calls": 65
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.0867,
+   "shadow_accuracy": 0.0867,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "moonshotai/kimi-k2.6",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.18,
+   "shadow_accuracy": 0.18,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "openai/gpt-5.6-luna",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.1633,
+   "shadow_accuracy": 0.1633,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "qwen/qwen3.7-max",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.15,
+   "shadow_accuracy": 0.15,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 0,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.6533,
+   "shadow_accuracy": 0.6533,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 1,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.2367,
+   "shadow_accuracy": 0.2367,
+   "junk_promoted": false,
+   "cache_teacher_calls": 66,
+   "shadow_teacher_calls": 66
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.1533,
+   "shadow_accuracy": 0.1533,
+   "junk_promoted": false,
+   "cache_teacher_calls": 63,
+   "shadow_teacher_calls": 63
+  },
+  {
+   "slug": "x-ai/grok-4.5",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.27,
+   "shadow_accuracy": 0.27,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 0,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.6033,
+   "shadow_accuracy": 0.6033,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 1,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.2367,
+   "shadow_accuracy": 0.2367,
+   "junk_promoted": false,
+   "cache_teacher_calls": 58,
+   "shadow_teacher_calls": 58
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.1,
+   "shadow_accuracy": 0.1,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 0,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.0867,
+   "shadow_accuracy": 0.0867,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 1,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.2,
+   "shadow_accuracy": 0.2,
+   "junk_promoted": false,
+   "cache_teacher_calls": 66,
+   "shadow_teacher_calls": 66
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 2,
+   "k": 3,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.5233,
+   "shadow_accuracy": 0.5233,
+   "junk_promoted": false,
+   "cache_teacher_calls": 72,
+   "shadow_teacher_calls": 72
+  }
+ ],
+ "sensitivity_k2": [
+  {
+   "slug": "anthropic/claude-sonnet-5",
+   "seed": 0,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.5233,
+   "shadow_accuracy": 0.5233,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "anthropic/claude-sonnet-5",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.11,
+   "shadow_accuracy": 0.11,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "deepseek/deepseek-v4-pro",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.7067,
+   "shadow_accuracy": 0.7067,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 0,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.5167,
+   "shadow_accuracy": 0.5167,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 1,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.53,
+   "shadow_accuracy": 0.53,
+   "junk_promoted": false,
+   "cache_teacher_calls": 58,
+   "shadow_teacher_calls": 58
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.17,
+   "shadow_accuracy": 0.17,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 0,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.5,
+   "shadow_accuracy": 0.5,
+   "junk_promoted": false,
+   "cache_teacher_calls": 57,
+   "shadow_teacher_calls": 57
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 1,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.08,
+   "shadow_accuracy": 0.08,
+   "junk_promoted": false,
+   "cache_teacher_calls": 65,
+   "shadow_teacher_calls": 65
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.0867,
+   "shadow_accuracy": 0.0867,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "moonshotai/kimi-k2.6",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.18,
+   "shadow_accuracy": 0.18,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "openai/gpt-5.6-luna",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.1633,
+   "shadow_accuracy": 0.1633,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "qwen/qwen3.7-max",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.15,
+   "shadow_accuracy": 0.15,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 0,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.6533,
+   "shadow_accuracy": 0.6533,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 1,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.2367,
+   "shadow_accuracy": 0.2367,
+   "junk_promoted": false,
+   "cache_teacher_calls": 66,
+   "shadow_teacher_calls": 66
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.1533,
+   "shadow_accuracy": 0.1533,
+   "junk_promoted": false,
+   "cache_teacher_calls": 63,
+   "shadow_teacher_calls": 63
+  },
+  {
+   "slug": "x-ai/grok-4.5",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.27,
+   "shadow_accuracy": 0.27,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 0,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.6033,
+   "shadow_accuracy": 0.6033,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 1,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.2367,
+   "shadow_accuracy": 0.2367,
+   "junk_promoted": false,
+   "cache_teacher_calls": 58,
+   "shadow_teacher_calls": 58
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.1,
+   "shadow_accuracy": 0.1,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 0,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.0867,
+   "shadow_accuracy": 0.0867,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 1,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.2,
+   "shadow_accuracy": 0.2,
+   "junk_promoted": false,
+   "cache_teacher_calls": 66,
+   "shadow_teacher_calls": 66
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 2,
+   "k": 2,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.5233,
+   "shadow_accuracy": 0.5233,
+   "junk_promoted": false,
+   "cache_teacher_calls": 72,
+   "shadow_teacher_calls": 72
+  }
+ ],
+ "sensitivity_k5": [
+  {
+   "slug": "anthropic/claude-sonnet-5",
+   "seed": 0,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.5233,
+   "shadow_accuracy": 0.5233,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "anthropic/claude-sonnet-5",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.11,
+   "shadow_accuracy": 0.11,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "deepseek/deepseek-v4-pro",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.7067,
+   "shadow_accuracy": 0.7067,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 0,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.5167,
+   "shadow_accuracy": 0.5167,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 1,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.53,
+   "shadow_accuracy": 0.53,
+   "junk_promoted": false,
+   "cache_teacher_calls": 58,
+   "shadow_teacher_calls": 58
+  },
+  {
+   "slug": "google/gemini-3.5-flash",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.17,
+   "shadow_accuracy": 0.17,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 0,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.5,
+   "shadow_accuracy": 0.5,
+   "junk_promoted": false,
+   "cache_teacher_calls": 57,
+   "shadow_teacher_calls": 57
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 1,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.08,
+   "shadow_accuracy": 0.08,
+   "junk_promoted": false,
+   "cache_teacher_calls": 65,
+   "shadow_teacher_calls": 65
+  },
+  {
+   "slug": "minimax/minimax-m3",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.0867,
+   "shadow_accuracy": 0.0867,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "moonshotai/kimi-k2.6",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.18,
+   "shadow_accuracy": 0.18,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "openai/gpt-5.6-luna",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.1633,
+   "shadow_accuracy": 0.1633,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "qwen/qwen3.7-max",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.15,
+   "shadow_accuracy": 0.15,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 0,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.6533,
+   "shadow_accuracy": 0.6533,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 1,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.2367,
+   "shadow_accuracy": 0.2367,
+   "junk_promoted": false,
+   "cache_teacher_calls": 66,
+   "shadow_teacher_calls": 66
+  },
+  {
+   "slug": "x-ai/grok-4.3",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.1533,
+   "shadow_accuracy": 0.1533,
+   "junk_promoted": false,
+   "cache_teacher_calls": 63,
+   "shadow_teacher_calls": 63
+  },
+  {
+   "slug": "x-ai/grok-4.5",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.27,
+   "shadow_accuracy": 0.27,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 0,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.6033,
+   "shadow_accuracy": 0.6033,
+   "junk_promoted": false,
+   "cache_teacher_calls": 53,
+   "shadow_teacher_calls": 53
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 1,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.2367,
+   "shadow_accuracy": 0.2367,
+   "junk_promoted": false,
+   "cache_teacher_calls": 58,
+   "shadow_teacher_calls": 58
+  },
+  {
+   "slug": "xiaomi/mimo-v2.5-pro",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [],
+   "cache_accuracy": 0.1,
+   "shadow_accuracy": 0.1,
+   "junk_promoted": false,
+   "cache_teacher_calls": 60,
+   "shadow_teacher_calls": 60
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 0,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.0867,
+   "shadow_accuracy": 0.0867,
+   "junk_promoted": false,
+   "cache_teacher_calls": 61,
+   "shadow_teacher_calls": 61
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 1,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [],
+   "shadow_checks_used": 0,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by",
+    "syn:q2_directors_of_movies_acted_in_by<=~q2_directors_of_movies_acted_in_by.q2_directors_of_movies_acted_in_by"
+   ],
+   "cache_accuracy": 0.2,
+   "shadow_accuracy": 0.2,
+   "junk_promoted": false,
+   "cache_teacher_calls": 66,
+   "shadow_teacher_calls": 66
+  },
+  {
+   "slug": "z-ai/glm-5.2",
+   "seed": 2,
+   "k": 5,
+   "net_calls_saved_pct": 0.0,
+   "promoted_rules": [],
+   "demoted_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "shadow_checks_used": 1,
+   "shadow_rules_mined": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "cache_accuracy": 0.5233,
+   "shadow_accuracy": 0.5233,
+   "junk_promoted": false,
+   "cache_teacher_calls": 72,
+   "shadow_teacher_calls": 72
+  }
+ ]
+}
