@@ -19,3 +19,7 @@
 **Vulnerability:** FastAPI endpoints using default Pydantic models for nested and flat string fields were not enforcing maximum lengths, creating a Denial of Service (DoS) vector from unbounded inputs.
 **Learning:** Pydantic's default `str` fields and `list` collections allow unbounded sizes, meaning maliciously large nested JSON requests could exhaust memory.
 **Prevention:** Always enforce max sizes in request models. Use `Field(..., max_length=X)` for strings or collection lengths. For strings nested in lists, use `typing.Annotated`, like `list[Annotated[str, Field(max_length=X)]]`.
+## 2024-07-14 - FastAPI Swagger UI Broken by Strict CSP
+**Vulnerability:** Missing `Content-Security-Policy` and `X-XSS-Protection` headers in FastAPI application.
+**Learning:** Applying a strict `Content-Security-Policy` (CSP) header globally in a FastAPI app breaks the auto-generated Swagger UI and Redoc documentation paths because they rely on inline scripts and styles.
+**Prevention:** When enforcing CSP in a FastAPI middleware, always conditionally apply it to exclude documentation paths (e.g., `/docs`, `/redoc`, `/openapi.json`).

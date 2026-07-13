@@ -326,6 +326,12 @@ def build_app(
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+
+        # Conditionally apply CSP to prevent breaking Swagger UI/docs
+        if request.url.path not in ["/docs", "/redoc", "/openapi.json"]:
+            response.headers["Content-Security-Policy"] = "default-src 'self'"
+
         return response
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
