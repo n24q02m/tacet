@@ -450,6 +450,7 @@ def _new_metered(
     oracle_gold: dict[str, frozenset[str]] | None = None,
     error_rate: float = 0.0,
     seed: int = 0,
+    response_format: dict | None = None,
 ) -> MeteredTeacher:
     """A fresh per-arm MeteredTeacher (isolated so spend / call-count is per-arm).
 
@@ -469,6 +470,11 @@ def _new_metered(
     first wrapped in a :class:`CompositionTeacher` so the synthetic
     composed-relation token is rewritten into a natural-language multi-hop
     question; the meter reads the proxied provider usage either way.
+
+    ``response_format`` is an optional OpenAI-style structured-output constraint
+    forwarded to the real teacher (only the OpenRouter teacher honours it). It is
+    ignored in oracle mode (the oracle makes no API call), so leaving it ``None``
+    (the default) reproduces today's behaviour on every teacher kind.
     """
     if settings.teacher == "oracle":
         if oracle_gold is None:
@@ -489,7 +495,7 @@ def _new_metered(
             noise_mode="per_key",
         )
         return MeteredTeacher(teacher, PriceTable.default(), model=model)
-    teacher = build_teacher_from_settings(settings)
+    teacher = build_teacher_from_settings(settings, response_format=response_format)
     if teacher is None:
         raise SystemExit(
             "No real teacher configured. Set TACET_TEACHER=grok and "

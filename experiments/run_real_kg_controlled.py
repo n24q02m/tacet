@@ -265,10 +265,22 @@ SPEND_SEMANTICS = (
     "answers cost in total, not only what this process billed to the provider)"
 )
 
-#: Stream-defining fields that MUST match for a record to be replayable: together
-#: they fix the exact ``(head, relation)`` sequence, so replaying a record made
-#: under different values would silently mismatch pairs.
-_REPLAY_PROVENANCE_FIELDS = ("hop", "split", "limit", "zipf_a", "seed", "composed_relation")
+#: Fields that MUST match for a record to be replayable. The first six fix the exact
+#: ``(head, relation)`` sequence, so replaying a record made under different values
+#: would silently mismatch pairs. ``response_format_max_items`` does not change the
+#: stream but DOES change the recorded ANSWERS (a capped structured record vs an E11
+#: original), so mixing the two would compare distillability on non-comparable
+#: answers; it is guarded the same way. A record made before this field existed, and
+#: a plain (unconstrained) run, both carry ``None``, so E11 originals still replay.
+_REPLAY_PROVENANCE_FIELDS = (
+    "hop",
+    "split",
+    "limit",
+    "zipf_a",
+    "seed",
+    "composed_relation",
+    "response_format_max_items",
+)
 
 
 def _load_answers_record(path: str) -> dict:
@@ -309,14 +321,17 @@ def _check_replay_provenance(
     limit,
     zipf_a,
     seed,
-    composed_relation,  # noqa: ANN001
+    composed_relation,
+    response_format_max_items=None,  # noqa: ANN001
 ) -> None:
     """Refuse to replay a record made under different stream parameters.
 
     Compares every :data:`_REPLAY_PROVENANCE_FIELDS` value in the record against the
     current run and raises :class:`ProvenanceMismatchError` naming the FIRST field
-    that differs. These fields fix the exact ``(head, relation)`` stream, so a
-    mismatch would replay the wrong answers against the wrong pairs.
+    that differs. The stream fields fix the exact ``(head, relation)`` sequence, so a
+    mismatch would replay the wrong answers against the wrong pairs;
+    ``response_format_max_items`` fixes the answer discipline the record was made
+    under, so a structured record cannot masquerade as an E11 original.
     """
     prov = record.get("provenance", {})
     current = {
@@ -326,6 +341,7 @@ def _check_replay_provenance(
         "zipf_a": zipf_a,
         "seed": seed,
         "composed_relation": composed_relation,
+        "response_format_max_items": response_format_max_items,
     }
     for name in _REPLAY_PROVENANCE_FIELDS:
         recorded = prov.get(name)
@@ -455,7 +471,8 @@ def _resume_or_start_log(
     limit,
     zipf_a,
     seed,
-    composed_relation,  # noqa: ANN001
+    composed_relation,
+    response_format_max_items=None,  # noqa: ANN001
 ) -> list[dict]:
     """Ready ``log`` for a recording run; return the warm rows to preload (if any).
 
@@ -486,6 +503,7 @@ def _resume_or_start_log(
         zipf_a=zipf_a,
         seed=seed,
         composed_relation=composed_relation,
+        response_format_max_items=response_format_max_items,
     )
     # Normalise the sidecar to its intact prefix so continued appends never concatenate
     # onto a crash-truncated trailing line (a second kill would otherwise corrupt it).
@@ -636,6 +654,67 @@ def _scoring_graph(
     return gt
 
 
+def _max_items_response_format(max_items: int) -> dict:
+    """An OpenAI-style ``json_schema`` capping the teacher's answer list at ``max_items``.
+
+    Strict structured-output mode requires an OBJECT root (a bare array root is
+    rejected), so the answer list lives under a single ``answers`` property; the
+    permissive parser (:func:`tacet.llm.teachers.llm._parse_json_list`) unwraps that
+    object back into a list. ``additionalProperties: false`` + ``required`` make the
+    shape exact, so a provider that supports strict schemas cannot pad the object.
+    """
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "kg_answers",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "answers": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "maxItems": max_items,
+                    }
+                },
+                "required": ["answers"],
+                "additionalProperties": False,
+            },
+        },
+    }
+
+
+def _build_metered_teacher(
+    settings,  # noqa: ANN001
+    model,  # noqa: ANN001
+    nl_template: str | None,
+    oracle_gold: dict[str, frozenset[str]] | None,
+    *,
+    error_rate: float = 0.0,
+    seed: int = 0,
+    max_items: int | None = None,
+) -> object:
+    """Build the run's metered teacher, applying a ``max_items`` answer cap when set.
+
+    A thin wrapper over :func:`_new_metered` that turns ``max_items`` into the
+    OpenAI-style ``response_format`` constraint the (openrouter) teacher is built
+    with. ``max_items=None`` forwards no constraint, so every recorded artifact stays
+    byte-identical to the E11 originals unless a caller opts in. The caller
+    (:func:`run_controlled`) is responsible for rejecting ``max_items`` on a
+    teacher kind that cannot honour it.
+    """
+    response_format = _max_items_response_format(max_items) if max_items is not None else None
+    return _new_metered(
+        settings,
+        model,
+        nl_template,
+        oracle_gold,
+        error_rate=error_rate,
+        seed=seed,
+        response_format=response_format,
+    )
+
+
 def run_controlled(
     *,
     metaqa_root: str = "data/MetaQA",
@@ -650,6 +729,7 @@ def run_controlled(
     gamma: float = 0.95,
     answers_path: str | None = None,
     recorded_at: str | None = None,
+    max_items: int | None = None,
     settings=None,  # noqa: ANN001
     bench=None,  # noqa: ANN001
     verbose: bool = True,
@@ -694,6 +774,14 @@ def run_controlled(
     served, not merely what this process billed. ``recorded_at`` is stamped verbatim
     into the record's provenance; it MUST be supplied by the caller (a Modal wrapper) —
     this function never reads the clock itself.
+
+    ``max_items`` caps the teacher's answer list at N via an OpenAI-style
+    ``json_schema`` structured-output constraint (openrouter teacher only). It is
+    stamped into the record's provenance as ``response_format_max_items`` so a
+    structured record is distinguishable from — and refuses to replay against — an
+    unconstrained E11 original; it is rejected on replay (no live teacher) and for any
+    non-openrouter teacher kind. ``None`` (the default) forwards no constraint, leaving
+    every recorded artifact byte-identical to the E11 originals.
     """
     # Replay when ``answers_path`` names an EXISTING record; record when it names a
     # not-yet-existing one; behave exactly as before when it is ``None``.
@@ -706,6 +794,22 @@ def run_controlled(
         bench = load_metaqa(metaqa_root, hop=1, split=split)
     oracle_mode = settings.teacher == "oracle"
     openrouter_mode = getattr(settings, "teacher", None) == "openrouter"
+    # A max-items answer cap constrains a LIVE openrouter teacher call, so it is
+    # meaningless without one: refuse it in replay mode (no teacher is called, the
+    # answers are already fixed on disk) and for any non-openrouter teacher kind.
+    if max_items is not None:
+        if replay_mode:
+            raise SystemExit(
+                f"--max-items constrains a live teacher call, but this run REPLAYS answers "
+                f"from {answers_path} (no teacher is called; the recorded answers are fixed). "
+                f"Re-record with --max-items instead of passing it on replay."
+            )
+        if not openrouter_mode:
+            raise SystemExit(
+                f"--max-items requires TACET_TEACHER=openrouter (structured output is an "
+                f"OpenAI-style response_format constraint); teacher={settings.teacher!r} does "
+                f"not support it."
+            )
     # Price key: an explicit TACET_PRICE_MODEL wins; else the OpenRouter teacher
     # derives it from its slug (so it need not be set by hand); else grok-4.3.
     model = resolve_price_key(settings)
@@ -808,11 +912,18 @@ def run_controlled(
             zipf_a=zipf_a,
             seed=seed,
             composed_relation=composed_relation,
+            response_format_max_items=max_items,
         )
         shared = ReplayAnswerCache.from_record(record, guard, bench.kg)
     else:
-        metered = _new_metered(
-            settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
+        metered = _build_metered_teacher(
+            settings,
+            model,
+            nl_template,
+            gold_map,
+            error_rate=oracle_error_rate,
+            seed=seed,
+            max_items=max_items,
         )
         if recording:
             # Provenance is fixed BEFORE the first teacher call so the durable log's
@@ -827,6 +938,10 @@ def run_controlled(
                 "zipf_a": zipf_a,
                 "seed": seed,
                 "composed_relation": composed_relation,
+                # ``None`` for an unconstrained run (byte-identical to an E11 original);
+                # the cap N when a structured record is being made, which the replay
+                # guard then refuses to mix with an unconstrained run.
+                "response_format_max_items": max_items,
                 "teacher_kind": settings.teacher,
                 "recorded_at": recorded_at,
             }
@@ -843,6 +958,7 @@ def run_controlled(
                 zipf_a=zipf_a,
                 seed=seed,
                 composed_relation=composed_relation,
+                response_format_max_items=max_items,
             )
             shared = SharedAnswerCache(metered, guard, bench.kg, log=log)
             shared.warm_from_rows(warm_rows)
@@ -1039,6 +1155,16 @@ def main() -> None:
             "(no API calls, byte-identical) whenever the file already exists"
         ),
     )
+    ap.add_argument(
+        "--max-items",
+        type=int,
+        default=None,
+        help=(
+            "cap the openrouter teacher's answer list at N via an OpenAI-style "
+            "json_schema (structured output); openrouter-only, and not valid on replay. "
+            "Unset = today's unconstrained behaviour (byte-identical to the E11 records)"
+        ),
+    )
     ap.add_argument("--out", default="experiments/results/real_kg_controlled.json")
     args = ap.parse_args()
 
@@ -1061,6 +1187,7 @@ def main() -> None:
         gamma=args.gamma,
         answers_path=args.answers_path,
         recorded_at=recorded_at,
+        max_items=args.max_items,
         verbose=True,
     )
     out = Path(args.out)
