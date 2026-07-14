@@ -8,9 +8,10 @@ These tests pin:
 * (a) the runner's builder threads the EXACT schema through to the OpenRouter
   client, and the default (``--max-items`` unset) path stays byte-identical to
   today (no ``response_format`` key emitted);
-* (c) a structured record refuses to replay against an unstructured run and vice
-  versa -- the provenance guard treats ``response_format_max_items`` like every
-  other stream-fixing field, naming it in the error;
+* (c) a structured record REPLAYS by inheriting its cap: on replay there is no
+  run-side cap to declare (no live teacher is called), so
+  ``response_format_max_items`` is inherited from the record and surfaced in the
+  report -- never a mismatch -- while every OTHER provenance field still refuses;
 * (d) ``--max-items`` is refused for any non-openrouter teacher and in replay mode.
 
 All fixtures are TINY and SYNTHETIC: MetaQA is never loaded. The teacher is a fake
@@ -210,8 +211,8 @@ def test_max_items_none_sends_no_response_format() -> None:
     assert "response_format" not in captured[0]
 
 
-# ============================================================= (c) provenance refusal both ways
-def test_structured_record_refuses_replay_by_unstructured_run(tmp_path, monkeypatch) -> None:
+# ============================================================= (c) replay inherits the cap
+def test_structured_record_replays_and_inherits_max_items(tmp_path, monkeypatch) -> None:
     counter = {"calls": 0}
     _install_fake_teacher(monkeypatch, counter)
     bench, settings = _tiny_bench(), _openrouter_settings()
@@ -222,31 +223,65 @@ def test_structured_record_refuses_replay_by_unstructured_run(tmp_path, monkeypa
     # The record is self-describing: structured records carry the cap in provenance.
     assert record["provenance"]["response_format_max_items"] == 25
 
+    # A replay is a property OF THE RECORD: no run-side max_items is declared (no live
+    # teacher), so the cap is INHERITED, never mismatched, and echoed in the report so
+    # downstream analysis still distinguishes a structured replay from an unconstrained one.
     calls_before_replay = counter["calls"]
-    with pytest.raises(ProvenanceMismatchError) as excinfo:
-        run_controlled(answers_path=str(path), **_common(bench, settings))
-    assert "response_format_max_items" in str(excinfo.value)
-    # refused before touching the teacher
+    rep = run_controlled(answers_path=str(path), **_common(bench, settings))
+    assert rep["response_format_max_items"] == 25
+    # replay makes no teacher call
     assert counter["calls"] == calls_before_replay
 
 
-def test_provenance_check_flags_max_items_both_directions() -> None:
+def test_replay_inherits_max_items_never_mismatches() -> None:
     base = dict(hop=1, split="test", limit=24, zipf_a=1.5, seed=0, composed_relation=None)
     structured = {"provenance": {**base, "response_format_max_items": 25}}
     unstructured = {"provenance": {**base, "response_format_max_items": None}}
+    inherit = frozenset({"response_format_max_items"})
 
-    # a structured record (25) refuses a run not requesting it (None) ...
-    with pytest.raises(ProvenanceMismatchError) as e1:
-        rkc._check_replay_provenance(structured, **base, response_format_max_items=None)
-    assert "response_format_max_items" in str(e1.value)
+    # A replay INHERITS the record's cap: neither a structured record (25) nor an E11
+    # original (None) mismatches the replay's absent run-side cap (None).
+    rkc._check_replay_provenance(
+        structured, **base, response_format_max_items=None, inherit_fields=inherit
+    )
+    rkc._check_replay_provenance(
+        unstructured, **base, response_format_max_items=None, inherit_fields=inherit
+    )
 
-    # ... and vice versa: an E11 original (None) refuses a run requesting 25.
-    with pytest.raises(ProvenanceMismatchError) as e2:
-        rkc._check_replay_provenance(unstructured, **base, response_format_max_items=25)
-    assert "response_format_max_items" in str(e2.value)
+    # Inheriting the cap does NOT weaken any OTHER field: a seed mismatch still refuses.
+    with pytest.raises(ProvenanceMismatchError) as e:
+        rkc._check_replay_provenance(
+            structured,
+            **{**base, "seed": 1},
+            response_format_max_items=None,
+            inherit_fields=inherit,
+        )
+    assert "seed" in str(e.value)
 
-    # Matching values (both None = an E11 original replayed plainly) still replay.
-    rkc._check_replay_provenance(unstructured, **base, response_format_max_items=None)
+
+def test_unconstrained_record_replays_and_reports_none(tmp_path, monkeypatch) -> None:
+    counter = {"calls": 0}
+    _install_fake_teacher(monkeypatch, counter)
+    bench, settings = _tiny_bench(), _oracle_settings()
+    path = tmp_path / "answers.json"
+
+    # A plain (E11 original) recording: provenance carries the cap as None.
+    run_controlled(answers_path=str(path), **_common(bench, settings))
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["provenance"]["response_format_max_items"] is None
+
+    calls_before_replay = counter["calls"]
+    rep = run_controlled(answers_path=str(path), **_common(bench, settings))
+    assert rep["response_format_max_items"] is None
+    assert counter["calls"] == calls_before_replay
+
+    # A record made BEFORE this field existed lacks the key entirely; it still replays
+    # (the cap is inherited as None), never a spurious mismatch.
+    del record["provenance"]["response_format_max_items"]
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(json.dumps(record), encoding="utf-8")
+    rep_legacy = run_controlled(answers_path=str(legacy), **_common(bench, settings))
+    assert rep_legacy["response_format_max_items"] is None
 
 
 # ============================================================= (d) --max-items guards

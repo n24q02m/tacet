@@ -265,13 +265,15 @@ SPEND_SEMANTICS = (
     "answers cost in total, not only what this process billed to the provider)"
 )
 
-#: Fields that MUST match for a record to be replayable. The first six fix the exact
-#: ``(head, relation)`` sequence, so replaying a record made under different values
-#: would silently mismatch pairs. ``response_format_max_items`` does not change the
-#: stream but DOES change the recorded ANSWERS (a capped structured record vs an E11
-#: original), so mixing the two would compare distillability on non-comparable
-#: answers; it is guarded the same way. A record made before this field existed, and
-#: a plain (unconstrained) run, both carry ``None``, so E11 originals still replay.
+#: Provenance fields checked for a record to be replayable. The first six fix the exact
+#: ``(head, relation)`` sequence, so replaying a record made under different values would
+#: silently mismatch pairs; they are ALWAYS compared. ``response_format_max_items`` is
+#: different: it does not shape the stream, it LABELS the answer discipline the record was
+#: made under. On a recording RESUME it is compared strictly (a live teacher is called, so
+#: resuming with a different cap would mix capped and uncapped answers); on REPLAY there is
+#: no run-side cap to compare against — no teacher is called — so the caller lists it in
+#: ``inherit_fields`` and it is INHERITED from the record and reported instead of matched.
+#: A record made before this field existed carries ``None``, so E11 originals still replay.
 _REPLAY_PROVENANCE_FIELDS = (
     "hop",
     "split",
@@ -323,15 +325,23 @@ def _check_replay_provenance(
     seed,
     composed_relation,
     response_format_max_items=None,  # noqa: ANN001
+    inherit_fields: frozenset[str] = frozenset(),
 ) -> None:
     """Refuse to replay a record made under different stream parameters.
 
     Compares every :data:`_REPLAY_PROVENANCE_FIELDS` value in the record against the
     current run and raises :class:`ProvenanceMismatchError` naming the FIRST field
     that differs. The stream fields fix the exact ``(head, relation)`` sequence, so a
-    mismatch would replay the wrong answers against the wrong pairs;
-    ``response_format_max_items`` fixes the answer discipline the record was made
-    under, so a structured record cannot masquerade as an E11 original.
+    mismatch would replay the wrong answers against the wrong pairs.
+
+    ``inherit_fields`` names provenance fields the caller INHERITS from the record
+    rather than matching: they are skipped by the comparison. A replay passes
+    ``{"response_format_max_items"}`` because that cap is a property of the record's
+    answers, not a replay-run parameter — no live teacher is called, so there is no
+    run-side cap to compare against, and comparing one would make a structured record
+    impossible to replay. The recording-resume caller passes nothing, so it still
+    matches the cap strictly (resuming with a different cap would mix capped and
+    uncapped answers). No stream-fixing field is ever inheritable.
     """
     prov = record.get("provenance", {})
     current = {
@@ -344,6 +354,8 @@ def _check_replay_provenance(
         "response_format_max_items": response_format_max_items,
     }
     for name in _REPLAY_PROVENANCE_FIELDS:
+        if name in inherit_fields:
+            continue
         recorded = prov.get(name)
         if recorded != current[name]:
             raise ProvenanceMismatchError(
@@ -778,10 +790,13 @@ def run_controlled(
     ``max_items`` caps the teacher's answer list at N via an OpenAI-style
     ``json_schema`` structured-output constraint (openrouter teacher only). It is
     stamped into the record's provenance as ``response_format_max_items`` so a
-    structured record is distinguishable from — and refuses to replay against — an
-    unconstrained E11 original; it is rejected on replay (no live teacher) and for any
-    non-openrouter teacher kind. ``None`` (the default) forwards no constraint, leaving
-    every recorded artifact byte-identical to the E11 originals.
+    structured record stays self-describing; passing ``max_items`` itself is rejected on
+    replay (no live teacher) and for any non-openrouter teacher kind. On replay the cap
+    is a property of the RECORD, so it is INHERITED from the record's provenance and
+    echoed in the report (``response_format_max_items``) rather than re-declared — a
+    replay calls no teacher, so there is no run-side cap to match and comparing one would
+    make a structured record impossible to replay. ``None`` (the default) forwards no
+    constraint, leaving every recorded artifact byte-identical to the E11 originals.
     """
     # Replay when ``answers_path`` names an EXISTING record; record when it names a
     # not-yet-existing one; behave exactly as before when it is ``None``.
@@ -896,6 +911,11 @@ def run_controlled(
     # ``TACET_TEACHER=oracle`` this single teacher IS the (noisy) oracle. In replay
     # mode the cache is pre-populated from the record and holds NO teacher, so no
     # credential is touched and no API call is possible.
+    # The answer-discipline cap that LABELS this run's answers. On replay it is a
+    # property of the RECORD, not a run parameter (no live teacher is called, so there is
+    # no run-side cap to declare), so it is INHERITED from the record's provenance and
+    # reported; on a recording / plain run it is the run's own ``max_items``.
+    response_format_max_items = max_items
     if replay_mode:
         record = _load_answers_record(answers_path)
         schema = record.get("schema")
@@ -904,6 +924,7 @@ def run_controlled(
                 f"answers record schema {schema!r} != expected {ANSWERS_RECORD_SCHEMA!r}; "
                 f"re-record with the current code."
             )
+        response_format_max_items = record.get("provenance", {}).get("response_format_max_items")
         _check_replay_provenance(
             record,
             hop=hop,
@@ -913,6 +934,10 @@ def run_controlled(
             seed=seed,
             composed_relation=composed_relation,
             response_format_max_items=max_items,
+            # Inherit the record's cap instead of matching it: a replay declares no
+            # run-side cap (no live teacher), so comparing would deadlock against any
+            # structured record. Only this field is inherited; all others still match.
+            inherit_fields=frozenset({"response_format_max_items"}),
         )
         shared = ReplayAnswerCache.from_record(record, guard, bench.kg)
     else:
@@ -1099,6 +1124,11 @@ def run_controlled(
         "workload_cap": limit,
         "zipf_a": zipf_a,
         "seed": seed,
+        # The answer-discipline cap this run's answers were made under: the run's own
+        # ``max_items`` when a teacher is called, or the value INHERITED from the record
+        # on replay, so downstream analysis can always tell a structured replay from an
+        # unconstrained one.
+        "response_format_max_items": response_format_max_items,
         "stream_len": len(stream),
         "distinct_queries": distinct,
         "teacher_answer_accuracy": teacher_acc,
