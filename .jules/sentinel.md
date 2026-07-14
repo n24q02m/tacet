@@ -19,3 +19,8 @@
 **Vulnerability:** FastAPI endpoints using default Pydantic models for nested and flat string fields were not enforcing maximum lengths, creating a Denial of Service (DoS) vector from unbounded inputs.
 **Learning:** Pydantic's default `str` fields and `list` collections allow unbounded sizes, meaning maliciously large nested JSON requests could exhaust memory.
 **Prevention:** Always enforce max sizes in request models. Use `Field(..., max_length=X)` for strings or collection lengths. For strings nested in lists, use `typing.Annotated`, like `list[Annotated[str, Field(max_length=X)]]`.
+
+## 2024-05-25 - Prevent Generic Catch-All from Obscuring HTTPExceptions
+**Vulnerability:** A generic `except Exception:` block in the `/ask` endpoint was mistakenly catching intentionally raised `HTTPException`s, masking authentication/authorization errors as 500 errors.
+**Learning:** When dealing with FastAPI (or any framework with dedicated exception types like HTTPException), a bare `except Exception:` handler will intercept framework-specific errors too, potentially leaking generic error states or bypassing explicit application logic for 40x codes.
+**Prevention:** Always add an explicit `except HTTPException: raise` before the generic `except Exception:` catch-all, or ensure the generic catch block does not interfere with the framework's internal error types.
