@@ -299,12 +299,18 @@ def _build_shared(
     limit: int,
     zipf_a: float,
     composed_relation: str | None,
-) -> SharedAnswerCache:
-    """The one teacher-answer cache both arms share (replay record or oracle).
+) -> tuple[SharedAnswerCache, int | None]:
+    """The one teacher-answer cache both arms share, plus the record's answer cap.
 
     In replay mode the record's provenance is validated against this run's stream
-    parameters -- including ``composed_relation`` for a hop>=2 ladder -- so a
-    record made for a different stream is refused, never silently mis-served.
+    parameters -- including ``composed_relation`` for a hop>=2 ladder -- so a record
+    made for a different stream is refused, never silently mis-served. The answer-
+    discipline cap ``response_format_max_items`` is INHERITED from the record rather
+    than matched: a replay calls no live teacher, so there is no run-side cap to
+    compare against (matching one would make a structured record impossible to replay).
+    The cap is returned so the report can echo it -- the record's value on replay
+    (``None`` for a legacy/unconstrained record), or ``None`` in the oracle path, where
+    no teacher cap applies.
     """
     if replay_mode:
         record = _load_answers_record(answers_path)
@@ -322,12 +328,17 @@ def _build_shared(
             zipf_a=zipf_a,
             seed=seed,
             composed_relation=composed_relation,
+            # Inherit the record's cap instead of matching it: a replay declares no
+            # run-side cap (no live teacher), so comparing would refuse any structured
+            # record. Only this field is inherited; all others still match strictly.
+            inherit_fields=frozenset({"response_format_max_items"}),
         )
-        return ReplayAnswerCache.from_record(record, guard, kg)
+        max_items = record.get("provenance", {}).get("response_format_max_items")
+        return ReplayAnswerCache.from_record(record, guard, kg), max_items
     metered = _new_metered(
         settings, model, nl_template, gold_map, error_rate=oracle_error_rate, seed=seed
     )
-    return SharedAnswerCache(metered, guard, kg)
+    return SharedAnswerCache(metered, guard, kg), None
 
 
 def _resolve_composition(composition: str | None, hop: int) -> tuple[dict, str]:
@@ -442,7 +453,7 @@ def shadow_report(
     )
     guard = BudgetGuard(budget_usd)
     model = resolve_price_key(settings)
-    shared = _build_shared(
+    shared, response_format_max_items = _build_shared(
         replay_mode=replay_mode,
         answers_path=answers_path,
         settings=settings,
@@ -491,6 +502,11 @@ def shadow_report(
         "composed_relation": composed_relation,
         "k": k,
         "gamma_candidate": gamma_candidate,
+        # The answer-discipline cap the replayed record's answers were made under,
+        # inherited from the record on replay (None for a legacy/unconstrained record or
+        # the oracle path), so a future structured E12 replay is distinguishable from an
+        # unconstrained one.
+        "response_format_max_items": response_format_max_items,
         "teacher_kind": (
             "replay"
             if replay_mode

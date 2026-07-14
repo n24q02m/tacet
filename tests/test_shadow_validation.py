@@ -336,6 +336,39 @@ def test_replay_accepts_real_hop2_provenance_shape(tmp_path) -> None:
     assert rep["hop"] == 2
     assert rep["composed_relation"] == Q2
     assert rep["cache_teacher_calls"] == rep["shadow_teacher_calls"] == 4
+    # an unconstrained (legacy) record has no cap key: it is inherited as None and
+    # reported as None, so an E11-original replay is labelled unconstrained.
+    assert rep["response_format_max_items"] is None
+
+
+def test_replay_inherits_structured_record_max_items(tmp_path) -> None:
+    stream = _hop2_stream(4)
+    prov = {**_real_hop2_provenance(seed=0), "response_format_max_items": 25}
+    record = _hop2_record(stream, prov)
+    path = tmp_path / "grok-4.3_seed0.json"
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+    # A replay INHERITS the record's answer-discipline cap: no run-side cap is declared
+    # (no live teacher), so a structured record replays cleanly instead of deadlocking on
+    # the provenance guard, and the report echoes the cap so a future structured E12 run
+    # is distinguishable from an unconstrained one.
+    rep = shadow_report(
+        "grok-4.3",
+        0,
+        hop=2,
+        split="test",
+        limit=300,
+        zipf_a=1.5,
+        composed_relation=Q2,
+        answers_path=str(path),
+        bench=_hop2_true_bench(4),
+        settings=_oracle_settings(),
+        stream=stream,
+        budget_usd=1e9,
+        verbose=False,
+    )
+    assert rep["response_format_max_items"] == 25
+    assert rep["cache_teacher_calls"] == rep["shadow_teacher_calls"] == 4
 
 
 def test_replay_rejects_mismatched_composed_relation(tmp_path) -> None:
