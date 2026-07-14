@@ -92,7 +92,15 @@ the cache on every seed. The distillation-over-caching effect is itself
 generalising composition rule and makes $87\%$ fewer teacher calls than a
 cache, because a rule answers unseen heads and a cache cannot; under the
 noisy real LLM the miner recovers no installable rule and the cascade
-reduces to a cache. Tier-1 answers carry replayable Datalog proof trees,
+reduces to a cache. Sweeping the installation threshold across eleven 2026
+frontier teachers refines this: at the paper's operating point none installs
+the rule, but at a lower threshold ten of eleven install the
+world-precision-$1.0$ composition rule at $81$--$86\%$ fewer calls, so the gate
+is the confidence threshold, not teacher identity --- yet that low-threshold
+regime is not a deployable fix, because the natural label-free way to promote
+such rules (agreement with the teacher on unseen heads) is provably inert, and
+cross-teacher ``distillability'' at low threshold is an answer-length artifact
+(Section~\ref{sec:threshold-gate}). Tier-1 answers carry replayable Datalog proof trees,
 and we prove an ontology-preservation guarantee
 (Theorem~\ref{thm:soundness}) for the synthesised rules. The
 distillation-over-caching effect that is neutral under the noisy KGQA
@@ -211,7 +219,12 @@ downward and the blended cost decays toward the symbolic floor.
   teacher calls than a cache, recovering a generalising composition rule for
   unseen heads) but neutral under the noisy real LLM, which on this benchmark
   reduces the cascade to a cache. We do not claim distillation beats caching
-  with a real LLM here.
+  with a real LLM here. A threshold sweep over eleven 2026 teachers further
+  shows the MetaQA null is governed by the installation threshold rather than
+  teacher identity, and that the low-threshold regime it exposes is not
+  deployable (Section~\ref{sec:threshold-gate}): the obvious label-free
+  promotion signal is inert and the cross-teacher ranking is confounded by
+  answer verbosity.
   \item[(C4)] \textbf{An honest negative result.} A candid study of graph
   \emph{forecasting} showing that a learned forward-dynamics extension does
   not beat purpose-built temporal models, reported as a negative result
@@ -1720,6 +1733,9 @@ the 2-hop streams across seeds (and some calls fail outright), so the confidence
 of the genuine base-relation composition
 $\mathit{starred\_actors}^{-1}\cdot\mathit{directed\_by}$ falls below the
 miner's installation threshold, and no generalising rule is installed.
+Section~\ref{sec:threshold-gate} revisits this null with a 2026 eleven-teacher
+threshold sweep and shows the operative variable is the installation threshold,
+not teacher quality.
 
 \paragraph{Isolating the mechanism with an oracle teacher.} To show that the
 ceiling here is teacher quality and not the architecture, we re-run the same
@@ -2214,6 +2230,76 @@ tool calls grows \citep{onweller2026cited}. The supersession mechanism
 such an extension would contribute is, moreover, already occupied by
 concurrent work \citep{joshi2026eywa,patel2026supersede}. The extension
 clears neither its own soundness bar nor an originality bar.
+
+\subsection{The installation gate is the confidence threshold, not teacher identity}
+\label{sec:threshold-gate}
+
+Section~\ref{sec:realcost} found that under a real Grok teacher the miner installs
+no generalising 2-hop rule at the operating point $\gamma{=}0.95$, and read the
+null as a teacher-quality ceiling. A confidence-threshold sweep across eleven
+2026 frontier teachers on the same controlled 2-hop MetaQA workload sharpens, and
+partially revises, that reading (Table~\ref{tab:threshold_gate}). At
+$\gamma{=}0.95$ \emph{none} of the eleven installs the rule, reproducing the Grok
+null and showing it is not an artifact of 2025-era models. At $\gamma{=}0.50$,
+\emph{ten of eleven} install the exact composition
+$q2(x,y)\!\leftarrow\!\mathit{starred\_actors}^{-1}(x,z)\wedge\mathit{directed\_by}(z,y)$
+at world precision $1.0$, cutting $81$--$86\%$ of teacher calls at no accuracy
+loss --- despite a teacher answer accuracy of only $0$--$5\%$. The free variable
+is therefore the installation threshold $\gamma$, not the teacher: raising teacher
+accuracy and lowering $\gamma$ both cross the gate, and at a fixed low $\gamma$
+even a $0$--$5\%$-accurate teacher installs the world-correct rule, because the
+miner's confidence is taken over the observed base-relation groundings, which the
+noisy answers still supply. The effect is seed-dependent --- installation is a
+per-workload draw and we report the favourable seed per model over the $1$--$3$
+seeds recorded --- so we read the sweep as establishing \emph{which variable}
+gates installation, not a per-model ranking. The low-$\gamma$ regime it exposes
+is not, however, a deployable recommendation, for the two reasons below.
+
+\input{results/tab_threshold_gate.tex}
+
+\paragraph{Label-free promotion is inert.} Lowering $\gamma$ installs the true
+rule, but it also installs a self-referential junk rule, and telling the two
+apart in the study required world precision, i.e.\ gold labels a deployment does
+not have. The stream itself already pays for teacher answers, so a natural
+label-free test suggests itself: install a candidate at low $\gamma$ in
+\emph{shadow} (it predicts but does not route), and promote it only after it
+agrees with the teacher on $k$ distinct unseen heads, demoting on the first
+disagreement. We pre-registered this test (positive iff mean net teacher-call
+reduction ${\ge}20\%$ across the grid with no accuracy loss and zero junk
+promotions, at $k{=}3$) and ran it offline over the recorded ladder. Across the
+$22$ replayable cells and $k\in\{2,3,5\}$, \emph{not one rule was ever promoted}:
+every shadow rule agreed with the teacher on \emph{zero} of its unseen-head
+checks. The mechanism is structural. A rule installs precisely on the workloads
+where the teacher is least accurate; a world-correct rule there \emph{corrects}
+the teacher and therefore \emph{disagrees} with it, so agreement-with-teacher is
+anti-correlated with rule value exactly in the regime where the rule is valuable.
+The junk self-rule, which predicts nothing on unseen heads, is rejected for free
+--- so shadow validation is a sound \emph{guard} but not a \emph{promoter}, and
+closing the gold gap at low $\gamma$ needs a precision signal the stream does not
+supply. This is a negative result, and it bounds an otherwise attractive
+self-tuning story.
+
+\paragraph{Cross-teacher ``distillability'' is an answer-length artifact.} One
+might still rank teachers by how readily their answers distil, and build a
+benchmark on that ranking. It does not survive a controls check. Re-recording
+ten of the teachers with the answer list capped by a structured-output
+constraint (the eleventh is refused by its provider) and replaying at
+$\gamma{=}0.50$, the install set flips wholesale: six teachers that installed
+uncapped no longer do, and one that never installed now does --- while every
+teacher's answer accuracy is essentially unchanged. What the uncapped ladder read
+as ``distillability'' is dominated by how many entities a teacher emits per
+answer, not by the structure of its errors. The cap is moreover honoured
+inconsistently across providers (one returned $118$ entities against a limit of
+$25$), so a structured-output constraint is not even a reliable verbosity
+control. We therefore report no cross-teacher distillability ranking and do not
+pursue a benchmark on one.
+
+\paragraph{An engine boundary on answer width.} Both regimes are bounded from
+below by the engine: a verbose teacher that returns $40$--$64$ candidate tails
+per answer exhausts memory in the Datalog join, which materialises all bindings
+before deduplication. This caps the practical answer width and is tracked as an
+open issue rather than hidden; it also explains why the eleven-teacher sweep is
+reported over the models whose recorded answers replay within memory.
 
 \subsection{The unifying boundary}
 The two extensions --- together with the forward-dynamics forecaster we
