@@ -1,0 +1,28 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Confidence-threshold sweep on the controlled 2-hop MetaQA workload,
+eleven 2026 frontier teachers (favourable seed per model). At the operating
+point $\gamma{=}0.95$ no teacher installs the composition rule; at
+$\gamma{=}0.50$ ten of eleven install it at world precision $1.0$, cutting
+$81$--$86\%$ of teacher calls despite a teacher answer accuracy (\emph{t-acc}) of
+$0$--$5\%$. Installation is governed by $\gamma$, not by the teacher.}
+\label{tab:threshold_gate}
+\begin{tabular}{lccrc}
+\toprule
+Teacher & install $\gamma{=}0.95$ & install $\gamma{=}0.50$ & calls saved & t-acc \\
+\midrule
+GLM-5.2            & no & yes & $86.1\%$ & $0.00$ \\
+Kimi-K2.6          & no & yes & $83.6\%$ & $0.02$ \\
+Qwen3.7-Max        & no & yes & $83.6\%$ & $0.00$ \\
+Claude Sonnet~5    & no & yes & $83.3\%$ & $0.03$ \\
+DeepSeek-V4-Pro    & no & yes & $83.3\%$ & $0.00$ \\
+Gemini 3.5 Flash   & no & yes & $83.3\%$ & $0.05$ \\
+MiniMax-M3         & no & yes & $83.3\%$ & $0.00$ \\
+GPT-5.6            & no & yes & $83.3\%$ & $0.00$ \\
+Grok 4.5           & no & yes & $83.3\%$ & $0.00$ \\
+Grok 4.3           & no & yes & $81.1\%$ & $0.04$ \\
+MiMo-V2.5-Pro      & no & no  & ---      & $0.02$ \\
+\bottomrule
+\end{tabular}
+\end{table}
