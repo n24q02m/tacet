@@ -61,9 +61,9 @@ def test_per_seed_means_reproduce_committed_macro():
         factors = per_seed_full_factors(data)
         assert len(factors) == 3
         committed = data["aggregate"][teacher]["full"]["amortisation_mean"]
-        assert (
-            round(statistics.fmean(factors), 3) == committed
-        ), f"{teacher}: per-seed mean {statistics.fmean(factors)} != committed {committed}"
+        assert round(statistics.fmean(factors), 3) == committed, (
+            f"{teacher}: per-seed mean {statistics.fmean(factors)} != committed {committed}"
+        )
 
 
 def test_bootstrap_mirror_matches_canonical():
