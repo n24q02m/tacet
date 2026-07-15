@@ -56,13 +56,13 @@ class InducedRelation:
 def _node_signature(graph: WorldGraph, node_id: str) -> dict[tuple[str, str], int]:
     """Structural signature: (relation, direction) -> degree."""
     sig: dict[tuple[str, str], int] = defaultdict(int)
-    for rel in graph.relations():
-        out_deg = len(graph.out(node_id, rel))
-        in_deg = len(graph.into(node_id, rel))
-        if out_deg:
-            sig[(rel, "out")] = out_deg
-        if in_deg:
-            sig[(rel, "in")] = in_deg
+    # Direct access to _out and _in reduces time complexity from O(|R| * Degree) to O(Degree)
+    for rel, targets in graph._out.get(node_id, {}).items():
+        if targets:
+            sig[(rel, "out")] = len(targets)
+    for rel, sources in graph._in.get(node_id, {}).items():
+        if sources:
+            sig[(rel, "in")] = len(sources)
     return dict(sig)
 
 
