@@ -214,9 +214,9 @@ stream, one metered teacher call per distinct case shared across arms. Needs the
 PrivaCI-Bench dataset (default root `../PrivaCI-Bench`) and a teacher key.
 
 ```bash
-# keys in skret /tacet/prod
-MSYS_NO_PATHCONV=1 skret run -e prod --path=/tacet/prod -- \
-    uv run python experiments/run_privaci_controlled.py --n 300 --teacher gemini --seed 0
+# provide the selected teacher's API key via your environment / secret manager
+export TACET_GEMINI_API_KEY=<key>
+uv run python experiments/run_privaci_controlled.py --n 300 --teacher gemini --seed 0
 ```
 
 Repeat with `--teacher grok` and `--teacher claude`. Summarise across teachers
@@ -227,8 +227,7 @@ uv run python experiments/analyze_privaci.py \
     --results experiments/results --out paper/results
 ```
 
-**API keys:** the selected teacher's key (`gemini` / `grok` / `claude`) from
-skret `/tacet/prod`.
+**API keys:** the selected teacher's key (`TACET_GEMINI_API_KEY` / `TACET_XAI_API_KEY` / `TACET_OPENROUTER_API_KEY`), supplied via your environment or secret manager.
 
 ## Where outputs land
 
