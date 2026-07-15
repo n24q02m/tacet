@@ -2306,10 +2306,16 @@ The junk self-rule, which predicts nothing on unseen heads, is rejected for free
 --- so shadow validation is a sound \emph{guard} but not a \emph{promoter}, and
 closing the gold gap at low $\gamma$ needs a precision signal beyond single-sample
 teacher agreement. What that signal is we leave open: label-free alternatives we
-did not test --- multi-sample self-consistency (querying the teacher $k$ times and
-promoting only on majority agreement with the rule) and cross-rule or ontology
-consistency --- trade additional teacher cost for a precision signal, and we make
-no claim that either would succeed. This is a negative result, and it bounds an
+did not conclusively test --- multi-sample self-consistency (querying the teacher
+$k$ times and promoting only on majority agreement with the rule) and cross-rule
+or ontology consistency --- trade additional teacher cost for a precision signal,
+and we make no claim that either would succeed. A preliminary attempt at the
+self-consistency variant ($k{=}3$ over the models that install the rule) was in
+fact inconclusive for a telling reason: drawing the $k$ samples by raising the
+decoding temperature perturbs the teacher's primary answer enough that the rule
+no longer installs at $\gamma{=}0.50$ to begin with, so the majority signal is
+never exercised. A clean test would need paraphrase-based sampling at temperature
+zero, which we leave to future work. This is a negative result, and it bounds an
 otherwise attractive self-tuning story.
 
 \paragraph{Cross-teacher ``distillability'' is an answer-length artifact.} One
