@@ -97,6 +97,139 @@ python experiments/run_rotation_smoke.py --out experiments/results/rotation_smok
 
 Writes a small RotatE/ComplEx link-prediction smoke result to the given path.
 
+## 8. Real-LLM cost at matched accuracy (MetaQA, Section 8.1)
+
+The controlled real-teacher study shares one deterministic teacher answer per
+distinct `(head, relation)` across all arms (Tier 2 disabled), so the arms
+differ only in routing. It needs MetaQA under `data/MetaQA` (see the README's
+"Real MetaQA evaluation" for the clone command).
+
+```bash
+# real Grok teacher (metered USD)
+export TACET_TEACHER=grok TACET_XAI_API_KEY=<key> TACET_KGE_BACKEND=numpy
+uv run python experiments/run_real_kg_controlled.py --hop 1 --seed 0
+uv run python experiments/run_real_kg_controlled.py --hop 2 --seed 0
+
+# free (noisy) oracle — $0, no key
+export TACET_TEACHER=oracle TACET_ORACLE_ERROR_RATE=0.2
+uv run python experiments/run_real_kg_controlled.py --hop 2 --seed 0
+```
+
+Writes `experiments/results/real_kg_controlled.json` (per-arm teacher calls,
+metered cost, and accuracy). Pass `--answers-path <file>` to record the teacher
+answers on the first run and replay them byte-identically (no API calls) on
+later runs. **API key:** `TACET_XAI_API_KEY` (xAI) for the real Grok teacher;
+none for `TACET_TEACHER=oracle`.
+
+## 9. Oracle noise sweep (E11) — teacher-accuracy vs. rule-advantage
+
+Sweeps `OracleTeacher.error_rate` under the same controlled design ($0, no API
+key), reporting the mean rule-over-cache saving with a bootstrap 95% CI and a
+pre-registered verdict.
+
+```bash
+export TACET_TEACHER=oracle
+uv run python experiments/run_oracle_noise_sweep.py --hop 2 --seeds 3 \
+    --out experiments/results/oracle_noise_sweep.json
+```
+
+The default error-rate grid is `0.0..0.5` by `0.05`; add `--gammas 0.5 0.7 0.95`
+for the 2-D noise x gamma sweep. **API key:** none.
+
+## 10. Eleven-teacher threshold-gate sweep (H.3 / Table 9)
+
+Each teacher's 2-hop MetaQA ladder is recorded once through the controlled
+runner in OpenRouter mode, then replayed at the two thresholds; the committed
+reference artifacts are `experiments/results/real_ladder_hop2.json` and the
+rendered `paper/results/tab_threshold_gate.tex`.
+
+```bash
+export TACET_TEACHER=openrouter TACET_OPENROUTER_API_KEY=<key>
+export TACET_OPENROUTER_MODEL=x-ai/grok-4.3    # set per teacher in the ladder
+
+# record the teacher's answers at gamma=0.50, then replay the same answers at 0.95
+uv run python experiments/run_real_kg_controlled.py --hop 2 --seed 0 --gamma 0.50 \
+    --answers-path experiments/results/ladder_grok-4.3_hop2_seed0.json
+uv run python experiments/run_real_kg_controlled.py --hop 2 --seed 0 --gamma 0.95 \
+    --answers-path experiments/results/ladder_grok-4.3_hop2_seed0.json
+```
+
+Repeat with `TACET_OPENROUTER_MODEL` set to each of the eleven models. Summarise
+the recorded ladder (read-only over the on-disk JSON):
+
+```bash
+uv run python experiments/analyze_teacher_ladder.py \
+    --real experiments/results/real_ladder_hop2.json --axis both
+```
+
+**API key:** `TACET_OPENROUTER_API_KEY` (OpenRouter) for the teacher ladder.
+
+## 11. Structured-output comparison (answer-length control)
+
+Re-record each teacher with its answer list capped by an OpenAI-style
+`json_schema` constraint (`--max-items`, OpenRouter only), replay at
+`gamma=0.50`, and compare the install set with the uncapped ladder of Section 10.
+The committed reference artifact is
+`experiments/results/structured_output_comparison_hop2.json`.
+
+```bash
+export TACET_TEACHER=openrouter TACET_OPENROUTER_API_KEY=<key>
+export TACET_OPENROUTER_MODEL=x-ai/grok-4.3    # set per teacher
+uv run python experiments/run_real_kg_controlled.py --hop 2 --seed 0 --gamma 0.50 \
+    --max-items 25 \
+    --answers-path experiments/results/ladder_capped_grok-4.3_hop2_seed0.json \
+    --out experiments/results/real_kg_controlled_capped.json
+```
+
+`--max-items` requires `TACET_TEACHER=openrouter` (it is a live structured-output
+constraint, rejected on replay and on any non-OpenRouter teacher). **API key:**
+`TACET_OPENROUTER_API_KEY`.
+
+## 12. Shadow validation (E12) — label-free rule promotion
+
+Runs the mined rule in shadow (it predicts but does not route) and promotes it
+only after `k` distinct agreeing unseen heads, demoting on the first
+disagreement — a gold-free promotion test.
+
+```bash
+# free oracle (mechanism check)
+export TACET_TEACHER=oracle
+uv run python experiments/run_shadow_validation.py --slug oracle --seed 0
+
+# replay a recorded teacher ladder (no API calls)
+uv run python experiments/run_shadow_validation.py \
+    --answers experiments/results/ladder --slug grok-4.3 --seed 0
+```
+
+Sweep `k` with `--k 2`, `--k 3` (default), `--k 5`; pass `--out` to write the
+JSON report (the committed reference is
+`experiments/results/shadow_validation_hop2.json`, with zero promotions across
+all cells). **API key:** none for the oracle; the recorded ladder replays
+offline.
+
+## 13. Compliance amortisation (PrivaCI-Bench GDPR, C5)
+
+Three arms (`llm_only` / `cache` / `full`) over the same shuffled GDPR case
+stream, one metered teacher call per distinct case shared across arms. Needs the
+PrivaCI-Bench dataset (default root `../PrivaCI-Bench`) and a teacher key.
+
+```bash
+# keys in skret /tacet/prod
+MSYS_NO_PATHCONV=1 skret run -e prod --path=/tacet/prod -- \
+    uv run python experiments/run_privaci_controlled.py --n 300 --teacher gemini --seed 0
+```
+
+Repeat with `--teacher grok` and `--teacher claude`. Summarise across teachers
+and seeds into the paper macros:
+
+```bash
+uv run python experiments/analyze_privaci.py \
+    --results experiments/results --out paper/results
+```
+
+**API keys:** the selected teacher's key (`gemini` / `grok` / `claude`) from
+skret `/tacet/prod`.
+
 ## Where outputs land
 
 Raw experiment data (per-run rows and `summary.json`, plus the `*.json` result

@@ -94,12 +94,12 @@ cache, because a rule answers unseen heads and a cache cannot; under the
 noisy real LLM the miner recovers no installable rule and the cascade
 reduces to a cache. Sweeping the installation threshold across eleven 2026
 frontier teachers refines this: at the paper's operating point none installs
-the rule, but at a lower threshold ten of eleven install the
-world-precision-$1.0$ composition rule at $81$--$86\%$ fewer calls, so the gate
+the rule, but at a lower threshold ten of eleven (favourable seed per model)
+install the world-precision-$1.0$ composition rule at $81$--$86\%$ fewer calls, so the gate
 is the confidence threshold, not teacher identity --- yet that low-threshold
 regime is not a deployable fix, because the natural label-free way to promote
-such rules (agreement with the teacher on unseen heads) is provably inert, and
-cross-teacher ``distillability'' at low threshold is an answer-length artifact
+such rules (agreement with the teacher on unseen heads) is empirically inert, and
+cross-teacher ``distillability'' at low threshold is largely an answer-length artifact
 (Section~\ref{sec:threshold-gate}). Tier-1 answers carry replayable Datalog proof trees,
 and we prove an ontology-preservation guarantee
 (Theorem~\ref{thm:soundness}) for the synthesised rules. The
@@ -1261,7 +1261,7 @@ What we contribute instead is the \emph{quantified teacher-quality boundary} tha
 separates the two regimes, together with the instruments needed to locate it. The
 boundary is sharp: with an oracle teacher rule distillation is positive ($87\%$
 fewer teacher calls than caching on unseen heads), whereas with a real Grok~4.3
-teacher at ${\sim}53\%$ accuracy on $2$-hop compositions the rule miner degrades
+teacher at ${\sim}22$--$54\%$ accuracy on $2$-hop compositions the rule miner degrades
 and the distillation-beyond-caching effect is \emph{neutral}.
 On a second domain the boundary is \emph{crossed by a real teacher}: streaming
 GDPR compliance cases (PrivaCI-Bench) past three frontier teachers, online rule
@@ -2266,8 +2266,11 @@ label-free test suggests itself: install a candidate at low $\gamma$ in
 agrees with the teacher on $k$ distinct unseen heads, demoting on the first
 disagreement. We pre-registered this test (positive iff mean net teacher-call
 reduction ${\ge}20\%$ across the grid with no accuracy loss and zero junk
-promotions, at $k{=}3$) and ran it offline over the recorded ladder. Across the
-$22$ replayable cells and $k\in\{2,3,5\}$, \emph{not one rule was ever promoted}:
+promotions, at $k{=}3$) and ran it offline over the recorded ladder. Of the $33$
+attempted (teacher, seed) cells, $11$ --- the most verbose answerers ($40$--$64$
+tails) --- failed to replay within memory and are excluded, as the
+engine-boundary paragraph below explains. Across the $22$ replayable cells and
+$k\in\{2,3,5\}$, \emph{not one rule was ever promoted}:
 every shadow rule agreed with the teacher on \emph{zero} of its unseen-head
 checks. The mechanism is structural. A rule installs precisely on the workloads
 where the teacher is least accurate; a world-correct rule there \emph{corrects}
@@ -2286,9 +2289,12 @@ ten of the teachers with the answer list capped by a structured-output
 constraint (the eleventh is refused by its provider) and replaying at
 $\gamma{=}0.50$, the install set flips wholesale: six teachers that installed
 uncapped no longer do, and one that never installed now does --- while every
-teacher's answer accuracy is essentially unchanged. What the uncapped ladder read
+teacher's answer accuracy remains in the $0$--$5\%$ range. What the uncapped ladder read
 as ``distillability'' is dominated by how many entities a teacher emits per
-answer, not by the structure of its errors. The cap is moreover honoured
+answer, not by the structure of its errors. The lone teacher that installs only
+after the cap is consistent with this reading: capping removes its noisiest
+surplus entities, cleaning the base-relation groundings the miner scores over,
+which raises its confidence enough to install. The cap is moreover honoured
 inconsistently across providers (one returned $118$ entities against a limit of
 $25$), so a structured-output constraint is not even a reliable verbosity
 control. We therefore report no cross-teacher distillability ranking and do not

@@ -80,7 +80,7 @@ is published on Zenodo: [doi:10.5281/zenodo.20621240](https://doi.org/10.5281/ze
    └──────────────────────┘
 ```
 
-## v0.1.0 (first public release)
+## 1.0.0 (first public release)
 
 - **Sound symbolic Tier 1** — forward-chaining Datalog with machine-checkable
   provenance proof trees (`tacet.core.symbolic`); abstains rather than guess.
@@ -215,13 +215,13 @@ the single integration point for a real LLM (Gemini, Grok, GPT, …).
 python -m tacet.serve.cli demo      # 5 systems on a synthetic benchmark
 python examples/real_kg_demo.py    # the cascade on a real geography KG
 python examples/quickstart.py      # the API in 20 lines
-python -m unittest discover tests  # 39 tests
+python -m unittest discover tests  # 61 tests
 ```
 
 ## Reproduce the paper
 
 ```bash
-python -m tacet.eval.experiment --out experiments/results --seeds 12
+python -m tacet.eval.experiment --out experiments/results --seeds 8
 python experiments/analyze.py --results experiments/results --out experiments/results
 ```
 
@@ -230,12 +230,24 @@ frontier, E4 ablations, E5 repetition sensitivity, E6 noisy-teacher robustness)
 and emits the figures and LaTeX tables used by the paper.  See
 [`docs/reproduce.md`](docs/reproduce.md) for the full reproduction recipe.
 
-## Results (synthetic KGQA benchmark, 12 seeds)
+## Results (synthetic KGQA benchmark, 8 seeds)
 
 After running the grid above, the per-seed figures land in `experiments/results/`;
 the headline is a **~4–5× reduction in blended cost**
 versus an LLM-only system at near-parity accuracy, and a strict cost win over
 an exact-match cache because synthesised rules generalise to unseen entities.
+
+### What's new: threshold-gate sweep and two negative results
+
+A confidence-threshold sweep across **eleven 2026 frontier teachers** on the
+controlled 2-hop MetaQA workload shows the installation gate is the confidence
+threshold, not teacher identity: at the paper's operating point (γ≈0.95) none
+installs the composition rule, while at γ≈0.50 ten of eleven do (favourable seed
+per model) at 81–86% fewer teacher calls. That low-threshold regime is not
+deployable, and the paper reports **two negative results** that say why —
+label-free promotion of mined rules (promote on agreement with the teacher over
+unseen heads) is inert, and the cross-teacher "distillability" ranking is largely
+an answer-length artifact rather than a property of a teacher's error structure.
 
 ## Modules
 
@@ -285,7 +297,7 @@ This release ships all of **Tier A** and the tractable parts of
   offline pipelines + `CallableExtractor` as the LLM hook.
 - ✅ **Standard KGC dataset support** — FB15k-237 / WN18RR style loaders,
   `synthetic_kg_dataset`, `worldgeo`. The Tier-2 ComplEx attains
-  **MRR≈0.39 / Hits@10≈0.58** on the synthetic-org benchmark
+  **MRR≈0.34 / Hits@10≈0.60** on the synthetic-org benchmark
   (`experiments/kge_real_eval.py`).
 - ✅ **Causal layer (Tier B)** — `CausalModel` with structural equations,
   `do`-interventions, `counterfactual()` via abduction-action-prediction,
@@ -306,7 +318,9 @@ This release ships all of **Tier A** and the tractable parts of
   `IdentityWorldModel` stand-in *only*; a real Dreamer / JEPA integration
   needs GPU + perception data and is out of scope.
 - ⬜ Multi-modal entity embeddings — deferred.
-- ⬜ Real KGQA benchmark eval with a frontier LLM teacher — needs API keys.
+- ✅ **Real KGQA benchmark eval with a frontier LLM teacher** — a real Grok 4.3
+  teacher on MetaQA (metered at xAI's published price) and three frontier
+  teachers on PrivaCI-Bench (GDPR compliance), reported end-to-end in the paper.
 
 The full ID algorithm for semi-Markovian causal models, learnt federation
 trust inference, and CRDT-grade federation infrastructure remain explicit
