@@ -272,6 +272,7 @@ class GrokTeacher(Teacher):
         cost: float = 0.05,
         prompt_template: str | None = None,
         response_format: dict | None = None,
+        temperature: float | None = None,
     ) -> None:
         try:
             from openai import OpenAI  # type: ignore[import-not-found]
@@ -289,6 +290,11 @@ class GrokTeacher(Teacher):
         #: behaviour byte-for-byte, so every recorded artifact stays reproducible
         #: unless a caller opts in.
         self._response_format = response_format
+        #: Optional sampling temperature. ``None`` sends no ``temperature`` field,
+        #: so a single-sample recording stays byte-identical to today; a value
+        #: (used by the E13 self-consistency recorder) makes repeated calls for the
+        #: same pair diverge so a k-sample majority vote is meaningful.
+        self._temperature = temperature
         #: xAI/OpenAI-style token usage from the most recent call
         #: (``prompt_tokens`` / ``completion_tokens`` / ``total_tokens``).
         #: ``None`` until the first successful call. Read by
@@ -303,6 +309,8 @@ class GrokTeacher(Teacher):
         }
         if self._response_format is not None:
             kwargs["response_format"] = self._response_format
+        if self._temperature is not None:
+            kwargs["temperature"] = self._temperature
         try:
             resp = self._client.chat.completions.create(**kwargs)
             text = resp.choices[0].message.content or ""
@@ -379,6 +387,7 @@ class OpenRouterTeacher(GrokTeacher):
         model: str = "anthropic/claude-sonnet-4.6",
         prompt_template: str | None = None,
         response_format: dict | None = None,
+        temperature: float | None = None,
     ) -> None:
         super().__init__(
             api_key,
@@ -386,6 +395,7 @@ class OpenRouterTeacher(GrokTeacher):
             base_url="https://openrouter.ai/api/v1",
             prompt_template=prompt_template,
             response_format=response_format,
+            temperature=temperature,
         )
 
 
@@ -490,7 +500,11 @@ DEFAULT_ROTATING_MODELS: tuple[str, ...] = (
 )
 
 
-def build_teacher_from_settings(settings, response_format: dict | None = None) -> Teacher | None:  # noqa: ANN001
+def build_teacher_from_settings(
+    settings,  # noqa: ANN001
+    response_format: dict | None = None,
+    temperature: float | None = None,
+) -> Teacher | None:
     """Build the configured teacher; returns None for ``teacher=oracle`` so
     the caller can wire in its own ``OracleTeacher`` from a benchmark.
 
@@ -498,6 +512,11 @@ def build_teacher_from_settings(settings, response_format: dict | None = None) -
     (e.g. a ``json_schema``). Only the OpenRouter teacher honours it (it is the
     E11 ladder path); every other teacher kind ignores it, so passing ``None`` (the
     default) reproduces today's behaviour for all of them byte-for-byte.
+
+    ``temperature`` is an optional sampling temperature forwarded to the OpenRouter
+    teacher only (the E13 self-consistency ladder path); ``None`` (the default)
+    sends no ``temperature`` field, so every other teacher kind and the single-sample
+    recording stay byte-identical to today.
     """
     name = settings.teacher
     gemini_endpoint = getattr(settings, "gemini_endpoint", "generativelanguage")
@@ -520,6 +539,7 @@ def build_teacher_from_settings(settings, response_format: dict | None = None) -
             settings.openrouter_api_key,
             settings.openrouter_model,
             response_format=response_format,
+            temperature=temperature,
         )
     if name == "rotating":
         if not settings.gemini_api_key:

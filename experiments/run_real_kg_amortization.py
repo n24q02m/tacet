@@ -451,6 +451,7 @@ def _new_metered(
     error_rate: float = 0.0,
     seed: int = 0,
     response_format: dict | None = None,
+    temperature: float | None = None,
 ) -> MeteredTeacher:
     """A fresh per-arm MeteredTeacher (isolated so spend / call-count is per-arm).
 
@@ -475,6 +476,11 @@ def _new_metered(
     forwarded to the real teacher (only the OpenRouter teacher honours it). It is
     ignored in oracle mode (the oracle makes no API call), so leaving it ``None``
     (the default) reproduces today's behaviour on every teacher kind.
+
+    ``temperature`` is an optional sampling temperature likewise forwarded to the
+    OpenRouter teacher (the E13 self-consistency recorder samples each pair k times
+    at a non-zero temperature); ``None`` (the default) sends no temperature field and
+    is ignored in oracle mode, so today's behaviour is unchanged on every teacher kind.
     """
     if settings.teacher == "oracle":
         if oracle_gold is None:
@@ -495,7 +501,9 @@ def _new_metered(
             noise_mode="per_key",
         )
         return MeteredTeacher(teacher, PriceTable.default(), model=model)
-    teacher = build_teacher_from_settings(settings, response_format=response_format)
+    teacher = build_teacher_from_settings(
+        settings, response_format=response_format, temperature=temperature
+    )
     if teacher is None:
         raise SystemExit(
             "No real teacher configured. Set TACET_TEACHER=grok and "
