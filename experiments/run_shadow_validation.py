@@ -180,6 +180,7 @@ def _replay_shadow_arm(
     gamma_candidate: float,
     k: int,
     kge_cfg: KGEConfig,
+    signal=None,  # noqa: ANN001
 ) -> dict:
     """Stream through a cache cascade with shadow rule-validation wired around it.
 
@@ -192,6 +193,13 @@ def _replay_shadow_arm(
     routing engine and the closure re-materialised), a disagreement demotes it.
     Promotion latency is real: the k agreeing checks are still teacher calls, so
     savings begin only after promotion.
+
+    ``signal`` selects WHAT the prediction is validated against. ``None`` (the E12
+    default) compares against the single shared teacher answer, byte-identically to
+    before. E13 injects ``signal(shared, head, relation) -> frozenset`` to compare
+    against the k-sample self-consistency MAJORITY instead; everything else -- the
+    mining trigger, the unseen-head bookkeeping, the ``k``-agreement state machine --
+    is shared, so the two experiments differ only in the validation target.
     """
     replay = ReplayTeacher(shared)
     cfg = CascadeConfig(
@@ -232,7 +240,9 @@ def _replay_shadow_arm(
         correct += int(_accuracy(gold, ans.answers))
 
         if teacher_event and ans.tier == 3:
-            teacher_answer = frozenset(ans.answers)  # the shared teacher answer
+            # E12 validates against the single shared teacher answer; E13 injects a
+            # ``signal`` that returns the k-sample self-consistency majority instead.
+            teacher_answer = frozenset(ans.answers) if signal is None else signal(shared, h, r)
             for name, pred in predictions.items():
                 sr = shadow[name]
                 if sr.state != "shadow":

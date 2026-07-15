@@ -44,6 +44,7 @@ import json
 import os
 import sys
 import time
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -80,6 +81,28 @@ from tacet.serve.settings import load_settings  # noqa: E402
 
 #: Confidence is a probability in [0, 1]; a threshold above 1 disables Tier-2.
 TIER2_OFF = 1.01
+
+
+def majority(samples: list[list[str]]) -> frozenset[str]:
+    """The self-consistency majority answer set over ``k`` teacher samples (E13).
+
+    Given the ``k`` answer-sets sampled from the teacher for one ``(head,
+    relation)`` pair, return the entities present in AT LEAST ``ceil(k / 2)`` of
+    them -- a per-entity strict-majority vote. Each sample votes at most once for
+    an entity (a repeat inside one sample does not count twice). ``k == 1`` returns
+    exactly the sole sample, so a single-sample record's majority equals its
+    answer and the E13 signal degenerates to the E12 single-sample signal. An empty
+    ``samples`` list, or samples that are all empty, votes for nothing and returns
+    the empty set.
+    """
+    k = len(samples)
+    if k == 0:
+        return frozenset()
+    threshold = (k + 1) // 2  # == ceil(k / 2)
+    votes: Counter[str] = Counter()
+    for sample in samples:
+        votes.update(set(sample))
+    return frozenset(entity for entity, count in votes.items() if count >= threshold)
 
 
 def _cell_valid(full_accuracy: float, cache_accuracy: float) -> bool:
@@ -176,6 +199,17 @@ class SharedAnswerCache:
         self.guard.add(self.metered.last_cost_usd)  # real spend only
         return self.answers[key], self.cost[key]
 
+    def majority(self, head: str, relation: str) -> frozenset[str]:
+        """The self-consistency majority for a pair (E13 signal).
+
+        The base cache holds ONE answer per pair (a single teacher sample), so the
+        majority IS that served answer -- exactly the E12 single-sample signal. A
+        k-sample record overrides this in :class:`KSampleReplayAnswerCache` to vote
+        over all k samples. It is read AFTER the pair has been served (its answer is
+        cached), so it never triggers or re-charges a teacher call.
+        """
+        return frozenset(self.answers[(head, relation)])
+
 
 class AnswerRecordError(RuntimeError):
     """Integrity failure while replaying an on-disk teacher-answer record.
@@ -246,6 +280,53 @@ class ReplayAnswerCache(SharedAnswerCache):
         return self.answers[key], self.cost[key]
 
 
+class KSampleReplayAnswerCache(ReplayAnswerCache):
+    """A replay cache holding ``k`` teacher samples per pair for self-consistency (E13).
+
+    Serves the PRIMARY sample (``samples[0]``) for routing / write-back -- so the
+    cascade's base teacher-call count and its cache arm stay single-sample, identical
+    to E12 -- while :meth:`majority` votes over all ``k`` samples for the shadow-rule
+    promotion check. A legacy single-sample record (no ``samples`` field per row) loads
+    as ``samples == [answers]`` (k=1), whose majority is the sole answer, so E13 replays
+    every existing E11/E12 record byte-identically. Cost charging is inherited unchanged
+    from :class:`ReplayAnswerCache` (once per distinct pair on first service).
+    """
+
+    def __init__(self, guard, kg, answers, cost, usage, samples, k) -> None:  # noqa: ANN001
+        super().__init__(guard, kg, answers, cost, usage)
+        #: ``(head, relation) -> [answer_set_1, ..., answer_set_k]``.
+        self.samples = samples
+        #: The declared samples-per-pair from the record's provenance (1 for legacy).
+        self.k = k
+
+    @classmethod
+    def from_record(
+        cls, record: dict, guard: BudgetGuard, kg: WorldGraph
+    ) -> KSampleReplayAnswerCache:
+        answers: dict[tuple[str, str], list[str]] = {}
+        cost: dict[tuple[str, str], float] = {}
+        usage: dict[tuple[str, str], dict | None] = {}
+        samples: dict[tuple[str, str], list[list[str]]] = {}
+        for row in record.get("answers", []):
+            key = (row["head"], row["relation"])
+            # A legacy / single-sample row carries only ``answers``; its lone answer
+            # IS its only sample, so it votes as a k=1 majority equal to itself.
+            row_samples = row.get("samples")
+            if row_samples is None:
+                row_samples = [row["answers"]]
+            samples[key] = [list(s) for s in row_samples]
+            # Serve the primary sample so routing / write-back is single-sample,
+            # exactly as a plain replay of ``samples[0]``.
+            answers[key] = list(samples[key][0])
+            cost[key] = row["cost_usd"]
+            usage[key] = row.get("usage")
+        k = record.get("provenance", {}).get("k", 1)
+        return cls(guard, kg, answers, cost, usage, samples, k)
+
+    def majority(self, head: str, relation: str) -> frozenset[str]:
+        return majority(self.samples[(head, relation)])
+
+
 #: Version tag stamped into every on-disk answers record; bump on a breaking change
 #: to the record layout so a stale record is rejected loudly on replay.
 ANSWERS_RECORD_SCHEMA = "tacet.controlled.answers/v1"
@@ -311,6 +392,118 @@ def _build_answers_record(shared: SharedAnswerCache, *, provenance: dict) -> dic
                 "usage": shared.usage.get((h, r)),
             }
             for (h, r) in shared.answers
+        ],
+    }
+
+
+class SharedKSampleAnswerCache(SharedAnswerCache):
+    """Records ``k`` teacher samples per distinct pair for self-consistency (E13).
+
+    On a cold pair it queries the (temperature-configured) metered teacher
+    ``n_samples`` times and stores every answer-set, per-sample cost and usage; the
+    pair's ``cost_usd`` is the SUM of the ``k`` sample costs (the real spend of
+    sampling it ``k`` times), and the SERVED answer is the primary sample so the
+    cascade's routing / write-back stays single-sample, exactly as E12. A resumed
+    partial log warm-loads the samples it already bought and never re-samples. Only
+    used when ``n_samples > 1`` -- the plain :class:`SharedAnswerCache` already covers
+    ``n_samples == 1`` byte-identically -- so it never changes a single-sample record.
+    """
+
+    def __init__(self, metered, guard, kg, *, n_samples, log=None) -> None:  # noqa: ANN001
+        super().__init__(metered, guard, kg, log=log)
+        self.n_samples = n_samples
+        self.samples: dict[tuple[str, str], list[list[str]]] = {}
+        self.sample_costs: dict[tuple[str, str], list[float]] = {}
+        self.sample_usages: dict[tuple[str, str], list[dict | None]] = {}
+
+    def warm_from_rows(self, rows: list[dict]) -> None:
+        """Pre-load the k-sample rows recovered from a resumed partial log.
+
+        Mirrors :meth:`SharedAnswerCache.warm_from_rows` but restores the full sample
+        lists (a row from a single-sample log falls back to its lone answer as one
+        sample), so a resumed k-sample recording never re-buys a paid pair.
+        """
+        for row in rows:
+            key = (row["head"], row["relation"])
+            row_samples = row.get("samples") or [row["answers"]]
+            self.samples[key] = [list(s) for s in row_samples]
+            self.sample_costs[key] = list(row.get("sample_costs") or [row["cost_usd"]])
+            self.sample_usages[key] = list(row.get("sample_usages") or [row.get("usage")])
+            self.answers[key] = list(self.samples[key][0])
+            self.cost[key] = row["cost_usd"]
+            self.usage[key] = row.get("usage")
+
+    def answer(self, head: str, relation: str) -> tuple[list[str], float]:
+        key = (head, relation)
+        if key in self.answers:
+            # Served earlier or warm-loaded: charge the summed cost once, no re-sample.
+            if key not in self._charged:
+                self._charged.add(key)
+                self.real_calls += 1
+                self.guard.add(self.cost[key])
+            return self.answers[key], self.cost[key]
+        # Cold pair: draw n_samples independent teacher answers (they diverge only
+        # when the teacher was built with a non-zero temperature).
+        sample_sets: list[list[str]] = []
+        sample_costs: list[float] = []
+        sample_usages: list[dict | None] = []
+        for _ in range(self.n_samples):
+            resp = self.metered.answer(self.kg, head, relation)
+            sample_sets.append(resp.answers)
+            sample_costs.append(self.metered.last_cost_usd)
+            sample_usages.append(getattr(self.metered, "last_usage", None))
+        total_cost = sum(sample_costs)
+        self.samples[key] = sample_sets
+        self.sample_costs[key] = sample_costs
+        self.sample_usages[key] = sample_usages
+        self.answers[key] = sample_sets[0]
+        self.cost[key] = total_cost
+        self.usage[key] = sample_usages[0]
+        if self._log is not None:
+            self._log.append_row(
+                {
+                    "head": head,
+                    "relation": relation,
+                    "answers": list(sample_sets[0]),
+                    "samples": [list(s) for s in sample_sets],
+                    "cost_usd": total_cost,
+                    "usage": sample_usages[0],
+                    "sample_costs": sample_costs,
+                    "sample_usages": sample_usages,
+                }
+            )
+        self._charged.add(key)
+        self.real_calls += 1
+        self.guard.add(total_cost)  # real spend for the whole k-sample draw
+        return self.answers[key], self.cost[key]
+
+
+def _build_k_sample_answers_record(shared: SharedKSampleAnswerCache, *, provenance: dict) -> dict:
+    """Serialise a k-sample shared cache into a record (a superset of the v1 row).
+
+    Each row carries every teacher ``samples`` set plus the primary ``answers`` (==
+    ``samples[0]``) and the summed ``cost_usd``, so the SAME record replays either
+    single-sample (the existing :class:`ReplayAnswerCache`, reading ``answers``) or
+    with the self-consistency majority (:class:`KSampleReplayAnswerCache`, reading
+    ``samples``). ``provenance`` carries ``k`` and ``temperature`` so the artifact is
+    self-describing.
+    """
+    return {
+        "schema": ANSWERS_RECORD_SCHEMA,
+        "spend_semantics": SPEND_SEMANTICS,
+        "provenance": provenance,
+        "answers": [
+            {
+                "head": h,
+                "relation": r,
+                "answers": list(shared.samples[(h, r)][0]),
+                "samples": [list(s) for s in shared.samples[(h, r)]],
+                "cost_usd": shared.cost[(h, r)],
+                "usage": shared.usage.get((h, r)),
+                "sample_costs": list(shared.sample_costs[(h, r)]),
+                "sample_usages": list(shared.sample_usages[(h, r)]),
+            }
+            for (h, r) in shared.samples
         ],
     }
 
@@ -421,13 +614,24 @@ class _AnswerLog:
         _atomic_write_text(self.path, json.dumps(header) + "\n")
 
     def append(self, head: str, relation: str, answers, cost, usage) -> None:  # noqa: ANN001
-        row = {
-            "head": head,
-            "relation": relation,
-            "answers": list(answers),
-            "cost_usd": cost,
-            "usage": usage,
-        }
+        self.append_row(
+            {
+                "head": head,
+                "relation": relation,
+                "answers": list(answers),
+                "cost_usd": cost,
+                "usage": usage,
+            }
+        )
+
+    def append_row(self, row: dict) -> None:
+        """Durably append a pre-built row dict, flushing + fsyncing before return.
+
+        :meth:`append` is the single-sample convenience wrapper over this; the
+        k-sample recorder (:class:`SharedKSampleAnswerCache`) uses it directly to
+        persist a row carrying every sample. The output for a single-sample row is
+        byte-identical to the previous inline write.
+        """
         with self.path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row) + "\n")
             fh.flush()
@@ -705,6 +909,7 @@ def _build_metered_teacher(
     error_rate: float = 0.0,
     seed: int = 0,
     max_items: int | None = None,
+    temperature: float | None = None,
 ) -> object:
     """Build the run's metered teacher, applying a ``max_items`` answer cap when set.
 
@@ -714,8 +919,13 @@ def _build_metered_teacher(
     byte-identical to the E11 originals unless a caller opts in. The caller
     (:func:`run_controlled`) is responsible for rejecting ``max_items`` on a
     teacher kind that cannot honour it.
+
+    ``temperature`` is the E13 self-consistency sampling temperature; it is forwarded
+    to :func:`_new_metered` ONLY when set so the default call is byte-identical to
+    today (and a fake ``_new_metered`` that predates the field keeps working).
     """
     response_format = _max_items_response_format(max_items) if max_items is not None else None
+    extra = {} if temperature is None else {"temperature": temperature}
     return _new_metered(
         settings,
         model,
@@ -724,6 +934,7 @@ def _build_metered_teacher(
         error_rate=error_rate,
         seed=seed,
         response_format=response_format,
+        **extra,
     )
 
 
@@ -742,6 +953,8 @@ def run_controlled(
     answers_path: str | None = None,
     recorded_at: str | None = None,
     max_items: int | None = None,
+    samples: int = 1,
+    temperature: float | None = None,
     settings=None,  # noqa: ANN001
     bench=None,  # noqa: ANN001
     verbose: bool = True,
@@ -797,6 +1010,15 @@ def run_controlled(
     replay calls no teacher, so there is no run-side cap to match and comparing one would
     make a structured record impossible to replay. ``None`` (the default) forwards no
     constraint, leaving every recorded artifact byte-identical to the E11 originals.
+
+    ``samples`` (the E13 self-consistency recorder) draws N teacher answers per distinct
+    pair instead of one, storing all N answer-sets in a k-sample record for a later
+    majority vote (see :func:`run_self_consistency.self_consistency_report`). ``samples
+    == 1`` (the default) keeps the single-sample recording path byte-identical to today.
+    ``temperature`` is the sampling temperature those draws use (forwarded to the
+    openrouter teacher only); it is meaningful only while recording, so both are refused
+    on replay. Neither shapes the ``(head, relation)`` stream, so ``k`` is stamped into
+    the record's provenance for self-description but is NOT a replay-provenance field.
     """
     # Replay when ``answers_path`` names an EXISTING record; record when it names a
     # not-yet-existing one; behave exactly as before when it is ``None``.
@@ -809,6 +1031,16 @@ def run_controlled(
         bench = load_metaqa(metaqa_root, hop=1, split=split)
     oracle_mode = settings.teacher == "oracle"
     openrouter_mode = getattr(settings, "teacher", None) == "openrouter"
+    if samples < 1:
+        raise SystemExit(f"--samples must be >= 1, got {samples}")
+    # k-sampling and its temperature only mean something for a LIVE recording: a replay
+    # serves fixed answers from disk (its k is a property of the record), so refuse both.
+    if replay_mode and (samples > 1 or temperature is not None):
+        raise SystemExit(
+            f"--samples/--temperature drive a live k-sample RECORDING, but this run REPLAYS "
+            f"answers from {answers_path} (no teacher is called; the record already fixes k). "
+            f"Re-record with --samples/--temperature instead of passing them on replay."
+        )
     # A max-items answer cap constrains a LIVE openrouter teacher call, so it is
     # meaningless without one: refuse it in replay mode (no teacher is called, the
     # answers are already fixed on disk) and for any non-openrouter teacher kind.
@@ -949,6 +1181,7 @@ def run_controlled(
             error_rate=oracle_error_rate,
             seed=seed,
             max_items=max_items,
+            temperature=temperature,
         )
         if recording:
             # Provenance is fixed BEFORE the first teacher call so the durable log's
@@ -970,6 +1203,12 @@ def run_controlled(
                 "teacher_kind": settings.teacher,
                 "recorded_at": recorded_at,
             }
+            # A k-sample recording is self-describing: stamp the sample count and its
+            # temperature. Added ONLY when k-sampling so a single-sample record's
+            # provenance stays byte-identical to an E11 original.
+            if samples > 1:
+                provenance["k"] = samples
+                provenance["temperature"] = temperature
             # Durable append-only sidecar. If a prior run was killed its partial log is
             # present: warm-load the pairs it already bought (validated against this
             # run's provenance) so they are never re-bought, and keep appending the rest.
@@ -985,7 +1224,14 @@ def run_controlled(
                 composed_relation=composed_relation,
                 response_format_max_items=max_items,
             )
-            shared = SharedAnswerCache(metered, guard, bench.kg, log=log)
+            # k-sampling draws N answers per pair (E13); the plain cache covers the
+            # single-sample path byte-identically, so only branch off it when k > 1.
+            if samples > 1:
+                shared = SharedKSampleAnswerCache(
+                    metered, guard, bench.kg, n_samples=samples, log=log
+                )
+            else:
+                shared = SharedAnswerCache(metered, guard, bench.kg, log=log)
             shared.warm_from_rows(warm_rows)
             if verbose and warm_rows:
                 print(
@@ -1049,7 +1295,11 @@ def run_controlled(
         # now each paid answer was already durable in the JSONL sidecar, so a process
         # killed before this point loses nothing and resumes. Discard the sidecar last,
         # once the canonical record is on disk.
-        rec = _build_answers_record(shared, provenance=provenance)
+        rec = (
+            _build_k_sample_answers_record(shared, provenance=provenance)
+            if samples > 1
+            else _build_answers_record(shared, provenance=provenance)
+        )
         rec_path = Path(answers_path)
         rec_path.parent.mkdir(parents=True, exist_ok=True)
         _atomic_write_text(rec_path, json.dumps(rec, indent=2))
@@ -1195,6 +1445,25 @@ def main() -> None:
             "Unset = today's unconstrained behaviour (byte-identical to the E11 records)"
         ),
     )
+    ap.add_argument(
+        "--samples",
+        type=int,
+        default=1,
+        help=(
+            "E13 self-consistency recorder: draw N teacher answers per distinct pair "
+            "(stored in a k-sample record for a later majority vote); recording-only, "
+            "not valid on replay. Unset (1) = today's single-sample behaviour"
+        ),
+    )
+    ap.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help=(
+            "sampling temperature for the --samples draws (openrouter teacher only); "
+            "unset sends no temperature field (byte-identical to today)"
+        ),
+    )
     ap.add_argument("--out", default="experiments/results/real_kg_controlled.json")
     args = ap.parse_args()
 
@@ -1218,6 +1487,8 @@ def main() -> None:
         answers_path=args.answers_path,
         recorded_at=recorded_at,
         max_items=args.max_items,
+        samples=args.samples,
+        temperature=args.temperature,
         verbose=True,
     )
     out = Path(args.out)
