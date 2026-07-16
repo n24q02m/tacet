@@ -31,8 +31,8 @@ license: MIT
 repository-code: "https://github.com/n24q02m/tacet"
 date-released: 2026-06-30
 version: "1.0.0"
-# The paper's v6 content is not yet deposited on Zenodo; the concept DOI below
-# currently resolves to v5. It always points at the latest deposited version.
+# The concept DOI below always points at the latest deposited version
+# (currently v6: 10.5281/zenodo.21394527, deposited 2026-07-16).
 identifiers:
   - type: doi
     value: 10.5281/zenodo.20621240
