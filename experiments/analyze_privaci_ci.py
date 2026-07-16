@@ -95,9 +95,9 @@ def build_ci_macros(matrices):
         rng = np.random.default_rng(BOOTSTRAP_RNG_SEED)
         lo, hi = bootstrap_ci(factors, rng)
         for seed_token, factor in zip(SEED_TOKENS, factors, strict=True):
-            lines.append(f"\\newcommand{{\\privFullS{seed_token}{token}}}{{{factor:.2f}}}")
-        lines.append(f"\\newcommand{{\\privFullCILo{token}}}{{{lo:.2f}}}")
-        lines.append(f"\\newcommand{{\\privFullCIHi{token}}}{{{hi:.2f}}}")
+            lines.append(f"\\newcommand{{\\privFullS{seed_token}{token}}}{{{factor:.3f}}}")
+        lines.append(f"\\newcommand{{\\privFullCILo{token}}}{{{lo:.3f}}}")
+        lines.append(f"\\newcommand{{\\privFullCIHi{token}}}{{{hi:.3f}}}")
     return "\n".join(lines) + "\n"
 
 
