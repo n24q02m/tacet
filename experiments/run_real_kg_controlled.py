@@ -409,9 +409,15 @@ class SharedKSampleAnswerCache(SharedAnswerCache):
     ``n_samples == 1`` byte-identically -- so it never changes a single-sample record.
     """
 
-    def __init__(self, metered, guard, kg, *, n_samples, log=None) -> None:  # noqa: ANN001
+    def __init__(self, metered, guard, kg, *, n_samples, log=None, primary_metered=None) -> None:  # noqa: ANN001
         super().__init__(metered, guard, kg, log=log)
         self.n_samples = n_samples
+        #: E14 mixed-temperature recorder: when set, sample 0 (the PRIMARY, mined for a
+        #: rule install) is drawn from this teacher -- built at ``--primary-temperature`` --
+        #: while samples 1..k-1 (the VOTES) come from ``metered`` at ``--temperature``, so a
+        #: clean-temperature answer is mined while the votes carry the sampling diversity.
+        #: ``None`` draws every sample from ``metered``, byte-identical to the E13 recorder.
+        self.primary_metered = primary_metered
         self.samples: dict[tuple[str, str], list[list[str]]] = {}
         self.sample_costs: dict[tuple[str, str], list[float]] = {}
         self.sample_usages: dict[tuple[str, str], list[dict | None]] = {}
@@ -443,15 +449,23 @@ class SharedKSampleAnswerCache(SharedAnswerCache):
                 self.guard.add(self.cost[key])
             return self.answers[key], self.cost[key]
         # Cold pair: draw n_samples independent teacher answers (they diverge only
-        # when the teacher was built with a non-zero temperature).
+        # when the teacher was built with a non-zero temperature). E14 draws the PRIMARY
+        # sample (index 0) from ``primary_metered`` when set -- at ``--primary-temperature``
+        # -- and the votes (1..k-1) from ``metered`` at ``--temperature``; cost and usage are
+        # read from whichever teacher actually served the draw.
         sample_sets: list[list[str]] = []
         sample_costs: list[float] = []
         sample_usages: list[dict | None] = []
-        for _ in range(self.n_samples):
-            resp = self.metered.answer(self.kg, head, relation)
+        for idx in range(self.n_samples):
+            teacher = (
+                self.primary_metered
+                if idx == 0 and self.primary_metered is not None
+                else self.metered
+            )
+            resp = teacher.answer(self.kg, head, relation)
             sample_sets.append(resp.answers)
-            sample_costs.append(self.metered.last_cost_usd)
-            sample_usages.append(getattr(self.metered, "last_usage", None))
+            sample_costs.append(teacher.last_cost_usd)
+            sample_usages.append(getattr(teacher, "last_usage", None))
         total_cost = sum(sample_costs)
         self.samples[key] = sample_sets
         self.sample_costs[key] = sample_costs
@@ -955,6 +969,7 @@ def run_controlled(
     max_items: int | None = None,
     samples: int = 1,
     temperature: float | None = None,
+    primary_temperature: float | None = None,
     settings=None,  # noqa: ANN001
     bench=None,  # noqa: ANN001
     verbose: bool = True,
@@ -1019,6 +1034,18 @@ def run_controlled(
     openrouter teacher only); it is meaningful only while recording, so both are refused
     on replay. Neither shapes the ``(head, relation)`` stream, so ``k`` is stamped into
     the record's provenance for self-description but is NOT a replay-provenance field.
+
+    ``primary_temperature`` (the E14 rebuttal design) draws the PRIMARY sample (index 0,
+    the one mined for a rule install and served for routing / write-back) at ITS OWN
+    temperature while the votes (samples 1..k-1) keep drawing at ``temperature`` -- so a
+    clean-temperature primary can be mined while the votes carry the sampling diversity a
+    self-consistency majority needs. It builds a second metered teacher at that temperature
+    (identical to the voting teacher otherwise) and routes sample 0 to it. It separates
+    sample 0 from the votes, so it requires ``samples > 1``; ``None`` (the default) draws
+    every sample at ``temperature``, byte-identical to the single-temperature E13 recorder.
+    Like ``temperature`` it is meaningful only while recording (refused on replay) and does
+    NOT shape the stream, so it is stamped into the record's provenance for self-description
+    but is not a replay-provenance field.
     """
     # Replay when ``answers_path`` names an EXISTING record; record when it names a
     # not-yet-existing one; behave exactly as before when it is ``None``.
@@ -1033,13 +1060,24 @@ def run_controlled(
     openrouter_mode = getattr(settings, "teacher", None) == "openrouter"
     if samples < 1:
         raise SystemExit(f"--samples must be >= 1, got {samples}")
-    # k-sampling and its temperature only mean something for a LIVE recording: a replay
-    # serves fixed answers from disk (its k is a property of the record), so refuse both.
-    if replay_mode and (samples > 1 or temperature is not None):
+    # k-sampling and its temperatures only mean something for a LIVE recording: a replay
+    # serves fixed answers from disk (its k is a property of the record), so refuse them
+    # FIRST, so a stray sampling flag on replay reports the replay conflict, not a
+    # recording-mode coherence complaint below.
+    if replay_mode and (samples > 1 or temperature is not None or primary_temperature is not None):
         raise SystemExit(
-            f"--samples/--temperature drive a live k-sample RECORDING, but this run REPLAYS "
-            f"answers from {answers_path} (no teacher is called; the record already fixes k). "
-            f"Re-record with --samples/--temperature instead of passing them on replay."
+            f"--samples/--temperature/--primary-temperature drive a live k-sample RECORDING, but "
+            f"this run REPLAYS answers from {answers_path} (no teacher is called; the record "
+            f"already fixes k). Re-record with --samples/--temperature instead of passing them "
+            f"on replay."
+        )
+    # --primary-temperature separates sample 0 from the votes 1..k-1, so it is meaningful
+    # only with more than one sample; with a single sample it would be a silent no-op.
+    if primary_temperature is not None and samples <= 1:
+        raise SystemExit(
+            f"--primary-temperature draws sample 0 apart from the votes 1..k-1, so it needs "
+            f"--samples > 1 (got --samples {samples}). Raise --samples, or drop "
+            f"--primary-temperature to draw the single sample at --temperature."
         )
     # A max-items answer cap constrains a LIVE openrouter teacher call, so it is
     # meaningless without one: refuse it in replay mode (no teacher is called, the
@@ -1209,6 +1247,10 @@ def run_controlled(
             if samples > 1:
                 provenance["k"] = samples
                 provenance["temperature"] = temperature
+                # E14: stamp the primary-sample temperature ONLY when the run is mixed, so
+                # a single-temperature E13 record's provenance stays byte-identical to today.
+                if primary_temperature is not None:
+                    provenance["primary_temperature"] = primary_temperature
             # Durable append-only sidecar. If a prior run was killed its partial log is
             # present: warm-load the pairs it already bought (validated against this
             # run's provenance) so they are never re-bought, and keep appending the rest.
@@ -1227,8 +1269,30 @@ def run_controlled(
             # k-sampling draws N answers per pair (E13); the plain cache covers the
             # single-sample path byte-identically, so only branch off it when k > 1.
             if samples > 1:
+                # E14: the mixed-temperature run draws sample 0 from a SECOND teacher built
+                # at ``primary_temperature`` (identical to the voting teacher otherwise), so a
+                # clean-temperature primary is mined while the votes carry the diversity.
+                primary_metered = (
+                    _build_metered_teacher(
+                        settings,
+                        model,
+                        nl_template,
+                        gold_map,
+                        error_rate=oracle_error_rate,
+                        seed=seed,
+                        max_items=max_items,
+                        temperature=primary_temperature,
+                    )
+                    if primary_temperature is not None
+                    else None
+                )
                 shared = SharedKSampleAnswerCache(
-                    metered, guard, bench.kg, n_samples=samples, log=log
+                    metered,
+                    guard,
+                    bench.kg,
+                    n_samples=samples,
+                    log=log,
+                    primary_metered=primary_metered,
                 )
             else:
                 shared = SharedAnswerCache(metered, guard, bench.kg, log=log)
@@ -1464,6 +1528,17 @@ def main() -> None:
             "unset sends no temperature field (byte-identical to today)"
         ),
     )
+    ap.add_argument(
+        "--primary-temperature",
+        type=float,
+        default=None,
+        help=(
+            "E14 mixed-temperature recorder: draw the PRIMARY sample (index 0, mined for a "
+            "rule install) at this temperature while the votes (samples 1..k-1) keep drawing "
+            "at --temperature; requires --samples > 1, recording-only, not valid on replay. "
+            "Unset draws every sample at --temperature (byte-identical to the E13 recorder)"
+        ),
+    )
     ap.add_argument("--out", default="experiments/results/real_kg_controlled.json")
     args = ap.parse_args()
 
@@ -1489,6 +1564,7 @@ def main() -> None:
         max_items=args.max_items,
         samples=args.samples,
         temperature=args.temperature,
+        primary_temperature=args.primary_temperature,
         verbose=True,
     )
     out = Path(args.out)
