@@ -372,6 +372,24 @@ class _CannedMeteredTeacher:
         return TeacherResponse(answers=[f"{head}_s{idx}"])
 
 
+class _TempSinkTeacher(_CannedMeteredTeacher):
+    """A canned teacher that appends its construction temperature to a shared sink per call.
+
+    The E14 mixed-temperature recorder draws sample 0 (the mined primary) from a teacher
+    built at ``--primary-temperature`` and samples 1..k-1 (the votes) from one built at
+    ``--temperature``. Two of these sharing one ``sink`` let a test read back, in call
+    order, the temperature each of the k draws went out at.
+    """
+
+    def __init__(self, temperature, sink) -> None:  # noqa: ANN001
+        super().__init__(temperature=temperature)
+        self._sink = sink
+
+    def answer(self, graph, head: str, relation: str) -> TeacherResponse:  # noqa: ANN001
+        self._sink.append(self.temperature)
+        return super().answer(graph, head, relation)
+
+
 def test_k_sample_cache_draws_k_samples_and_stores_them() -> None:
     fake = _CannedMeteredTeacher()
     kg = WorldGraph(name="empty")
@@ -403,6 +421,45 @@ def test_k_sample_cache_draws_k_samples_and_stores_them() -> None:
     replay = rkc.KSampleReplayAnswerCache.from_record(record, BudgetGuard(1e9), kg)
     assert replay.answer("M0", "directed_by")[0] == ["M0_s0"]
     assert replay.majority("M0", "directed_by") == frozenset()
+
+
+# ==================================================== (E14) mixed-temperature draw loop
+def test_mixed_temperature_draws_primary_at_t0_and_votes_at_t() -> None:
+    # With a ``primary_metered`` teacher set, sample 0 (the mined primary) is drawn from
+    # it and samples 1..k-1 (the votes) from the base teacher. Capture, in call order,
+    # the temperature each of the k draws went out at.
+    sink: list[float | None] = []
+    primary = _TempSinkTeacher(temperature=0.0, sink=sink)
+    votes = _TempSinkTeacher(temperature=0.7, sink=sink)
+    kg = WorldGraph(name="empty")
+    cache = SharedKSampleAnswerCache(
+        votes, BudgetGuard(1e9), kg, n_samples=3, primary_metered=primary
+    )
+
+    served, _cost = cache.answer("M0", "directed_by")
+    # the primary went out at T0=0.0, the two votes at T=0.7 -- in that order.
+    assert sink == [0.0, 0.7, 0.7]
+    # the primary teacher drew exactly sample 0; the voting teacher drew the other two.
+    assert len(primary.calls) == 1
+    assert len(votes.calls) == 2
+    # the served (routed / mined) answer is still the PRIMARY sample (index 0), exactly as
+    # E13; all k draws are stored, and sample 0 is that primary draw.
+    stored = cache.samples[("M0", "directed_by")]
+    assert len(stored) == 3
+    assert stored[0] == served == ["M0_s0"]
+
+
+def test_no_primary_temperature_draws_all_k_at_the_single_temperature() -> None:
+    # Regression guard: with no primary_metered, every one of the k samples is drawn from
+    # the single voting teacher -- byte-identical to the E13 single-temperature recorder.
+    sink: list[float | None] = []
+    votes = _TempSinkTeacher(temperature=0.7, sink=sink)
+    kg = WorldGraph(name="empty")
+    cache = SharedKSampleAnswerCache(votes, BudgetGuard(1e9), kg, n_samples=3)
+
+    cache.answer("M0", "directed_by")
+    assert sink == [0.7, 0.7, 0.7]
+    assert len(votes.calls) == 3
 
 
 def test_openrouter_teacher_threads_temperature_to_client() -> None:
@@ -548,6 +605,140 @@ def test_samples_and_temperature_refused_on_replay(tmp_path, monkeypatch) -> Non
         run_controlled(answers_path=str(path), samples=3, temperature=0.7, **common)
     msg = str(excinfo.value).lower()
     assert "replay" in msg or "record" in msg
+
+
+# ==================================================== (E14) mixed-temperature run_controlled
+def _chunk(seq: list, size: int) -> list[list]:
+    return [seq[i : i + size] for i in range(0, len(seq), size)]
+
+
+def test_run_controlled_records_mixed_temperature_record(tmp_path, monkeypatch) -> None:
+    # ``--primary-temperature`` threads through the same builder chain as ``--temperature``:
+    # run_controlled builds TWO teachers (the votes at --temperature, the primary at
+    # --primary-temperature) and draws sample 0 from the latter, the votes from the former.
+    per_call_temp: list[float | None] = []
+    built_temps: list[float | None] = []
+
+    def factory(  # noqa: ANN001, ANN202
+        settings,
+        model,
+        nl_template,
+        oracle_gold=None,
+        error_rate=0.0,
+        seed=0,
+        response_format=None,
+        temperature=None,
+    ):
+        built_temps.append(
+            temperature
+        )  # proves both --temperature and --primary-temperature build a teacher
+        return _TempSinkTeacher(temperature=temperature, sink=per_call_temp)
+
+    monkeypatch.setattr(rkc, "_new_metered", factory)
+    path = tmp_path / "mixed.json"
+    run_controlled(
+        hop=1,
+        split="test",
+        limit=16,
+        zipf_a=1.5,
+        seed=0,
+        oracle_error_rate=0.0,
+        gamma=0.95,
+        answers_path=str(path),
+        samples=3,
+        temperature=0.7,
+        primary_temperature=0.0,
+        bench=_tiny_bench(),
+        settings=_oracle_settings(),
+        verbose=False,
+    )
+    # two teachers were built: the votes at 0.7 and the primary at 0.0 (order-agnostic).
+    assert set(built_temps) == {0.0, 0.7}
+    # every distinct pair drew its primary (sample 0) at T0=0.0 and both votes at T=0.7.
+    assert per_call_temp, "expected at least one recorded draw"
+    assert len(per_call_temp) % 3 == 0
+    for triple in _chunk(per_call_temp, 3):
+        assert triple == [0.0, 0.7, 0.7]
+    # the record is self-describing: it stamps BOTH temperatures and k in its provenance.
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["provenance"]["k"] == 3
+    assert record["provenance"]["temperature"] == 0.7
+    assert record["provenance"]["primary_temperature"] == 0.0
+    for row in record["answers"]:
+        assert len(row["samples"]) == 3
+
+
+def test_primary_temperature_refused_on_replay(tmp_path, monkeypatch) -> None:
+    def factory(  # noqa: ANN001, ANN202
+        settings,
+        model,
+        nl_template,
+        oracle_gold=None,
+        error_rate=0.0,
+        seed=0,
+        response_format=None,
+        temperature=None,
+    ):
+        return _TempSinkTeacher(temperature=temperature, sink=[])
+
+    monkeypatch.setattr(rkc, "_new_metered", factory)
+    path = tmp_path / "mixed.json"
+    common = dict(
+        hop=1,
+        split="test",
+        limit=16,
+        zipf_a=1.5,
+        seed=0,
+        oracle_error_rate=0.0,
+        gamma=0.95,
+        bench=_tiny_bench(),
+        settings=_oracle_settings(),
+        verbose=False,
+    )
+    # record a mixed-temperature file first so the next run REPLAYS it ...
+    run_controlled(
+        answers_path=str(path), samples=3, temperature=0.7, primary_temperature=0.0, **common
+    )
+    # ... and a primary temperature is refused on replay (no teacher is called there).
+    with pytest.raises(SystemExit) as excinfo:
+        run_controlled(answers_path=str(path), primary_temperature=0.0, **common)
+    msg = str(excinfo.value).lower()
+    assert "replay" in msg or "record" in msg
+
+
+def test_primary_temperature_requires_multiple_samples(tmp_path, monkeypatch) -> None:
+    def factory(  # noqa: ANN001, ANN202
+        settings,
+        model,
+        nl_template,
+        oracle_gold=None,
+        error_rate=0.0,
+        seed=0,
+        response_format=None,
+        temperature=None,
+    ):
+        return _TempSinkTeacher(temperature=temperature, sink=[])
+
+    monkeypatch.setattr(rkc, "_new_metered", factory)
+    # --primary-temperature only separates sample 0 from votes 1..k-1, so k must be > 1;
+    # with the default samples=1 it would be a silent no-op, so it is refused loudly.
+    with pytest.raises(SystemExit) as excinfo:
+        run_controlled(
+            hop=1,
+            split="test",
+            limit=16,
+            zipf_a=1.5,
+            seed=0,
+            oracle_error_rate=0.0,
+            gamma=0.95,
+            answers_path=str(tmp_path / "x.json"),
+            samples=1,
+            primary_temperature=0.0,
+            bench=_tiny_bench(),
+            settings=_oracle_settings(),
+            verbose=False,
+        )
+    assert "samples" in str(excinfo.value).lower()
 
 
 if __name__ == "__main__":
