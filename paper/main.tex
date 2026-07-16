@@ -2310,13 +2310,17 @@ did not conclusively test --- multi-sample self-consistency (querying the teache
 $k$ times and promoting only on majority agreement with the rule) and cross-rule
 or ontology consistency --- trade additional teacher cost for a precision signal,
 and we make no claim that either would succeed. A preliminary attempt at the
-self-consistency variant ($k{=}3$ over the models that install the rule) was in
-fact inconclusive for a telling reason: drawing the $k$ samples by raising the
-decoding temperature perturbs the teacher's primary answer enough that the rule
-no longer installs at $\gamma{=}0.50$ to begin with, so the majority signal is
-never exercised. A clean test would need paraphrase-based sampling at temperature
-zero, which we leave to future work. This is a negative result, and it bounds an
-otherwise attractive self-tuning story.
+self-consistency variant ($k{=}3$ over the models that install the rule;
+\texttt{experiments/results/self\_consistency\_hop2.json}) was inconclusive for a
+telling reason: drawing the $k$ samples by raising the decoding temperature
+perturbs the teacher's primary answer enough that the rule no longer installs at
+$\gamma{=}0.50$ to begin with (no rule is mined on any cell), so the majority
+signal is never exercised. A clean test must therefore decouple the mining sample
+from the voting samples --- draw the primary answer at temperature zero (so the
+rule still installs) and only the additional votes at temperature, or paraphrase
+the prompt while holding decoding deterministic --- which we leave to future work.
+This is a negative result, and it bounds an otherwise attractive self-tuning
+story.
 
 \paragraph{Cross-teacher ``distillability'' is an answer-length artifact.} One
 might still rank teachers by how readily their answers distil, and build a
