@@ -2313,12 +2313,18 @@ answer enough that the rule no longer installs at $\gamma{=}0.50$, so the majori
 is never exercised. Decoupling the two --- drawing the mining sample at
 temperature zero (the rule then installs) and only the votes at temperature ---
 removes that confound, and the clean test is decisive
-(\texttt{experiments/results/self\_consistency\_e14\_hop2.json}, $k{=}3$): the
+(\texttt{experiments/results/self\_consistency\_e14\_hop2.json}, $k{=}3$, two of
+three attempted cells --- the third teacher's provider returned malformed JSON
+at temperature and the record never completed): the
 rule installs, the majority signal \emph{is} exercised, and the world-correct rule
 is nonetheless \emph{demoted} on its first unseen-head check, because the majority
 is still wrong. This is the crux: a majority vote cancels \emph{random} noise, but
 the teacher's error on these workloads is \emph{systematic} (Sections~\ref{sec:realcost}
-and~\ref{sec:threshold-gate}: $0$--$5\%$ accuracy, the same wrong answer each time),
+and~\ref{sec:threshold-gate}: $0$--$5\%$ accuracy, the same wrong answer each time;
+the artifact's cache-arm accuracy is the stream-level metric over the
+Zipf-repeated $300$ queries --- $0.17$ and $0.09$ here --- while the
+per-distinct-pair teacher answer accuracy of these two cells is $0.05$ and
+$0.00$, inside the cited range),
 so the vote reproduces the mistake rather than washing it out. Self-consistency,
 the obvious label-free promotion signal, is therefore empirically inert here for
 the same reason single-sample agreement is --- and a cross-rule or ontology
