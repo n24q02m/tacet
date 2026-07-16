@@ -44,6 +44,13 @@ repos:
         types: [python]
         pass_filenames: false
 
+      - id: readme-test-count
+        name: README test count matches pytest collection
+        entry: uv run python scripts/check_readme_test_count.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
       - id: enforce-commit
         name: Enforce feat and fix commit prefixes
         entry: bash scripts/enforce-commit.sh
