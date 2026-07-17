@@ -40,7 +40,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
-      - uses: python-semantic-release/python-semantic-release@v10
+      - uses: n24q02m/better-semantic-release@v1
         id: release
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
