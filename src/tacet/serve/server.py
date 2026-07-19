@@ -328,7 +328,8 @@ def build_app(
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         if request.url.path not in ["/docs", "/redoc", "/openapi.json"]:
-            response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+            csp = "default-src 'none'; frame-ancestors 'none'"
+            response.headers["Content-Security-Policy"] = csp
         return response
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
