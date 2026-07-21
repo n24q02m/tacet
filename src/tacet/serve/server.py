@@ -323,9 +323,14 @@ def build_app(
     @app.middleware("http")
     async def add_security_headers(request, call_next):
         response = await call_next(request)
+        # 🛡️ Sentinel: Enforce security headers to prevent XSS and other attacks.
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # 🛡️ Sentinel: Apply CSP to non-doc endpoints to not break Swagger UI.
+        if not request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
+            response.headers["Content-Security-Policy"] = "default-src 'self'"
         return response
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
@@ -363,6 +368,8 @@ def build_app(
     def ask(req: AskRequest):
         try:
             out = service.ask(req.head, req.relation)
+        except HTTPException:
+            raise
         except Exception as e:  # pragma: no cover
             logging.error("Operation failed", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -370,15 +377,34 @@ def build_app(
 
     @app.post("/distill", dependencies=[Depends(_require_api_key)])
     def distill(req: DistillRequest):
-        return service.distill(req.head, req.relation, req.answers, req.correct)
+        # 🛡️ Sentinel: Catch and mask exceptions to avoid leaking internal state details.
+        try:
+            return service.distill(req.head, req.relation, req.answers, req.correct)
+        except HTTPException:
+            raise
+        except Exception as e:  # pragma: no cover
+            logging.error("Operation failed", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/consolidate", dependencies=[Depends(_require_api_key)])
     def consolidate():
-        return service.consolidate()
+        try:
+            return service.consolidate()
+        except HTTPException:
+            raise
+        except Exception as e:  # pragma: no cover
+            logging.error("Operation failed", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/graph/edges", dependencies=[Depends(_require_api_key)])
     def ingest(req: GraphIngestRequest):
-        return service.ingest(list(req.triples), list(req.nodes))
+        try:
+            return service.ingest(list(req.triples), list(req.nodes))
+        except HTTPException:
+            raise
+        except Exception as e:  # pragma: no cover
+            logging.error("Operation failed", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
 
     # /metrics — Prometheus scrape endpoint (no-op 503 when
     # prometheus_client is not installed, so dashboards stay aware of

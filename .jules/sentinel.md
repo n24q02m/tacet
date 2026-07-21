@@ -19,3 +19,11 @@
 **Vulnerability:** FastAPI endpoints using default Pydantic models for nested and flat string fields were not enforcing maximum lengths, creating a Denial of Service (DoS) vector from unbounded inputs.
 **Learning:** Pydantic's default `str` fields and `list` collections allow unbounded sizes, meaning maliciously large nested JSON requests could exhaust memory.
 **Prevention:** Always enforce max sizes in request models. Use `Field(..., max_length=X)` for strings or collection lengths. For strings nested in lists, use `typing.Annotated`, like `list[Annotated[str, Field(max_length=X)]]`.
+## 2024-05-24 - [Missing Security Headers in FastAPI]
+**Vulnerability:** Missing X-XSS-Protection and Content-Security-Policy headers in HTTP middleware.
+**Learning:** Security headers must be explicitly set in FastAPI middleware. CSP headers can break Swagger UI so they must be conditionally applied.
+**Prevention:** Always include comprehensive security headers in web frameworks and conditionally exclude documentation paths for CSP.
+## 2024-05-24 - [Uncaught Exceptions in FastAPI Endpoints]
+**Vulnerability:** Uncaught exceptions in POST endpoints (/distill, /consolidate, /graph/edges) could leak sensitive internal state via stack traces.
+**Learning:** Only /ask had a try-except block masking the errors and returning generic 500s. Other endpoints were exposing errors.
+**Prevention:** Always use a global error handler or wrap endpoints in try-except blocks to catch unhandled errors and return generic error messages, avoiding sensitive detail leakage.
