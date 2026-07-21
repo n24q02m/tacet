@@ -172,6 +172,14 @@ class WorldGraph:
         return [e.triple for e in self._edges]
 
     # ------------------------------------------------------------- traversal
+    def out_relations(self, node_id: str) -> dict[str, set[str]]:
+        """Return the dictionary of forward relations to neighbours."""
+        return self._out.get(node_id, {})
+
+    def in_relations(self, node_id: str) -> dict[str, set[str]]:
+        """Return the dictionary of backward relations from neighbours."""
+        return self._in.get(node_id, {})
+
     def out(self, node_id: str, relation: str | None = None) -> set[str]:
         """Forward one-hop neighbours, optionally filtered by relation."""
         rels = self._out.get(node_id, {})
