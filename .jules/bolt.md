@@ -4,3 +4,8 @@
 ## 2024-07-01 - Optimize path-mining for rule synthesis
 **Learning:** In `src/tacet/distill/distill.py`, `mine_rules_with_stats` used to reconstruct adjacency maps $O(|R|^2)$ times within nested loops while proposing length-2 Horn rules. By pre-computing these maps once outside the loop and additionally filtering head entities earlier rather than via a delayed set intersection, the time on a dense benchmark graph decreased from 3.47s to 0.73s.
 **Action:** When evaluating graph combinations ($R_1 \land R_2$) in a combinatorial loop, always lift structural calculations (like direct and inverse adjacency maps) to the top of the loop hierarchy.
+## 2024-03-24 - Early filtering of candidate head entities in rule mining
+
+**Learning:** When mining rules over graphs (e.g. AMIE-style length-2 path patterns), generating combinatorial pairs inside inner loops over relations creates substantial redundant O(N^2) work. Iterating over keys that are already present in a dictionary using a set intersection (`complete_heads`) and checking dictionary keys, or using dictionary comprehension to filter items early, avoids evaluating elements that will ultimately be discarded. However, it's important to use efficient dictionary views (`p1.items()`) rather than materializing full lists (`list(p1.items())`) when filtering isn't needed.
+
+**Action:** When performing combinatorial searches across graphs, explicitly pre-filter the starting candidate sets *before* entering deeply nested iteration blocks. When falling back to unmodified dictionary iterators, always use the view object itself (e.g., `p1.items()`) instead of wrapping it in `list()` to prevent unnecessary memory allocations and GC overhead.
