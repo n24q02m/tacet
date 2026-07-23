@@ -326,6 +326,10 @@ def build_app(
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        if not request.url.path.startswith(("/docs", "/redoc", "/openapi.json")):
+            csp = "default-src 'self'; frame-ancestors 'none'"
+            response.headers["Content-Security-Policy"] = csp
         return response
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
@@ -363,6 +367,8 @@ def build_app(
     def ask(req: AskRequest):
         try:
             out = service.ask(req.head, req.relation)
+        except HTTPException:
+            raise
         except Exception as e:  # pragma: no cover
             logging.error("Operation failed", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error") from e
