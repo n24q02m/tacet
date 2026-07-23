@@ -466,19 +466,53 @@ class TorchComplEx:
             filter_map[(fh, fr)].add(ft)
         all_ent_idx = torch.arange(ne, device=self.device)
         ranks: list[int] = []
+
+        # ⚡ Bolt Optimization: Batch test triples and evaluate efficiently to avoid
+        # sequential kernel launches and full-sized tensor re-allocations.
+        # Implements batched matmul (Complex) and loop-reduced (Rotate) to avoid OOMs.
+        valid_test = [
+            (h, r, t) for h, r, t in test if h in self.ent and r in self.rel and t in self.ent
+        ]
+        batch_size = 256
+
         with torch.no_grad():
-            for h, r, t in test:
-                if h not in self.ent or r not in self.rel or t not in self.ent:
-                    continue
-                hi, ri, ti = self.ent[h], self.rel[r], self.ent[t]
-                hh = torch.full((ne,), hi, device=self.device)
-                rr = torch.full((ne,), ri, device=self.device)
-                scores = self._phi_idx(hh, rr, all_ent_idx).cpu().numpy()
-                for ft in filter_map.get((h, r), set()):
-                    if ft != t and ft in self.ent:
-                        scores[self.ent[ft]] = -np.inf
-                rank = int((scores > scores[ti]).sum() + 1)
-                ranks.append(rank)
+            tr = self._E_re
+            ti_im = self._E_im
+
+            for i in range(0, len(valid_test), batch_size):
+                batch = valid_test[i : i + batch_size]
+
+                if self.cfg.score_fn == "rotate":
+                    # Fallback to sequential to avoid [B, N, D] OOM in _phi_idx
+                    # since rotate needs broadcasting.
+                    scores_b = []
+                    for h, r, _ in batch:
+                        hh = torch.full((ne,), self.ent[h], device=self.device)
+                        rr = torch.full((ne,), self.rel[r], device=self.device)
+                        scores_b.append(self._phi_idx(hh, rr, all_ent_idx))
+                    scores = torch.stack(scores_b).cpu().numpy()
+                else:
+                    hi = torch.tensor([self.ent[h] for h, _, _ in batch], device=self.device)
+                    ri = torch.tensor([self.rel[r] for _, r, _ in batch], device=self.device)
+
+                    hr, hi_im = self._E_re[hi], self._E_im[hi]
+                    rr, ri_im = self._R_re[ri], self._R_im[ri]
+                    a = hr * rr - hi_im * ri_im
+                    b = hr * ri_im + hi_im * rr
+                    # ⚡ Bolt Optimization: Calculate scores mathematically using batched matrix
+                    # multiplication (A @ tr.T) to bypass the explicit self._phi_idx broadcast
+                    # which instantiates massive [B, N, D] intermediate tensors causing OOM.
+                    scores = (a @ tr.T + b @ ti_im.T).cpu().numpy()  # [B, N]
+
+                ti = np.array([self.ent[t] for _, _, t in batch])
+
+                for j, (h, r, t) in enumerate(batch):
+                    for ft in filter_map.get((h, r), set()):
+                        if ft != t and ft in self.ent:
+                            scores[j, self.ent[ft]] = -np.inf
+                    rank = int(np.sum(scores[j] > scores[j, ti[j]]) + 1)
+                    ranks.append(rank)
+
         if not ranks:
             return {"MRR": 0.0, "Hits@1": 0.0, "Hits@3": 0.0, "Hits@10": 0.0}
         arr = np.array(ranks)

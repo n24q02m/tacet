@@ -335,7 +335,6 @@ class ComplEx:
     ) -> dict[str, float]:
         """Filtered tail-ranking metrics: MRR and Hits@{1,3,10}."""
         filter_triples = filter_triples or set()
-        all_ent = np.arange(len(self.ent))
         # Pre-index filter triples for fast lookup
         filter_map: dict[tuple[str, str], set[str]] = {}
         for fh, fr, ft in filter_triples:
@@ -343,16 +342,40 @@ class ComplEx:
                 filter_map[(fh, fr)] = set()
             filter_map[(fh, fr)].add(ft)
         ranks: list[int] = []
-        for h, r, t in test:
-            if h not in self.ent or r not in self.rel or t not in self.ent:
-                continue
-            hi, ri, ti = self.ent[h], self.rel[r], self.ent[t]
-            scores = self._phi_idx(np.full(len(all_ent), hi), np.full(len(all_ent), ri), all_ent)
-            for ft in filter_map.get((h, r), set()):
-                if ft != t and ft in self.ent:
-                    scores[self.ent[ft]] = -np.inf
-            rank = int(np.sum(scores > scores[ti]) + 1)
-            ranks.append(rank)
+
+        # ⚡ Bolt Optimization: Batch test triples and calculate using matrix
+        # multiplication (A @ B) rather than broadcasting to avoid (B, N, D)
+        # OOM memory explosions.
+        valid_test = [
+            (h, r, t) for h, r, t in test if h in self.ent and r in self.rel and t in self.ent
+        ]
+        batch_size = 256
+
+        tr = self.E_re.T
+        ti_im = self.E_im.T
+
+        for i in range(0, len(valid_test), batch_size):
+            batch = valid_test[i : i + batch_size]
+            hi = np.array([self.ent[h] for h, _, _ in batch])
+            ri = np.array([self.rel[r] for _, r, _ in batch])
+            ti = np.array([self.ent[t] for _, _, t in batch])
+
+            hr, hi_im = self.E_re[hi], self.E_im[hi]
+            rr, ri_im = self.R_re[ri], self.R_im[ri]
+
+            a = hr * rr - hi_im * ri_im
+            b = hr * ri_im + hi_im * rr
+
+            # [B, N] -> avoid OOM explosion while maintaining acceleration
+            scores = np.dot(a, tr) + np.dot(b, ti_im)
+
+            for j, (h, r, t) in enumerate(batch):
+                for ft in filter_map.get((h, r), set()):
+                    if ft != t and ft in self.ent:
+                        scores[j, self.ent[ft]] = -np.inf
+                rank = int(np.sum(scores[j] > scores[j, ti[j]]) + 1)
+                ranks.append(rank)
+
         if not ranks:
             return {"MRR": 0.0, "Hits@1": 0.0, "Hits@3": 0.0, "Hits@10": 0.0}
         arr = np.array(ranks)
