@@ -23,3 +23,7 @@
 **Vulnerability:** The FastAPI API lacked the `X-XSS-Protection` header and didn't use `Content-Security-Policy` globally, which violates defense-in-depth best practices against Cross-Site Scripting (XSS).
 **Learning:** Automatically generated API documentation (like `/docs` and `/redoc` in FastAPI) requires inline scripts and external assets to render correctly. Applying a strict CSP globally (`default-src 'self'`) breaks the Swagger UI, causing a functional regression.
 **Prevention:** When enforcing strict CSP rules globally via middleware, selectively exclude auto-generated documentation endpoints (`/docs`, `/redoc`, `/openapi.json`) to preserve functionality while securing standard API routes.
+## 2024-05-24 - [Correction: Security headers X-XSS-Protection and CSP]
+**Vulnerability:** Adding security headers with outdated or overly permissive values (e.g., `X-XSS-Protection: 1; mode=block` and `Content-Security-Policy: default-src 'self'`).
+**Learning:** `X-XSS-Protection: 1; mode=block` is actually an XS-leak vector and the auditor has been removed from modern browsers; the recommended value is `0` to explicitly disable it. Additionally, for a service that returns *only JSON*, `default-src 'self'` is too permissive (it allows same-origin scripts). The most secure policy for a JSON API is `default-src 'none'; frame-ancestors 'none'`.
+**Prevention:** Stay up to date with modern header recommendations (e.g., OWASP). When an API only returns JSON, lock down the CSP completely to `none`.
