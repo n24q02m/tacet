@@ -24,3 +24,8 @@
 **Vulnerability:** A generic `except Exception:` block in the `/ask` endpoint was mistakenly catching intentionally raised `HTTPException`s, masking authentication/authorization errors as 500 errors.
 **Learning:** When dealing with FastAPI (or any framework with dedicated exception types like HTTPException), a bare `except Exception:` handler will intercept framework-specific errors too, potentially leaking generic error states or bypassing explicit application logic for 40x codes.
 **Prevention:** Always add an explicit `except HTTPException: raise` before the generic `except Exception:` catch-all, or ensure the generic catch block does not interfere with the framework's internal error types.
+
+## 2024-05-25 - Security Headers - Deprecated and Tightened Policies
+**Vulnerability:** A previous PR applied `X-XSS-Protection: 1; mode=block` and `Content-Security-Policy: default-src 'self'`.
+**Learning:** `X-XSS-Protection` is deprecated in modern browsers and its blocking mode is a known XS-leak vector; the recommended secure value is now `0`. Additionally, for API endpoints returning only JSON, `default-src 'self'` is too permissive as it allows same-origin scripts/frames. The optimal policy for such APIs is `default-src 'none'; frame-ancestors 'none'`.
+**Prevention:** When implementing security headers for JSON APIs, set `X-XSS-Protection: 0` and use the most restrictive CSP (`default-src 'none'; frame-ancestors 'none'`), omitting them only for documentation endpoints (like Swagger UI) that genuinely require browser execution capabilities.
