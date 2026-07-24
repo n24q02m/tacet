@@ -4,3 +4,6 @@
 ## 2024-07-01 - Optimize path-mining for rule synthesis
 **Learning:** In `src/tacet/distill/distill.py`, `mine_rules_with_stats` used to reconstruct adjacency maps $O(|R|^2)$ times within nested loops while proposing length-2 Horn rules. By pre-computing these maps once outside the loop and additionally filtering head entities earlier rather than via a delayed set intersection, the time on a dense benchmark graph decreased from 3.47s to 0.73s.
 **Action:** When evaluating graph combinations ($R_1 \land R_2$) in a combinatorial loop, always lift structural calculations (like direct and inverse adjacency maps) to the top of the loop hierarchy.
+## 2024-07-02 - Optimize graph edge updates
+**Learning:** Found a major bottleneck in `src/tacet/core/graph.py` where updating properties of an existing edge required an $O(N)$ iteration over all edges because existence was checked with an $O(1)$ set lookup (`_triple_set`) but the object reference was lost. Replacing the set with a dictionary (`_triple_to_edge` mapping triples to `Edge` objects) reduced the complexity of `add_edge` updates to $O(1)$.
+**Action:** When maintaining uniqueness or tracking state within a collection, consider using dictionaries instead of sets if subsequent operations require direct access to the object associated with the key.
