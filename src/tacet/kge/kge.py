@@ -335,7 +335,6 @@ class ComplEx:
     ) -> dict[str, float]:
         """Filtered tail-ranking metrics: MRR and Hits@{1,3,10}."""
         filter_triples = filter_triples or set()
-        all_ent = np.arange(len(self.ent))
         # Pre-index filter triples for fast lookup
         filter_map: dict[tuple[str, str], set[str]] = {}
         for fh, fr, ft in filter_triples:
@@ -343,18 +342,39 @@ class ComplEx:
                 filter_map[(fh, fr)] = set()
             filter_map[(fh, fr)].add(ft)
         ranks: list[int] = []
-        for h, r, t in test:
-            if h not in self.ent or r not in self.rel or t not in self.ent:
-                continue
-            hi, ri, ti = self.ent[h], self.rel[r], self.ent[t]
-            scores = self._phi_idx(np.full(len(all_ent), hi), np.full(len(all_ent), ri), all_ent)
-            for ft in filter_map.get((h, r), set()):
-                if ft != t and ft in self.ent:
-                    scores[self.ent[ft]] = -np.inf
-            rank = int(np.sum(scores > scores[ti]) + 1)
-            ranks.append(rank)
-        if not ranks:
+
+        valid_test = [
+            (h, r, t) for h, r, t in test if h in self.ent and r in self.rel and t in self.ent
+        ]
+        if not valid_test:
             return {"MRR": 0.0, "Hits@1": 0.0, "Hits@3": 0.0, "Hits@10": 0.0}
+
+        # ⚡ Bolt Optimization: Batch test triples using matrix multiplication to compute
+        # scores against all entities simultaneously. Avoids element-wise broadcasting overhead.
+        batch_size = 128
+        for start in range(0, len(valid_test), batch_size):
+            batch = valid_test[start : start + batch_size]
+            b_h = np.array([self.ent[h] for h, r, t in batch])
+            b_r = np.array([self.rel[r] for h, r, t in batch])
+            b_t = np.array([self.ent[t] for h, r, t in batch])
+
+            hr, hi = self.E_re[b_h], self.E_im[b_h]
+            rr, ri = self.R_re[b_r], self.R_im[b_r]
+
+            a = hr * rr - hi * ri
+            b = hr * ri + hi * rr
+
+            scores = a @ self.E_re.T + b @ self.E_im.T
+
+            for i, (h, r, t) in enumerate(batch):
+                for ft in filter_map.get((h, r), set()):
+                    if ft != t and ft in self.ent:
+                        scores[i, self.ent[ft]] = -np.inf
+
+                ti = b_t[i]
+                rank = int(np.sum(scores[i] > scores[i, ti]) + 1)
+                ranks.append(rank)
+
         arr = np.array(ranks)
         return {
             "MRR": float(np.mean(1.0 / arr)),
