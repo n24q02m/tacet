@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import unittest
+import unittest.mock
 
+from tacet.core import symbolic
 from tacet.core.graph import WorldGraph
 from tacet.core.ontology import NodeType, Ontology, RelationType
 from tacet.core.symbolic import Derivation, Rule, RuleEngine
@@ -257,6 +259,62 @@ class TestRuleEngine(unittest.TestCase):
         # A bounded proof: each cited triple appears at most a small number of
         # times (the cycle is cut, not unfolded indefinitely).
         self.assertLessEqual(len(proof), 16)
+
+    def test_join_streams_bindings_instead_of_materialising_them(self) -> None:
+        # Regression for the mining OOM: _join used to build the whole binding
+        # list for every atom, so a high-fanout relation put the entire
+        # intermediate result in memory before the caller saw one row.
+        n = 300
+        facts = [(f"x{i}", "r", f"z{i}") for i in range(n)]
+        facts += [(f"z{i}", "p", f"y{i}") for i in range(n)]
+        idx_all: dict[str, list[tuple[str, str, str]]] = {}
+        idx_subj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
+        idx_obj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
+        for fact in facts:
+            h, r, t = fact
+            idx_all.setdefault(r, []).append(fact)
+            idx_subj.setdefault((r, h), []).append(fact)
+            idx_obj.setdefault((r, t), []).append(fact)
+
+        body = (("?x", "r", "?z"), ("?z", "p", "?y"))
+        calls = {"n": 0}
+        real_unify = symbolic._unify
+
+        def counting_unify(pattern, triple, binding):  # noqa: ANN001, ANN202
+            calls["n"] += 1
+            return real_unify(pattern, triple, binding)
+
+        with unittest.mock.patch.object(symbolic, "_unify", counting_unify):
+            first = next(iter(RuleEngine._join(body, idx_all, idx_subj, idx_obj)))
+
+        self.assertEqual(first["?x"], "x0")
+        # One unification per body atom to reach the first row. Materialising the
+        # join first would cost ~2n (600) before yielding anything.
+        self.assertLessEqual(calls["n"], 2 * len(body))
+
+    def test_join_preserves_binding_order(self) -> None:
+        # The order matters: materialise() records the FIRST derivation it sees
+        # for each fact, so a reordered join would change the proof trees.
+        facts = [
+            ("x0", "r", "z0"),
+            ("x1", "r", "z1"),
+            ("z0", "p", "y0"),
+            ("z1", "p", "y1"),
+        ]
+        idx_all: dict[str, list[tuple[str, str, str]]] = {}
+        idx_subj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
+        idx_obj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
+        for fact in facts:
+            h, r, t = fact
+            idx_all.setdefault(r, []).append(fact)
+            idx_subj.setdefault((r, h), []).append(fact)
+            idx_obj.setdefault((r, t), []).append(fact)
+
+        body = (("?x", "r", "?z"), ("?z", "p", "?y"))
+        rows = [
+            (b["?x"], b["?z"], b["?y"]) for b in RuleEngine._join(body, idx_all, idx_subj, idx_obj)
+        ]
+        self.assertEqual(rows, [("x0", "z0", "y0"), ("x1", "z1", "y1")])
 
     def test_add_rule_permissive_on_untyped_ontology(self) -> None:
         # An untyped/empty ontology constrains nothing: every relation defaults to

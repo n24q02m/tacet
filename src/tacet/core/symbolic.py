@@ -18,6 +18,7 @@ consequences the cascade relies on:
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from tacet.core.graph import WorldGraph
@@ -241,34 +242,40 @@ class RuleEngine:
         idx_all: dict[str, list[Triple]],
         idx_subj: dict[tuple[str, str], list[Triple]],
         idx_obj: dict[tuple[str, str], list[Triple]],
-    ) -> list[dict[str, str]]:
-        """Relational join of the body patterns.
+    ) -> Iterator[dict[str, str]]:
+        """Relational join of the body patterns, produced one binding at a time.
 
         Each atom is matched only against facts of its relation, and — when its
         subject or object is already bound — against the index keyed on that
         value, so a dense relation does not force a quadratic scan.
+
+        Bindings are yielded lazily. Materialising a level at a time is what
+        made a high-fanout relation exhaust memory during rule mining: the
+        intermediate result set is the product of the fanouts, while the caller
+        only ever needs one row. Depth-first traversal emits rows in the same
+        order the level-by-level version did, so the derivation a fact is
+        recorded with — and therefore its proof tree — is unchanged.
         """
-        bindings: list[dict[str, str]] = [{}]
-        for s, r, o in body:
-            nxt: list[dict[str, str]] = []
-            pattern = (s, r, o)
-            for binding in bindings:
-                s_val = binding.get(s) if _is_var(s) else s
-                o_val = binding.get(o) if _is_var(o) else o
-                if s_val is not None:
-                    candidates: list[Triple] = idx_subj.get((r, s_val), [])
-                elif o_val is not None:
-                    candidates = idx_obj.get((r, o_val), [])
-                else:
-                    candidates = idx_all.get(r, [])
-                for fact in candidates:
-                    merged = _unify(pattern, fact, binding)
-                    if merged is not None:
-                        nxt.append(merged)
-            bindings = nxt
-            if not bindings:
-                break
-        return bindings
+
+        def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
+            if depth == len(body):
+                yield binding
+                return
+            s, r, o = body[depth]
+            s_val = binding.get(s) if _is_var(s) else s
+            o_val = binding.get(o) if _is_var(o) else o
+            if s_val is not None:
+                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+            elif o_val is not None:
+                candidates = idx_obj.get((r, o_val), [])
+            else:
+                candidates = idx_all.get(r, [])
+            for fact in candidates:
+                merged = _unify((s, r, o), fact, binding)
+                if merged is not None:
+                    yield from extend(depth + 1, merged)
+
+        return extend(0, {})
 
     # ---------------------------------------------------------- closure
     def materialise(self, graph: WorldGraph) -> set[Triple]:
