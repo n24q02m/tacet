@@ -1,9 +1,24 @@
-## 2024-06-30 - Optimize path-mining relation lookup
+<!-- Bolt (performance) review memory for tacet. The Bolt bot appends dated "Learning / Action" entries below after each task. Dates are the date the change landed on main; keep them accurate, because an entry the bot cannot date is an entry it re-proposes. -->
+
+## 2026-07-01 - Optimize path-mining relation lookup
 **Learning:** Found a performance bottleneck specific to this codebase's architecture in `src/tacet/distill/concepts.py` where `induce_relations` rebuilds forward adjacency structures repeatedly. By pre-computing these maps once, the complexity dropped dramatically from $O(|R|^2 \times \text{pairs})$ to $O(|R| \times \text{pairs})$. The benchmark showed an improvement from 32s to 26s for 20 dense relations.
 **Action:** Always check for repeated graph traversal allocations or rebuilds inside nested loops when dealing with multi-relational graphs.
-## 2024-07-01 - Optimize path-mining for rule synthesis
+
+## 2026-07-10 - Optimize path-mining for rule synthesis
 **Learning:** In `src/tacet/distill/distill.py`, `mine_rules_with_stats` used to reconstruct adjacency maps $O(|R|^2)$ times within nested loops while proposing length-2 Horn rules. By pre-computing these maps once outside the loop and additionally filtering head entities earlier rather than via a delayed set intersection, the time on a dense benchmark graph decreased from 3.47s to 0.73s.
 **Action:** When evaluating graph combinations ($R_1 \land R_2$) in a combinatorial loop, always lift structural calculations (like direct and inverse adjacency maps) to the top of the loop hierarchy.
-## 2024-07-02 - Optimize graph edge updates
+
+## 2026-07-24 - Optimize graph edge updates
 **Learning:** Found a major bottleneck in `src/tacet/core/graph.py` where updating properties of an existing edge required an $O(N)$ iteration over all edges because existence was checked with an $O(1)$ set lookup (`_triple_set`) but the object reference was lost. Replacing the set with a dictionary (`_triple_to_edge` mapping triples to `Edge` objects) reduced the complexity of `add_edge` updates to $O(1)$.
 **Action:** When maintaining uniqueness or tracking state within a collection, consider using dictionaries instead of sets if subsequent operations require direct access to the object associated with the key.
+
+## 2026-07-24 - Node signatures walk local adjacency; the head filter is hoisted
+**Learning:** `_node_signature` in `src/tacet/distill/concepts.py` iterated `graph.relations()` for every node, so `induce_node_types` was $O(|\text{entities}| \times |R|)$ although a node participates in few relations. `WorldGraph` now exposes `out_relations`/`in_relations` and the signature walks those: $O(\text{degree})$. Separately, `mine_rules_with_stats` re-tested the `complete_heads` restriction on the same left-leg map inside all $2|R|$ inner passes; it is applied once per `(r1, inv1)` now.
+**Action:** Read a node's own adjacency rather than scanning the global relation set, and add a public accessor when the fast path needs an internal index -- reaching into `_out`/`_in` from another module is not acceptable here. Hoist a filter that does not depend on the inner loop variables out of the inner loop.
+
+## 2026-07-24 - The Datalog join streams instead of materialising each level
+**Learning:** `RuleEngine._join` in `src/tacet/core/symbolic.py` built the complete binding list for every body atom before moving on, so peak memory was the product of the per-atom fanouts even though both callers consume rows one at a time. A verbose teacher (40-64 tails per head after write-back) exhausted 16 GiB during rule mining. Yielding depth-first fixes it, and depth-first is the order the level-by-level version already produced, so `materialise()` records the same first derivation per fact and proof trees are unchanged.
+**Action:** When a helper returns a list that its only callers iterate once, make it a generator. Before doing so, check whether anything downstream depends on the emission ORDER -- here proof-tree provenance did, so order-preservation is part of the fix, and a test pins it.
+
+## Rejected optimisations (do not re-propose without the stated evidence)
+- **Batched matrix scoring in `ComplEx.evaluate`** (`src/tacet/kge/kge.py`, `kge_torch.py`). Mathematically equivalent to `_phi_idx`, but it duplicates the scoring formula inline and a different summation order can move ties in `np.sum(scores > scores[ti])`. `evaluate` is an offline script whose outputs are committed artifacts (`experiments/results/kge_*.json`), and Tier-2 is disabled in every experiment the paper reports, so the speed-up buys nothing on the hot path while putting published numbers at risk. Re-propose only with a test asserting bit-identical ranks against the current implementation.
