@@ -77,7 +77,7 @@ class WorldGraph:
         self.name = name
         self._nodes: dict[str, Node] = {}
         self._edges: list[Edge] = []
-        self._triple_to_edge: dict[Triple, Edge] = {}
+        self._triple_set: set[Triple] = set()
         self._out: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
         self._in: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
 
@@ -101,13 +101,14 @@ class WorldGraph:
         if target not in self._nodes:
             self.add_node(target)
         triple = (source, relation, target)
-        if triple in self._triple_to_edge:
-            edge = self._triple_to_edge[triple]
-            edge.props.update(props)
-            return edge
+        if triple in self._triple_set:
+            for edge in self._edges:
+                if edge.triple == triple:
+                    edge.props.update(props)
+                    return edge
         edge = Edge(source, relation, target, dict(props))
         self._edges.append(edge)
-        self._triple_to_edge[triple] = edge
+        self._triple_set.add(triple)
         self._out[source][relation].add(target)
         self._in[target][relation].add(source)
         return edge
@@ -120,7 +121,7 @@ class WorldGraph:
         return node_id in self._nodes
 
     def has_edge(self, source: str, relation: str, target: str) -> bool:
-        return (source, relation, target) in self._triple_to_edge
+        return (source, relation, target) in self._triple_set
 
     def slice_at(self, time: float) -> WorldGraph:
         """Return a graph containing only edges valid at `time`.
