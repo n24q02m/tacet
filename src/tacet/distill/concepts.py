@@ -55,15 +55,17 @@ class InducedRelation:
 # ---------------------------------------------------------------------------
 def _node_signature(graph: WorldGraph, node_id: str) -> dict[tuple[str, str], int]:
     """Structural signature: (relation, direction) -> degree."""
-    sig: dict[tuple[str, str], int] = defaultdict(int)
-    for rel in graph.relations():
-        out_deg = len(graph.out(node_id, rel))
-        in_deg = len(graph.into(node_id, rel))
-        if out_deg:
-            sig[(rel, "out")] = out_deg
-        if in_deg:
-            sig[(rel, "in")] = in_deg
-    return dict(sig)
+    sig: dict[tuple[str, str], int] = {}
+    # Walk the node's own adjacency, not the graph's whole relation set: the
+    # signature is O(degree) instead of O(|R|), which matters because
+    # induce_node_types calls this once per entity.
+    for rel, targets in graph.out_relations(node_id).items():
+        if targets:
+            sig[(rel, "out")] = len(targets)
+    for rel, sources in graph.in_relations(node_id).items():
+        if sources:
+            sig[(rel, "in")] = len(sources)
+    return sig
 
 
 def induce_node_types(

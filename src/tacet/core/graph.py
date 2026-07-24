@@ -171,6 +171,18 @@ class WorldGraph:
         return [e.triple for e in self._edges]
 
     # ------------------------------------------------------------- traversal
+    def out_relations(self, node_id: str) -> dict[str, set[str]]:
+        """Forward adjacency of one node: relation -> neighbours.
+
+        The mapping is the live index, so callers must treat it as read-only.
+        Iterating it costs O(degree); `out()` per relation costs O(|R|).
+        """
+        return self._out.get(node_id, {})
+
+    def in_relations(self, node_id: str) -> dict[str, set[str]]:
+        """Backward adjacency of one node: relation -> neighbours (read-only)."""
+        return self._in.get(node_id, {})
+
     def out(self, node_id: str, relation: str | None = None) -> set[str]:
         """Forward one-hop neighbours, optionally filtered by relation."""
         rels = self._out.get(node_id, {})

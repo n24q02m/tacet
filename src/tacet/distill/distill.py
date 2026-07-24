@@ -166,15 +166,22 @@ def mine_rules_with_stats(
             p1 = adj_maps[(r1, inv1)]
             if not p1:
                 continue
+            # Restrict the left leg once per (r1, inv1) rather than re-testing
+            # every head inside the 2 * |R| inner passes over the same map.
+            p1_items = (
+                p1.items()
+                if complete_heads is None
+                else [(x, zs) for x, zs in p1.items() if x in complete_heads]
+            )
+            if not p1_items:
+                continue
             for r2 in relations:
                 for inv2 in (False, True):
                     p2 = adj_maps[(r2, inv2)]
                     if not p2:
                         continue
                     raw: set[Pair] = set()
-                    for x, zs in p1.items():
-                        if complete_heads is not None and x not in complete_heads:
-                            continue
+                    for x, zs in p1_items:
                         for z in zs:
                             for y in p2.get(z, ()):
                                 if x != y:
