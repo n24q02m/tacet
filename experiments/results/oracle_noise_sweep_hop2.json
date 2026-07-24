@@ -1,0 +1,734 @@
+{
+ "provenance": {
+  "hop": 2,
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "error_rates": [
+   0.0,
+   0.05,
+   0.1,
+   0.15,
+   0.2,
+   0.25,
+   0.3,
+   0.35,
+   0.4,
+   0.45,
+   0.5
+  ],
+  "workload_cap": 300,
+  "zipf_a": 1.5,
+  "split": "test",
+  "metaqa_root": "/data/MetaQA",
+  "budget_usd": 1.5,
+  "design": "controlled: Tier-2 disabled + shared teacher answers across arms",
+  "teacher_kind": "oracle",
+  "tier2_disabled": true,
+  "shared_teacher_answers": true,
+  "noise_mode": "per_key",
+  "bootstrap": {
+   "resamples": 10000,
+   "rng_seed": 12345,
+   "ci": 0.95
+  },
+  "verdict_thresholds": {
+   "positive_min_calls_saved_pct": 20.0,
+   "negative_max_calls_saved_pct": 0.0,
+   "note": "PRE-REGISTERED; MUST NOT be tuned to the data"
+  }
+ },
+ "grid": {
+  "error_rates": [
+   0.0,
+   0.05,
+   0.1,
+   0.15,
+   0.2,
+   0.25,
+   0.3,
+   0.35,
+   0.4,
+   0.45,
+   0.5
+  ],
+  "seeds": [
+   0,
+   1,
+   2
+  ]
+ },
+ "cells": [
+  {
+   "error_rate": 0.0,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 81.13,
+   "accuracy_matched": true,
+   "cache_accuracy": 1.0,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 1.0,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.0,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 82.76,
+   "accuracy_matched": true,
+   "cache_accuracy": 1.0,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 1.0,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.0,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 83.33,
+   "accuracy_matched": true,
+   "cache_accuracy": 1.0,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 1.0,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.05,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 81.13,
+   "accuracy_matched": false,
+   "cache_accuracy": 0.9967,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 0.981132,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.05,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 82.76,
+   "accuracy_matched": false,
+   "cache_accuracy": 0.9933,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 0.965517,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.05,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.7767,
+   "full_accuracy": 0.7767,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.916667,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.1,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 81.13,
+   "accuracy_matched": false,
+   "cache_accuracy": 0.9833,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 0.924528,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.1,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 82.76,
+   "accuracy_matched": false,
+   "cache_accuracy": 0.99,
+   "full_accuracy": 1.0,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 0.948276,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.1,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.77,
+   "full_accuracy": 0.77,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.883333,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.15,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.94,
+   "full_accuracy": 0.94,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.811321,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.15,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 82.76,
+   "accuracy_matched": false,
+   "cache_accuracy": 0.8933,
+   "full_accuracy": 0.9933,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 0.896552,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.15,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.7567,
+   "full_accuracy": 0.7567,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.85,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.2,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.9267,
+   "full_accuracy": 0.9267,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.735849,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.2,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 10,
+   "calls_saved_pct": 82.76,
+   "accuracy_matched": false,
+   "cache_accuracy": 0.89,
+   "full_accuracy": 0.9933,
+   "synthesised_rules": [
+    "syn:q2_directors_of_movies_acted_in_by<=~starred_actors.directed_by"
+   ],
+   "teacher_answer_accuracy": 0.87931,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.2,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.7133,
+   "full_accuracy": 0.7133,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.75,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.25,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.9,
+   "full_accuracy": 0.9,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.679245,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.25,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 58,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.8433,
+   "full_accuracy": 0.8433,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.827586,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.25,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.7,
+   "full_accuracy": 0.7,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.683333,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.3,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.8933,
+   "full_accuracy": 0.8933,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.641509,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.3,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 58,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.8333,
+   "full_accuracy": 0.8333,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.793103,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.3,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.7,
+   "full_accuracy": 0.7,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.683333,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.35,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.86,
+   "full_accuracy": 0.86,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.566038,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.35,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 58,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.4567,
+   "full_accuracy": 0.4567,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.741379,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.35,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.6767,
+   "full_accuracy": 0.6767,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.616667,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.4,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.8567,
+   "full_accuracy": 0.8567,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.54717,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.4,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 58,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.44,
+   "full_accuracy": 0.44,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.672414,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.4,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.26,
+   "full_accuracy": 0.26,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.55,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.45,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.7067,
+   "full_accuracy": 0.7067,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.490566,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.45,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 58,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.44,
+   "full_accuracy": 0.44,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.672414,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.45,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.25,
+   "full_accuracy": 0.25,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.5,
+   "distinct_queries": 60,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.5,
+   "seed": 0,
+   "cache_teacher_calls": 53,
+   "full_teacher_calls": 53,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.6967,
+   "full_accuracy": 0.6967,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.433962,
+   "distinct_queries": 53,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.5,
+   "seed": 1,
+   "cache_teacher_calls": 58,
+   "full_teacher_calls": 58,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.4333,
+   "full_accuracy": 0.4333,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.637931,
+   "distinct_queries": 58,
+   "stream_len": 300
+  },
+  {
+   "error_rate": 0.5,
+   "seed": 2,
+   "cache_teacher_calls": 60,
+   "full_teacher_calls": 60,
+   "calls_saved_pct": 0.0,
+   "accuracy_matched": true,
+   "cache_accuracy": 0.2367,
+   "full_accuracy": 0.2367,
+   "synthesised_rules": [],
+   "teacher_answer_accuracy": 0.466667,
+   "distinct_queries": 60,
+   "stream_len": 300
+  }
+ ],
+ "aggregate": [
+  {
+   "error_rate": 0.0,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    81.13,
+    82.76,
+    83.33
+   ],
+   "mean_teacher_answer_accuracy": 1.0,
+   "mean_calls_saved_pct": 82.4067,
+   "bootstrap95_ci": [
+    81.13,
+    83.33
+   ],
+   "ci_excludes_zero": true,
+   "verdict": "POSITIVE"
+  },
+  {
+   "error_rate": 0.05,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    81.13,
+    82.76,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.954439,
+   "mean_calls_saved_pct": 54.63,
+   "bootstrap95_ci": [
+    0.0,
+    82.76
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.1,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    81.13,
+    82.76,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.918712,
+   "mean_calls_saved_pct": 54.63,
+   "bootstrap95_ci": [
+    0.0,
+    82.76
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.15,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    82.76,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.852624,
+   "mean_calls_saved_pct": 27.5867,
+   "bootstrap95_ci": [
+    0.0,
+    82.76
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.2,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    82.76,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.788386,
+   "mean_calls_saved_pct": 27.5867,
+   "bootstrap95_ci": [
+    0.0,
+    82.76
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.25,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.730055,
+   "mean_calls_saved_pct": 0.0,
+   "bootstrap95_ci": [
+    0.0,
+    0.0
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.3,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.705982,
+   "mean_calls_saved_pct": 0.0,
+   "bootstrap95_ci": [
+    0.0,
+    0.0
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.35,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.641361,
+   "mean_calls_saved_pct": 0.0,
+   "bootstrap95_ci": [
+    0.0,
+    0.0
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.4,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.589861,
+   "mean_calls_saved_pct": 0.0,
+   "bootstrap95_ci": [
+    0.0,
+    0.0
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.45,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.554327,
+   "mean_calls_saved_pct": 0.0,
+   "bootstrap95_ci": [
+    0.0,
+    0.0
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  },
+  {
+   "error_rate": 0.5,
+   "n_seeds": 3,
+   "per_seed_calls_saved_pct": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "mean_teacher_answer_accuracy": 0.512853,
+   "mean_calls_saved_pct": 0.0,
+   "bootstrap95_ci": [
+    0.0,
+    0.0
+   ],
+   "ci_excludes_zero": false,
+   "verdict": "NEUTRAL"
+  }
+ ]
+}
