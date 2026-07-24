@@ -302,8 +302,8 @@ def test_answers_path_none_is_unchanged(tmp_path, monkeypatch) -> None:
     rec = run_controlled(answers_path=str(path), **_common(bench, settings))
 
     # a recording run behaves EXACTLY as answers_path=None, only additionally writing
-    # the file (the returned report is identical).
-    assert base == rec
+    # the file (the returned report is identical up to per-arm wall-clock).
+    assert _record_no_timing(base) == _record_no_timing(rec)
     assert path.exists()
     # both runs made the same number of real teacher calls (recording adds no calls)
     assert counter["calls"] - n_calls_plain == n_calls_plain

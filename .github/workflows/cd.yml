@@ -27,27 +27,27 @@ jobs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
     steps:
-      - uses: actions/create-github-app-token@v3
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
           app-id: ${{ vars.CI_APP_ID }}
           private-key: ${{ secrets.CI_APP_KEY }}
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           # Checkout as the CI GitHub App (admin role) so PSR can push the
           # version bump + tag past the main branch ruleset (PR + CodeQL rules).
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
 
-      - uses: python-semantic-release/python-semantic-release@v10
+      - uses: n24q02m/better-semantic-release@95d056deb7b7edcf6b4be69536aec70624355333 # v1.2.1
         id: release
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: ${{ inputs.release_type == 'beta' }}
           prerelease_token: beta
 
-      - uses: python-semantic-release/publish-action@v10
+      - uses: python-semantic-release/publish-action@5a5718ce47b892ef699f2972dae122297771d641 # v10.6.1
         if: steps.release.outputs.released == 'true'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
