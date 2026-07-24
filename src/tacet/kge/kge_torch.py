@@ -457,12 +457,14 @@ class TorchComplEx:
         self, test: list[Triple], filter_triples: set[Triple] | None = None
     ) -> dict[str, float]:
         filter_triples = filter_triples or set()
+        ne = len(self.ent)
         # Pre-index filter triples for fast lookup
         filter_map: dict[tuple[str, str], set[str]] = {}
         for fh, fr, ft in filter_triples:
             if (fh, fr) not in filter_map:
                 filter_map[(fh, fr)] = set()
             filter_map[(fh, fr)].add(ft)
+        all_ent_idx = torch.arange(ne, device=self.device).unsqueeze(0)
         ranks: list[int] = []
 
         valid_test = [
@@ -471,24 +473,22 @@ class TorchComplEx:
         if not valid_test:
             return {"MRR": 0.0, "Hits@1": 0.0, "Hits@3": 0.0, "Hits@10": 0.0}
 
-        # ⚡ Bolt Optimization: Batch test triples using batched matrix multiplication to compute
-        # scores against all entities simultaneously, preventing broadcasting overhead.
+        # ⚡ Bolt Optimization: Batch test triples and score all entities simultaneously
+        # via broadcasting in `_phi_idx`. This significantly speeds up row-by-row
+        # looping while guaranteeing bit-identical ranks by reusing the exact formula.
         batch_size = 128
         with torch.no_grad():
             for start in range(0, len(valid_test), batch_size):
                 batch = valid_test[start : start + batch_size]
-                b_h = torch.tensor([self.ent[h] for h, r, t in batch], device=self.device)
-                b_r = torch.tensor([self.rel[r] for h, r, t in batch], device=self.device)
+                b_h = torch.tensor(
+                    [self.ent[h] for h, r, t in batch], device=self.device
+                ).unsqueeze(1)
+                b_r = torch.tensor(
+                    [self.rel[r] for h, r, t in batch], device=self.device
+                ).unsqueeze(1)
                 b_t = torch.tensor([self.ent[t] for h, r, t in batch], device=self.device)
 
-                hr, hi = self._E_re[b_h], self._E_im[b_h]
-                rr, ri = self._R_re[b_r], self._R_im[b_r]
-
-                a = hr * rr - hi * ri
-                b = hr * ri + hi * rr
-
-                scores = a @ self._E_re.T + b @ self._E_im.T
-                scores = scores.cpu().numpy()
+                scores = self._phi_idx(b_h, b_r, all_ent_idx).cpu().numpy()
                 b_t_np = b_t.cpu().numpy()
 
                 for i, (h, r, t) in enumerate(batch):

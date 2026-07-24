@@ -349,22 +349,18 @@ class ComplEx:
         if not valid_test:
             return {"MRR": 0.0, "Hits@1": 0.0, "Hits@3": 0.0, "Hits@10": 0.0}
 
-        # ⚡ Bolt Optimization: Batch test triples using matrix multiplication to compute
-        # scores against all entities simultaneously. Avoids element-wise broadcasting overhead.
+        # ⚡ Bolt Optimization: Batch test triples and score all entities simultaneously
+        # via broadcasting in `_phi_idx`. This significantly speeds up row-by-row
+        # looping while guaranteeing bit-identical ranks by reusing the exact formula.
+        all_ent_idx = np.arange(len(self.ent))[None, :]
         batch_size = 128
         for start in range(0, len(valid_test), batch_size):
             batch = valid_test[start : start + batch_size]
-            b_h = np.array([self.ent[h] for h, r, t in batch])
-            b_r = np.array([self.rel[r] for h, r, t in batch])
+            b_h = np.array([self.ent[h] for h, r, t in batch])[:, None]
+            b_r = np.array([self.rel[r] for h, r, t in batch])[:, None]
             b_t = np.array([self.ent[t] for h, r, t in batch])
 
-            hr, hi = self.E_re[b_h], self.E_im[b_h]
-            rr, ri = self.R_re[b_r], self.R_im[b_r]
-
-            a = hr * rr - hi * ri
-            b = hr * ri + hi * rr
-
-            scores = a @ self.E_re.T + b @ self.E_im.T
+            scores = self._phi_idx(b_h, b_r, all_ent_idx)
 
             for i, (h, r, t) in enumerate(batch):
                 for ft in filter_map.get((h, r), set()):
