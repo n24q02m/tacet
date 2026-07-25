@@ -64,22 +64,38 @@ def match_key(cell: tuple[str, int]) -> tuple[str, int]:
     return slug.replace(".", ""), seed
 
 
-def classify(rules: list[str]) -> tuple[bool, int]:
-    """(installed the true composition, number of junk rules).
+def classify(rules: list[str]) -> tuple[bool, int, int]:
+    """(installed the true composition, self-referential rules, everything else).
 
-    Classified from the rule BODY rather than from any stored verdict: a rule
-    whose body is the two base relations is the world-correct composition, and a
-    rule whose body mentions the mining target is the self-referential junk.
+    Classified from the rule BODY rather than from any stored verdict. Three
+    classes, not two, because the paper's claim is about one of them:
+
+    * the world-correct composition -- body is the two base relations;
+    * the SELF-REFERENTIAL junk -- body names the mining target, which is what
+      forbidding the target in the body removes;
+    * anything else -- a body of legitimate base relations that is nonetheless
+      not the composition. That is the near-functional leakage the paper scopes
+      out explicitly, and `--forbid-target-in-body` does nothing about it.
+
+    Folding the third class into "junk" happens to give the same counts on this
+    grid because it is empty here. On a workload that produces a leaky rule it
+    would report junk going to zero under an option that cannot remove it, which
+    is precisely the conflation the paper's scope limit warns against.
     """
     true_installed = False
-    junk = 0
+    self_referential = 0
+    other = 0
     for r in rules:
-        body = r.split("<=", 1)[1] if "<=" in r else r
+        head, _, body = r.partition("<=")
+        body = body or head
+        target = head.removeprefix("syn:").strip()
         if all(a in body for a in TRUE_RULE_ATOMS):
             true_installed = True
+        elif target and target in body:
+            self_referential += 1
         else:
-            junk += 1
-    return true_installed, junk
+            other += 1
+    return true_installed, self_referential, other
 
 
 def read_control(path: Path) -> dict[tuple[str, int], dict]:
@@ -91,7 +107,7 @@ def read_control(path: Path) -> dict[tuple[str, int], dict]:
             key = match_key(parse_cell(f.stem))
             slug, seed = parse_cell(f.stem)
             rules = cell.get("synthesised_rules") or []
-            true_installed, junk = classify(rules)
+            true_installed, self_ref, other = classify(rules)
             out[key] = {
                 "slug": slug,
                 "seed": seed,
@@ -101,7 +117,8 @@ def read_control(path: Path) -> dict[tuple[str, int], dict]:
                 "cache_accuracy": cell.get("cache_accuracy"),
                 "full_accuracy": cell.get("full_accuracy"),
                 "true_rule_installed": true_installed,
-                "junk_rules": junk,
+                "self_referential_rules": self_ref,
+                "other_rules": other,
             }
     return out
 
@@ -113,7 +130,7 @@ def read_forbid(path: Path) -> dict[tuple[str, int], dict]:
         v = d.get("verdict") or {}
         arms = {a["arm"]: a for a in d.get("arms", [])}
         rules = (arms.get("full_distillation") or {}).get("synthesised_rules") or []
-        true_installed, junk = classify(rules)
+        true_installed, self_ref, other = classify(rules)
         out[match_key(parse_cell(f.stem))] = {
             "calls_saved_pct": v.get("calls_saved_pct"),
             "rule_world_precision": v.get("rule_world_precision"),
@@ -121,7 +138,8 @@ def read_forbid(path: Path) -> dict[tuple[str, int], dict]:
             "cache_accuracy": v.get("accuracy_cache"),
             "full_accuracy": v.get("accuracy_full"),
             "true_rule_installed": true_installed,
-            "junk_rules": junk,
+            "self_referential_rules": self_ref,
+            "other_rules": other,
         }
     return out
 
@@ -159,9 +177,11 @@ def main() -> int:
 
     true_c = sum(x["control"]["true_rule_installed"] for x in cells)
     true_f = sum(x["forbid"]["true_rule_installed"] for x in cells)
-    junk_c = sum(x["control"]["junk_rules"] for x in cells)
-    junk_f = sum(x["forbid"]["junk_rules"] for x in cells)
-    junk_cells_c = sum(1 for x in cells if x["control"]["junk_rules"])
+    selfref_c = sum(x["control"]["self_referential_rules"] for x in cells)
+    selfref_f = sum(x["forbid"]["self_referential_rules"] for x in cells)
+    selfref_cells_c = sum(1 for x in cells if x["control"]["self_referential_rules"])
+    other_c = sum(x["control"]["other_rules"] for x in cells)
+    other_f = sum(x["forbid"]["other_rules"] for x in cells)
     identical = sum(1 for x in cells if x["savings_identical"])
     lost = [
         x["slug"]
@@ -188,8 +208,21 @@ def main() -> int:
         ),
         "true_rule_installs": {"control": true_c, "forbid": true_f},
         "cells_with_identical_savings": identical,
-        "junk_rules": {"control": junk_c, "forbid": junk_f},
-        "cells_installing_junk": {"control": junk_cells_c, "forbid": 0},
+        "self_referential_rules": {"control": selfref_c, "forbid": selfref_f},
+        "cells_installing_self_referential": {
+            "control": selfref_cells_c,
+            "forbid": sum(1 for x in cells if x["forbid"]["self_referential_rules"]),
+        },
+        "other_rules": {
+            "control": other_c,
+            "forbid": other_f,
+            "note": (
+                "Bodies of legitimate base relations that are not the composition -- the "
+                "near-functional leakage the paper scopes out. --forbid-target-in-body does "
+                "not address them, so they are counted apart from the self-referential rules "
+                "rather than folded in. Empty on this grid."
+            ),
+        },
         "cells_losing_accuracy": lost,
         "total_savings_delta_pp": round(delta, 4),
         "cells": cells,
@@ -200,7 +233,11 @@ def main() -> int:
     print(f"wrote {args.out} ({len(cells)} cells)")
     print(f"  true rule installs : control {true_c} -> forbid {true_f}")
     print(f"  identical savings  : {identical}/{true_c}")
-    print(f"  junk rules         : control {junk_c} across {junk_cells_c} cells -> forbid {junk_f}")
+    print(
+        f"  self-referential   : control {selfref_c} across {selfref_cells_c} cells "
+        f"-> forbid {selfref_f}"
+    )
+    print(f"  other (leakage)    : control {other_c} -> forbid {other_f}")
     print(f"  cells losing acc   : {len(lost)}")
     print(f"  savings delta      : {delta:+.2f} pp")
     return 0

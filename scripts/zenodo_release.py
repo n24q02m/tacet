@@ -89,8 +89,11 @@ def open_draft(token: str) -> dict | None:
     return None
 
 
-def new_version_draft(token: str, published_id: str) -> dict:
-    """The draft to deposit into: an open one if it exists, otherwise a fresh one.
+def new_version_draft(token: str, published_id: str) -> tuple[dict, bool]:
+    """The draft to deposit into, and whether it was already open.
+
+    This function is the only place that decides between reuse and creation, so
+    that a caller cannot ask the question twice and act on two different answers.
 
     Reusing matters for more than tidiness. ``actions/newversion`` refuses with
     400 ``files.enabled: Please remove all files first`` while a draft is open,
@@ -99,10 +102,10 @@ def new_version_draft(token: str, published_id: str) -> dict:
     """
     existing = open_draft(token)
     if existing is not None:
-        return existing
+        return existing, True
     original = _call("POST", f"{API}/deposit/depositions/{published_id}/actions/newversion", token)
     draft_url = original["links"]["latest_draft"]
-    return _call("GET", draft_url, token)
+    return _call("GET", draft_url, token), False
 
 
 def build_metadata(
@@ -200,10 +203,9 @@ def main() -> int:
     published = _call("GET", f"{API}/deposit/depositions/{published_id}", token)
     print(f"latest published version: {published_id} ({published['metadata'].get('version')})")
 
-    reused = open_draft(token)
-    draft = reused if reused is not None else new_version_draft(token, published_id)
+    draft, reused = new_version_draft(token, published_id)
     draft_id = str(draft["id"])
-    print(f"{'reusing open' if reused is not None else 'opened new'} draft: {draft_id}")
+    print(f"{'reusing open' if reused else 'opened new'} draft: {draft_id}")
 
     metadata = build_metadata(published, args.version, date, description)
     _call("PUT", f"{API}/deposit/depositions/{draft_id}", token, body={"metadata": metadata})
