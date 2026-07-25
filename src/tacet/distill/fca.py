@@ -64,16 +64,6 @@ class FormalContext:
     attributes: list[Attribute]
     # incidence[obj] -> set of attribute indices the object has
     incidence: dict[str, frozenset[int]] = field(default_factory=dict)
-    # _attr_extents[attr_idx] -> set of objects that have this attribute
-    _attr_extents: dict[int, frozenset[str]] = field(init=False, repr=False, default_factory=dict)
-
-    def __post_init__(self) -> None:
-        """Pre-compute the inverted index of attributes to objects for fast closure ops."""
-        extents: dict[int, set[str]] = {i: set() for i in range(len(self.attributes))}
-        for g, idxs in self.incidence.items():
-            for i in idxs:
-                extents[i].add(g)
-        self._attr_extents = {i: frozenset(s) for i, s in extents.items()}
 
     # --- factories ----------------------------------------------------
     @classmethod
@@ -130,17 +120,7 @@ class FormalContext:
 
     def objects_of(self, intent: frozenset[int]) -> frozenset[str]:
         """B' = {g ∈ G | B ⊆ g's attribute set}."""
-        # ⚡ Bolt Optimization: Use inverted index to compute object intersection
-        # O(|intent| * |extent|) instead of checking every object in O(|G| * |intent|)
-        if not intent:
-            return frozenset(self.objects)
-        it = iter(intent)
-        common = set(self._attr_extents[next(it)])
-        for attr in it:
-            common &= self._attr_extents[attr]
-            if not common:
-                break
-        return frozenset(common)
+        return frozenset(g for g, idxs in self.incidence.items() if intent.issubset(idxs))
 
     def closure_of_extent(self, extent: frozenset[str]) -> ExtentIntent:
         intent = self.attrs_of(extent)

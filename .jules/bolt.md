@@ -22,7 +22,3 @@
 
 ## Rejected optimisations (do not re-propose without the stated evidence)
 - **Batched matrix scoring in `ComplEx.evaluate`** (`src/tacet/kge/kge.py`, `kge_torch.py`). Mathematically equivalent to `_phi_idx`, but it duplicates the scoring formula inline and a different summation order can move ties in `np.sum(scores > scores[ti])`. `evaluate` is an offline script whose outputs are committed artifacts (`experiments/results/kge_*.json`), and Tier-2 is disabled in every experiment the paper reports, so the speed-up buys nothing on the hot path while putting published numbers at risk. Re-propose only with a test asserting bit-identical ranks against the current implementation.
-
-## 2026-07-25 - Optimize FCA concept generation (objects_of)
-**Learning:** Found a performance bottleneck in `src/tacet/distill/fca.py` where `objects_of` iterated over all objects in the context to check for subset containment (`intent.issubset(idxs)`). This caused concept generation to be $O(|G| \times |intent|)$ on each invocation. By pre-computing an inverted index `_attr_extents` mapping attributes to sets of objects, the intersection logic takes $O(|intent| \times |extent|)$ time and is significantly faster, reducing test time for a 2000-object graph from ~14s down to ~2s.
-**Action:** When repeatedly calculating object intersections in Galois closure operators, use inverted indexes rather than linear scans over the entire object set.
