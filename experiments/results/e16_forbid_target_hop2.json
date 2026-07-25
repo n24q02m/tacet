@@ -10,13 +10,18 @@
     "forbid": 10
   },
   "cells_with_identical_savings": 10,
-  "junk_rules": {
+  "self_referential_rules": {
     "control": 14,
     "forbid": 0
   },
-  "cells_installing_junk": {
+  "cells_installing_self_referential": {
     "control": 7,
     "forbid": 0
+  },
+  "other_rules": {
+    "control": 0,
+    "forbid": 0,
+    "note": "Bodies of legitimate base relations that are not the composition -- the near-functional leakage the paper scopes out. --forbid-target-in-body does not address them, so they are counted apart from the self-referential rules rather than folded in. Empty on this grid."
   },
   "cells_losing_accuracy": [],
   "total_savings_delta_pp": -3.36,
@@ -37,7 +42,8 @@
         "cache_accuracy": 0.5233,
         "full_accuracy": 0.5233,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -46,7 +52,8 @@
         "cache_accuracy": 0.5233,
         "full_accuracy": 0.5233,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -65,7 +72,8 @@
         "cache_accuracy": 0.11,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.33,
@@ -76,7 +84,8 @@
         "cache_accuracy": 0.11,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -95,7 +104,8 @@
         "cache_accuracy": 0.7067,
         "full_accuracy": 0.98,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.33,
@@ -106,7 +116,8 @@
         "cache_accuracy": 0.7067,
         "full_accuracy": 0.98,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -126,7 +137,8 @@
         "cache_accuracy": 0.5167,
         "full_accuracy": 0.5167,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -135,7 +147,8 @@
         "cache_accuracy": 0.5167,
         "full_accuracy": 0.5167,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -155,7 +168,8 @@
         "cache_accuracy": 0.53,
         "full_accuracy": 0.53,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -164,7 +178,8 @@
         "cache_accuracy": 0.53,
         "full_accuracy": 0.53,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -183,7 +198,8 @@
         "cache_accuracy": 0.17,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.33,
@@ -194,7 +210,8 @@
         "cache_accuracy": 0.17,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -211,7 +228,8 @@
         "cache_accuracy": 0.5,
         "full_accuracy": 0.5,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -220,7 +238,8 @@
         "cache_accuracy": 0.5,
         "full_accuracy": 0.5,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -237,7 +256,8 @@
         "cache_accuracy": 0.08,
         "full_accuracy": 0.08,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -246,7 +266,8 @@
         "cache_accuracy": 0.08,
         "full_accuracy": 0.08,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -265,7 +286,8 @@
         "cache_accuracy": 0.0867,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.33,
@@ -276,7 +298,8 @@
         "cache_accuracy": 0.0867,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -295,7 +318,8 @@
         "cache_accuracy": 0.18,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.61,
@@ -306,7 +330,8 @@
         "cache_accuracy": 0.18,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -325,7 +350,8 @@
         "cache_accuracy": 0.1633,
         "full_accuracy": 0.9467,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.33,
@@ -336,7 +362,8 @@
         "cache_accuracy": 0.1633,
         "full_accuracy": 0.9467,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -355,7 +382,8 @@
         "cache_accuracy": 0.15,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.61,
@@ -366,7 +394,8 @@
         "cache_accuracy": 0.15,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -385,7 +414,8 @@
         "cache_accuracy": 0.6533,
         "full_accuracy": 0.9667,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 81.13,
@@ -396,7 +426,8 @@
         "cache_accuracy": 0.6533,
         "full_accuracy": 0.9667,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -413,7 +444,8 @@
         "cache_accuracy": 0.2367,
         "full_accuracy": 0.2367,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -422,7 +454,8 @@
         "cache_accuracy": 0.2367,
         "full_accuracy": 0.2367,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -439,7 +472,8 @@
         "cache_accuracy": 0.1533,
         "full_accuracy": 0.1533,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -448,7 +482,8 @@
         "cache_accuracy": 0.1533,
         "full_accuracy": 0.1533,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -467,7 +502,8 @@
         "cache_accuracy": 0.27,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 83.33,
@@ -478,7 +514,8 @@
         "cache_accuracy": 0.27,
         "full_accuracy": 0.95,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     },
@@ -498,7 +535,8 @@
         "cache_accuracy": 0.6033,
         "full_accuracy": 0.6033,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -507,7 +545,8 @@
         "cache_accuracy": 0.6033,
         "full_accuracy": 0.6033,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -527,7 +566,8 @@
         "cache_accuracy": 0.2367,
         "full_accuracy": 0.2367,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -536,7 +576,8 @@
         "cache_accuracy": 0.2367,
         "full_accuracy": 0.2367,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -553,7 +594,8 @@
         "cache_accuracy": 0.1,
         "full_accuracy": 0.1,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -562,7 +604,8 @@
         "cache_accuracy": 0.1,
         "full_accuracy": 0.1,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -582,7 +625,8 @@
         "cache_accuracy": 0.0867,
         "full_accuracy": 0.0867,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -591,7 +635,8 @@
         "cache_accuracy": 0.0867,
         "full_accuracy": 0.0867,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -611,7 +656,8 @@
         "cache_accuracy": 0.2,
         "full_accuracy": 0.2,
         "true_rule_installed": false,
-        "junk_rules": 2
+        "self_referential_rules": 2,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 0.0,
@@ -620,7 +666,8 @@
         "cache_accuracy": 0.2,
         "full_accuracy": 0.2,
         "true_rule_installed": false,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": false
     },
@@ -639,7 +686,8 @@
         "cache_accuracy": 0.5233,
         "full_accuracy": 0.9733,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "forbid": {
         "calls_saved_pct": 86.11,
@@ -650,7 +698,8 @@
         "cache_accuracy": 0.5233,
         "full_accuracy": 0.9733,
         "true_rule_installed": true,
-        "junk_rules": 0
+        "self_referential_rules": 0,
+        "other_rules": 0
       },
       "savings_identical": true
     }
