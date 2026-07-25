@@ -56,8 +56,11 @@ jobs:
 
       - name: Build the paper
         run: |
+          # tectonic does not create --outdir; it errors if the path is absent.
+          mkdir -p paper/build
           ./tectonic paper/main.tex --outdir paper/build
           test -s paper/build/main.pdf
+          ls -la paper/build/main.pdf
 
       # The deposit description is the paper's own abstract, taken from a
       # rendering of the same source as the PDF, so the two cannot disagree.
