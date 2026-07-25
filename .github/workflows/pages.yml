@@ -31,10 +31,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends latexml poppler-utils
 
-      # The figures are PDFs (matplotlib output, committed). PDF is not a web
-      # image source, so LaTeXML emits <img src=""> for each of them. Rasterise
-      # them next to the originals first: LaTeXML resolves \includegraphics
-      # without the extension and picks the PNG for an HTML target.
+      # The figures are matplotlib PDFs, and \includegraphics names them WITH
+      # the .pdf extension, so LaTeXML resolves the file it was pointed at,
+      # cannot use a PDF as a web image, and emits <img src=""> with
+      # ltx_missing_image. Rasterise each one, then render from a COPY of the
+      # source whose figure paths carry .png. The copy is what makes this safe:
+      # paper/main.tex is untouched, so the PDF build and the deposit are
+      # unaffected and the HTML still comes from the same source.
       - name: Rasterise the figures
         run: |
           shopt -s nullglob
@@ -48,9 +51,14 @@ jobs:
           ls -la paper/figures/*.png
 
       - name: Render the paper to HTML
-        working-directory: paper
         run: |
-          mkdir -p ../site/public/paper
+          cp -r paper paper-html
+          sed -i 's|{figures/\([^}]*\)\.pdf}|{figures/\1.png}|g' paper-html/main.tex
+          remaining=$(grep -c 'figures/[^}]*\.pdf' paper-html/main.tex || true)
+          echo "figure references still pointing at a PDF: $remaining"
+          test "$remaining" -eq 0
+          mkdir -p site/public/paper
+          cd paper-html
           latexmlc main.tex \
             --format=html5 \
             --svg \
