@@ -96,10 +96,14 @@ reduces to a cache. Sweeping the installation threshold across eleven 2026
 frontier teachers refines this: at the paper's operating point none installs
 the rule, but at a lower threshold ten of eleven (favourable seed per model)
 install the world-precision-$1.0$ composition rule at $81$--$86\%$ fewer calls, so the gate
-is the confidence threshold, not teacher identity --- yet that low-threshold
-regime is not a deployable fix, because the natural label-free way to promote
-such rules (agreement with the teacher on unseen heads) is empirically inert, and
-cross-teacher ``distillability'' at low threshold is largely an answer-length artifact
+is the confidence threshold, not teacher identity. That regime installs a
+self-referential junk rule alongside the true one, which appears to demand gold
+labels to tell apart; the natural label-free substitutes (teacher agreement,
+self-consistency) are empirically inert. The apparent dependency is an artifact
+of candidate enumeration: excluding the mining target from its own rule body
+removes every junk rule while leaving the true rule and its savings untouched,
+so what still limits the regime is seed-dependence and the near-functional
+leakage of Section~\ref{sec:rule_precision}, not a need for gold
 (Section~\ref{sec:threshold-gate}). Tier-1 answers carry replayable Datalog proof trees,
 and we prove an ontology-preservation guarantee
 (Theorem~\ref{thm:soundness}) for the synthesised rules. The
@@ -226,10 +230,12 @@ downward and the blended cost decays toward the symbolic floor.
   quality decides whether the rule clears the bar. We do not claim distillation
   beats caching with a real LLM here. A threshold sweep over eleven 2026 teachers further
   shows the MetaQA null is governed by the installation threshold rather than
-  teacher identity, and that the low-threshold regime it exposes is not
-  deployable (Section~\ref{sec:threshold-gate}): the obvious label-free
-  promotion signal is inert and the cross-teacher ranking is confounded by
-  answer verbosity.
+  teacher identity (Section~\ref{sec:threshold-gate}). The low-threshold regime
+  it exposes is bounded by three findings there: the obvious label-free
+  promotion signals are inert, the cross-teacher ranking is confounded by answer
+  verbosity, and the junk rule that appeared to force a gold dependency is an
+  artifact of candidate enumeration that a one-line change removes at no cost to
+  the true rule.
   \item[(C4)] \textbf{An honest negative result.} A candid study of graph
   \emph{forecasting} showing that a learned forward-dynamics extension does
   not beat purpose-built temporal models, reported as a negative result
@@ -2279,14 +2285,19 @@ noisy answers still supply. The effect is seed-dependent --- installation is a
 per-workload draw and we report the favourable seed per model over the $1$--$3$
 seeds recorded --- so we read the sweep as establishing \emph{which variable}
 gates installation, not a per-model ranking. The low-$\gamma$ regime it exposes
-is not, however, a deployable recommendation, for the two reasons below.
+is bounded by the three findings below --- two of which limit it, and one of
+which removes an obstacle that turns out not to have been real.
 
 \input{results/tab_threshold_gate.tex}
 
 \paragraph{Label-free promotion is inert.} Lowering $\gamma$ installs the true
 rule, but it also installs a self-referential junk rule, and telling the two
-apart in the study required world precision, i.e.\ gold labels a deployment does
-not have. The stream itself already pays for teacher answers, so a natural
+apart \emph{by inspecting the installed rules} required world precision, i.e.\
+gold labels a deployment does not have. (The paragraph after next shows the junk
+need never be generated, which dissolves this particular obstacle; we report the
+label-free search as run, because its negative result stands on its own and
+bounds what stream supervision can do.) The stream itself already pays for
+teacher answers, so a natural
 label-free test suggests itself: install a candidate at low $\gamma$ in
 \emph{shadow} (it predicts but does not route), and promote it only after it
 agrees with the teacher on $k$ distinct unseen heads, demoting on the first
@@ -2329,6 +2340,38 @@ the same reason single-sample agreement is --- and a cross-rule or ontology
 consistency signal, which we do not test, would have to overcome the same
 systematic-error wall. This is a negative result, and it bounds an otherwise
 attractive self-tuning story.
+
+\paragraph{The junk rule is a candidate-generation artifact, not a property of
+distillation.} The obstacle above assumes the junk rule exists and must be
+recognised. It need not exist. The miner draws body atoms from the base-relation
+whitelist \emph{plus the mining target itself}; the length-$1$ branch refuses a
+body atom equal to the target, the length-$2$ branch does not, so
+$q2(x,y)\!\leftarrow\!q2(x,z)\wedge q2(z,y)$ is a well-formed candidate --- mined
+from the write-back edges the teacher's own answers created. That is the junk
+rule. Excluding the target from length-$2$ bodies, which merely makes the two
+branches agree, removes it structurally, with no gold and no runtime signal.
+
+Replaying the recorded ladder at $\gamma{=}0.50$ under both settings
+(\texttt{--forbid-target-in-body}; $22$ cells with a recorded control, no new API
+calls) is unambiguous. The true composition installs in the same $10$ cells, at
+\emph{identical} savings in $10$ of $10$ --- including the anchor teacher, Grok
+4.3 seed $0$, at $81.13\%$ and world precision $1.0$. All $14$ junk rules across
+the $7$ affected cells disappear, and no cell loses accuracy. The cost is
+$3.36$ percentage points of saving summed over the grid, from two cells where the
+self-rule happened to save a little at world precision $0.347$ and $0.021$ --- i.e.\
+saving produced by a rule wrong about the world in roughly two thirds and
+ninety-eight percent of its firings, with benchmark accuracy unchanged in both.
+
+We register the limits. This addresses the \emph{structural} self-reference only,
+not the near-functional leakage of Section~\ref{sec:rule_precision}, where a body of
+legitimate base relations still carries a $\sim\!20$-point confidence/world-precision
+gap; that case still wants the held-out admission test proposed there. It also
+forecloses genuinely recursive targets, which MetaQA's composed relation is not,
+so the option defaults to the published behaviour and must be enabled
+deliberately. Within those limits the reading is clear: the low-$\gamma$ regime's
+gold dependency was an artifact of how candidates were enumerated, and the three
+label-free experiments above were searching for a way to recognise something that
+did not have to be produced.
 
 \paragraph{Cross-teacher ``distillability'' is an answer-length artifact.} One
 might still rank teachers by how readily their answers distil, and build a
