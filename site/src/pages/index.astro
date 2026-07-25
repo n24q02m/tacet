@@ -1,0 +1,89 @@
+---
+import Base from "../layouts/Base.astro";
+const base = import.meta.env.BASE_URL;
+
+const title =
+  "TACET — cost-amortised reasoning via self-distilling neuro-symbolic cascades";
+const description =
+  "A three-tier cascade that migrates a streamed workload off the LLM and onto checkable tiers, with replayable Datalog proof trees. Measured cost amortisation, and the boundaries where it stops working.";
+---
+
+<Base title={title} description={description}>
+  <h1>Cost-amortised reasoning via self-distilling neuro-symbolic cascades</h1>
+
+  <p class="lede">
+    From knowledge-graph QA to regulatory-compliance checking. A sound Datalog tier, a
+    calibrated link predictor, and an LLM teacher — with an online distillation loop that
+    moves the teacher's answers down into the cheap tiers as the workload streams.
+  </p>
+
+  <div class="actions">
+    <a class="btn" href={`${base}paper/`}>Read the paper</a>
+    <a class="btn secondary" href="https://doi.org/10.5281/zenodo.20621240">Zenodo (DOI)</a>
+    <a class="btn secondary" href="https://github.com/n24q02m/tacet">Source code</a>
+  </div>
+
+  <h2>What is measured</h2>
+
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr><th>Setting</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>MetaQA, real Grok 4.3 teacher, matched accuracy</td>
+          <td class="num">2.8x / 5.1x</td>
+        </tr>
+        <tr>
+          <td>GDPR compliance (PrivaCI), three frontier teachers</td>
+          <td class="num">1.5-2.1x</td>
+        </tr>
+        <tr>
+          <td>Oracle teacher, unseen heads</td>
+          <td class="num">87% fewer calls</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The saving under a real teacher comes from answer reuse. The distinctive claim — that a
+    synthesised rule generalises past a cache — is teacher-quality-gated, and the paper says
+    where it does not hold.
+  </p>
+
+  <h2>What did not work</h2>
+
+  <p>
+    Roughly half the paper is negative results, reported because they bound the method rather
+    than decorate it:
+  </p>
+
+  <ul>
+    <li>
+      A graph forward-dynamics forecaster, kept as a documented negative rather than dropped.
+    </li>
+    <li>
+      Label-free promotion of mined rules: neither agreement with the teacher nor multi-sample
+      self-consistency works, because the teacher's error on these workloads is systematic, and
+      a majority vote cancels random noise rather than systematic error.
+    </li>
+    <li>
+      Cross-teacher "distillability" turns out to be confounded by answer length, so no ranking
+      is reported and no benchmark is built on one.
+    </li>
+    <li>
+      An earlier version excluded a third of the grid and blamed teacher verbosity. Both halves
+      were wrong; the current version reports the full grid and records the misattribution.
+    </li>
+  </ul>
+
+  <h2>Citing</h2>
+
+  <p>
+    The version of record is the Zenodo deposit under concept DOI
+    <code>10.5281/zenodo.20621240</code>, which always resolves to the latest version.
+    <code>CITATION.cff</code> in the repository is kept in step with it.
+  </p>
+</Base>

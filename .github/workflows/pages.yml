@@ -1,0 +1,66 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "paper/**"
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The reading copy is GENERATED from paper/main.tex, never hand-written, so
+      # it cannot drift from the source the Zenodo deposit is built from.
+      - name: Install LaTeXML
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends latexml
+
+      - name: Render the paper to HTML
+        working-directory: paper
+        run: |
+          mkdir -p ../site/public/paper
+          latexmlc main.tex \
+            --format=html5 \
+            --svg \
+            --dest=../site/public/paper/index.html
+          test -s ../site/public/paper/index.html
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build the site
+        working-directory: site
+        run: |
+          bun install
+          bun run build
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

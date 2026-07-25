@@ -33,3 +33,9 @@ experiments/results/privaci_matrix_partial_*.json
 
 # Local run logs (transient; the JSON artifacts next to them are the record)
 experiments/results/*.log
+
+# Astro site build output and deps
+site/dist/
+site/node_modules/
+site/.astro/
+site/public/paper/
