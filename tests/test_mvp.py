@@ -524,6 +524,26 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), {"ok": True})
 
+    def test_every_path_carries_a_content_security_policy(self) -> None:
+        # The doc pages are the only place that loads script, so exempting them
+        # would leave the sole script surface with no policy at all.
+        for path in ("/healthz", "/openapi.json", "/docs", "/redoc"):
+            with self.subTest(path=path):
+                csp = self.client.get(path).headers.get("Content-Security-Policy")
+                self.assertIsNotNone(csp, f"{path} served no CSP")
+                self.assertIn("default-src 'none'", csp)
+                self.assertIn("frame-ancestors 'none'", csp)
+
+    def test_doc_pages_allow_their_cdn_and_nothing_else_does(self) -> None:
+        docs = self.client.get("/docs").headers["Content-Security-Policy"]
+        self.assertIn("script-src 'self' https://cdn.jsdelivr.net", docs)
+        # A JSON endpoint has no reason to reach a CDN.
+        for path in ("/healthz", "/openapi.json"):
+            with self.subTest(path=path):
+                csp = self.client.get(path).headers["Content-Security-Policy"]
+                self.assertNotIn("jsdelivr", csp)
+                self.assertNotIn("script-src", csp)
+
     def test_readyz_after_warmup(self) -> None:
         resp = self.client.get("/readyz")
         self.assertEqual(resp.status_code, 200)

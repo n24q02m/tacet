@@ -45,7 +45,9 @@ KG contexts with a few thousand entities, filtering attributes
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # avoid mandatory import cycle for type-only use
@@ -58,12 +60,28 @@ ExtentIntent = tuple[frozenset[str], frozenset[Attribute]]
 
 @dataclass
 class FormalContext:
-    """Triplet (objects, attributes, incidence) for FCA."""
+    """Triplet (objects, attributes, incidence) for FCA.
+
+    ``incidence`` is wrapped read-only after construction. ``objects_of`` caches
+    an inverted index against the mapping's identity, which handles the mapping
+    being *replaced* but could serve a stale index if it were edited in place;
+    making in-place edits raise removes that case rather than documenting it.
+    (Freezing the dataclass would not: it forbids rebinding the attribute, which
+    the cache already handles, and still permits mutating the dict behind it.)
+    """
 
     objects: list[str]
     attributes: list[Attribute]
     # incidence[obj] -> set of attribute indices the object has
-    incidence: dict[str, frozenset[int]] = field(default_factory=dict)
+    incidence: Mapping[str, frozenset[int]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.incidence = MappingProxyType(dict(self.incidence))
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name == "incidence" and not isinstance(value, MappingProxyType):
+            value = MappingProxyType(dict(value))  # type: ignore[arg-type]
+        super().__setattr__(name, value)
 
     # --- factories ----------------------------------------------------
     @classmethod
