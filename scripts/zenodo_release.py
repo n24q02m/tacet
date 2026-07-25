@@ -46,7 +46,11 @@ def _call(method: str, url: str, token: str, body: Any = None, raw: bytes | None
     data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Authorization", f"Bearer {token}")
-    if raw is None and body is not None:
+    if raw is not None:
+        # urllib defaults a bytes body to application/x-www-form-urlencoded,
+        # which the files API rejects with a 415.
+        req.add_header("Content-Type", "application/octet-stream")
+    elif body is not None:
         req.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(req) as resp:
