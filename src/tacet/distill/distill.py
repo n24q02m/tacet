@@ -60,6 +60,7 @@ def mine_rules(
     max_rules: int = 8,
     complete_heads: set[str] | None = None,
     allowed_body: set[str] | None = None,
+    allow_target_in_body: bool = True,
 ) -> list[MinedRule]:
     """Induce Horn rules `body => target(x,y)` from data (body length 1-2).
 
@@ -70,7 +71,9 @@ def mine_rules(
     set for each query, so a correct rule is not penalised for unobserved
     heads. `allowed_body` restricts body atoms to a relation whitelist (the
     base relations), which keeps the search well-posed and avoids chaining
-    one synthesised relation into another.
+    one synthesised relation into another. `allow_target_in_body` (default
+    ``True``, the published behaviour) governs whether the length-2 branch may
+    chain `target` into its own body; the length-1 branch never does.
     """
     rules, _ = mine_rules_with_stats(
         graph,
@@ -81,6 +84,7 @@ def mine_rules(
         max_rules,
         complete_heads,
         allowed_body,
+        allow_target_in_body,
     )
     return rules
 
@@ -94,6 +98,7 @@ def mine_rules_with_stats(
     max_rules: int = 8,
     complete_heads: set[str] | None = None,
     allowed_body: set[str] | None = None,
+    allow_target_in_body: bool = True,
 ) -> tuple[list[MinedRule], int]:
     """`mine_rules` plus the count of candidate rules *proposed* before filtering.
 
@@ -161,7 +166,11 @@ def mine_rules_with_stats(
             adj_maps[(r, inv)] = _adj(_directed(idx[r], inv))
 
     # ---- length-2 body: R1(x,z) & R2(z,y) => target(x,y) ----------------
-    for r1 in relations:
+    # The whitelist above admits `target` itself, so without this the branch can
+    # chain the target through its own write-back edges. The length-1 branch has
+    # always refused that; opting in here makes the two branches agree.
+    body_relations = relations if allow_target_in_body else [r for r in relations if r != target]
+    for r1 in body_relations:
         for inv1 in (False, True):
             p1 = adj_maps[(r1, inv1)]
             if not p1:
@@ -175,7 +184,7 @@ def mine_rules_with_stats(
             )
             if not p1_items:
                 continue
-            for r2 in relations:
+            for r2 in body_relations:
                 for inv2 in (False, True):
                     p2 = adj_maps[(r2, inv2)]
                     if not p2:
@@ -221,6 +230,10 @@ class Distiller:
     min_confidence: float = 0.95
     min_support: int = 3
     base_relations: set[str] = field(default_factory=set)
+    # Default True = the published behaviour. Set False to keep the mining
+    # target out of its own length-2 body, which is where the self-referential
+    # rule comes from; see mine_rules.
+    allow_target_in_body: bool = True
     teacher_facts: set[Triple] = field(default_factory=set)
     _complete_heads: dict[str, set[str]] = field(default_factory=dict)
     _synthesised: set[str] = field(default_factory=set)
@@ -252,6 +265,7 @@ class Distiller:
             self.min_support,
             complete_heads=self._complete_heads.get(relation, set()),
             allowed_body=self.base_relations or None,
+            allow_target_in_body=self.allow_target_in_body,
         )
 
     def kge_augmentation(self) -> list[Triple]:

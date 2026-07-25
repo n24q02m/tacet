@@ -964,6 +964,7 @@ def run_controlled(
     composition: str | None = None,
     oracle_error_rate: float = 0.0,
     gamma: float = 0.95,
+    allow_target_in_body: bool = True,
     answers_path: str | None = None,
     recorded_at: str | None = None,
     max_items: int | None = None,
@@ -1338,6 +1339,7 @@ def run_controlled(
             write_back=True,
             l2_threshold=TIER2_OFF,
             min_confidence=gamma,
+            allow_target_in_body=allow_target_in_body,
         )
         r_c = _replay_cascade(
             "full_distillation", stream, bench, ontology, shared, cfg_full, gt_graph=gt_graph
@@ -1431,6 +1433,7 @@ def run_controlled(
         "teacher_kind": teacher_kind,
         "oracle_error_rate": oracle_error_rate if oracle_mode else None,
         "gamma": gamma,
+        "allow_target_in_body": allow_target_in_body,
         "noise_mode": "per_key" if oracle_mode else None,
         "teacher_model_called": called_model,
         "priced_as_model": model,
@@ -1489,6 +1492,14 @@ def main() -> None:
         type=float,
         default=0.95,
         help="rule-miner confidence threshold for the full-distillation arm",
+    )
+    ap.add_argument(
+        "--forbid-target-in-body",
+        action="store_true",
+        help=(
+            "keep the mining target out of its own length-2 body, so the miner "
+            "composes base relations only (default: the published behaviour)"
+        ),
     )
     ap.add_argument("--composition", default=None, choices=sorted(COMPOSITIONS))
     ap.add_argument(
@@ -1559,6 +1570,7 @@ def main() -> None:
         composition=args.composition,
         oracle_error_rate=oracle_error_rate,
         gamma=args.gamma,
+        allow_target_in_body=not args.forbid_target_in_body,
         answers_path=args.answers_path,
         recorded_at=recorded_at,
         max_items=args.max_items,
