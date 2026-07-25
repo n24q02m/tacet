@@ -2353,7 +2353,10 @@ branches agree, removes it structurally, with no gold and no runtime signal.
 
 Replaying the recorded ladder at $\gamma{=}0.50$ under both settings
 (\texttt{--forbid-target-in-body}; $22$ cells with a recorded control, no new API
-calls) is unambiguous. The true composition installs in the same $10$ cells, at
+calls; per-cell results in
+\texttt{experiments/results/e16\_forbid\_target\_hop2.json}, rebuilt by
+\texttt{experiments/aggregate\_e16\_forbid.py}) is unambiguous. The true
+composition installs in the same $10$ cells, at
 \emph{identical} savings in $10$ of $10$ --- including the anchor teacher, Grok
 4.3 seed $0$, at $81.13\%$ and world precision $1.0$. All $14$ junk rules across
 the $7$ affected cells disappear, and no cell loses accuracy. The cost is
@@ -2399,9 +2402,14 @@ which materialised the complete binding list for every body atom before moving t
 the next, so peak memory was the \emph{product} of the per-atom fan-outs even
 though the callers consume one binding at a time; yielding depth-first instead
 makes it linear in body length, and all eleven cells then replay. Verbosity was
-also not the discriminant: among the excluded cells the widest answer ranged from
-$33$ to $85$ tails, and among the cells that replayed it ranged from $19$ to $83$,
-so the two groups overlap almost entirely. We report the full $33$-cell grid; the
+not the discriminant either, though it does correlate: among the excluded cells
+the widest answer ranged from $33$ to $85$ tails (median $66$), and among the
+cells that replayed it ranged from $19$ to $83$ (median $41.5$). The ranges
+overlap across almost their whole extent, so no threshold on answer width
+separates the two groups, and the shifted medians are a consequence of the real
+mechanism rather than a cause: peak memory is the product of the per-atom
+fan-outs, which wider answers raise without determining.
+We report the full $33$-cell grid; the
 verdict is unchanged, and every re-run cell reproduces the pattern of the original
 $22$ --- one shadow check, one demotion, no promotion. We record the episode
 because the misattribution is instructive: an implementation limit presented as a

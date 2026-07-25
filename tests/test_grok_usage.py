@@ -10,7 +10,15 @@ returns a scripted response object shaped like each provider's usage.
 
 from types import SimpleNamespace
 
-from tacet.llm.teachers.llm import GrokTeacher, OpenRouterTeacher
+import pytest
+
+# The teacher adapters import the `openai` client, which lives in the `llm`
+# extra rather than the core dependencies. README tells a reader to run
+# `uv run pytest -q`, so without this guard a clean checkout greets them with
+# failures that say nothing about the code.
+pytest.importorskip("openai", reason="requires the 'llm' extra")
+
+from tacet.llm.teachers.llm import GrokTeacher, OpenRouterTeacher  # noqa: E402
 
 
 class _FakeCompletions:
