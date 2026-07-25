@@ -67,8 +67,32 @@ def latest_published_id(token: str) -> str:
     return str(rec["id"])
 
 
+def open_draft(token: str) -> dict | None:
+    """An unsubmitted draft already open on this concept record, if any.
+
+    ``links.latest_draft`` on the published record points back at the record
+    itself rather than at the draft, so the draft has to be found by listing.
+    """
+    drafts = _call("GET", f"{API}/deposit/depositions?status=draft&size=100", token) or []
+    for d in drafts:
+        if str(d.get("conceptrecid")) == CONCEPT_RECORD:
+            # The listing omits `files`; fetch the deposition so callers can see
+            # which filename the draft already carries.
+            return _call("GET", f"{API}/deposit/depositions/{d['id']}", token)
+    return None
+
+
 def new_version_draft(token: str, published_id: str) -> dict:
-    """Open a new-version draft. The action returns the ORIGINAL record, not the draft."""
+    """The draft to deposit into: an open one if it exists, otherwise a fresh one.
+
+    Reusing matters for more than tidiness. ``actions/newversion`` refuses with
+    400 ``files.enabled: Please remove all files first`` while a draft is open,
+    so a run that failed after opening one could never be retried. Reusing makes
+    the whole script re-runnable.
+    """
+    existing = open_draft(token)
+    if existing is not None:
+        return existing
     original = _call("POST", f"{API}/deposit/depositions/{published_id}/actions/newversion", token)
     draft_url = original["links"]["latest_draft"]
     return _call("GET", draft_url, token)
@@ -169,9 +193,10 @@ def main() -> int:
     published = _call("GET", f"{API}/deposit/depositions/{published_id}", token)
     print(f"latest published version: {published_id} ({published['metadata'].get('version')})")
 
-    draft = new_version_draft(token, published_id)
+    reused = open_draft(token)
+    draft = reused if reused is not None else new_version_draft(token, published_id)
     draft_id = str(draft["id"])
-    print(f"new-version draft: {draft_id}")
+    print(f"{'reusing open' if reused is not None else 'opened new'} draft: {draft_id}")
 
     metadata = build_metadata(published, args.version, date, description)
     _call("PUT", f"{API}/deposit/depositions/{draft_id}", token, body={"metadata": metadata})
