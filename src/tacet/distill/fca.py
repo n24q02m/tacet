@@ -105,6 +105,24 @@ class FormalContext:
         return cls(objects=ents, attributes=kept, incidence=incidence)
 
     # --- Galois operators --------------------------------------------
+    def _attr_extents(self) -> dict[int, frozenset[str]]:
+        """Inverted index attribute -> objects, cached against ``incidence``.
+
+        Caching on the identity of ``incidence`` rather than building once in
+        ``__post_init__`` means a context whose incidence is replaced after
+        construction cannot serve a stale index.
+        """
+        cached = getattr(self, "_extents_cache", None)
+        if cached is not None and cached[0] is self.incidence:
+            return cached[1]
+        extents: dict[int, set[str]] = {}
+        for g, idxs in self.incidence.items():
+            for i in idxs:
+                extents.setdefault(i, set()).add(g)
+        index = {i: frozenset(s) for i, s in extents.items()}
+        object.__setattr__(self, "_extents_cache", (self.incidence, index))
+        return index
+
     def attrs_of(self, extent: frozenset[str]) -> frozenset[int]:
         """A' = intersection over g ∈ A of g's attribute set."""
         if not extent:
@@ -119,8 +137,26 @@ class FormalContext:
         return frozenset(common)
 
     def objects_of(self, intent: frozenset[int]) -> frozenset[str]:
-        """B' = {g ∈ G | B ⊆ g's attribute set}."""
-        return frozenset(g for g, idxs in self.incidence.items() if intent.issubset(idxs))
+        """B' = {g ∈ G | B ⊆ g's attribute set}.
+
+        Intersects the per-attribute extents rather than testing every object,
+        which is O(|B| x |extent|) instead of O(|G| x |B|). ``_extents`` is
+        derived from ``incidence``, so it is built on demand and dropped
+        whenever ``incidence`` is reassigned — see ``_attr_extents``.
+        """
+        if not intent:
+            # B = {} holds of every object that HAS an attribute row, which is
+            # what the object-wise formulation returned; `objects` may list
+            # entities that were filtered out of `incidence`.
+            return frozenset(self.incidence)
+        extents = self._attr_extents()
+        it = iter(intent)
+        common = set(extents.get(next(it), frozenset()))
+        for attr in it:
+            common &= extents.get(attr, frozenset())
+            if not common:
+                break
+        return frozenset(common)
 
     def closure_of_extent(self, extent: frozenset[str]) -> ExtentIntent:
         intent = self.attrs_of(extent)

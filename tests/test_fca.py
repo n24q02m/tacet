@@ -75,3 +75,51 @@ class TestFormalContext(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestObjectsOfIndex(unittest.TestCase):
+    """`objects_of` intersects per-attribute extents; the index must stay honest."""
+
+    def _ctx(self) -> FormalContext:
+        return FormalContext(
+            objects=["g1", "g2", "g3", "orphan"],
+            attributes=[("r", "a"), ("r", "b"), ("r", "c")],
+            incidence={
+                "g1": frozenset({0, 1}),
+                "g2": frozenset({0, 1, 2}),
+                "g3": frozenset({0}),
+            },
+        )
+
+    def _brute(self, ctx: FormalContext, intent: frozenset[int]) -> frozenset[str]:
+        return frozenset(g for g, idxs in ctx.incidence.items() if intent.issubset(idxs))
+
+    def test_matches_the_object_wise_definition(self) -> None:
+        ctx = self._ctx()
+        for intent in (
+            frozenset(),
+            frozenset({0}),
+            frozenset({0, 1}),
+            frozenset({0, 1, 2}),
+            frozenset({2}),
+            frozenset({1, 2}),
+        ):
+            self.assertEqual(ctx.objects_of(intent), self._brute(ctx, intent), f"intent={intent}")
+
+    def test_empty_intent_excludes_objects_without_an_incidence_row(self) -> None:
+        # "orphan" is listed in `objects` but has no attribute row, so it is not
+        # in B' for B = {} -- the object-wise formulation never returned it.
+        ctx = self._ctx()
+        self.assertNotIn("orphan", ctx.objects_of(frozenset()))
+
+    def test_index_is_rebuilt_when_incidence_is_replaced(self) -> None:
+        ctx = self._ctx()
+        self.assertEqual(ctx.objects_of(frozenset({2})), frozenset({"g2"}))
+        ctx.incidence = {"g1": frozenset({2}), "g2": frozenset({0})}
+        self.assertEqual(ctx.objects_of(frozenset({2})), frozenset({"g1"}))
+
+    def test_agrees_with_from_graph_contexts(self) -> None:
+        ctx = FormalContext.from_graph(_toy_graph(), min_support=1)
+        for i in range(len(ctx.attributes)):
+            intent = frozenset({i})
+            self.assertEqual(ctx.objects_of(intent), self._brute(ctx, intent))
