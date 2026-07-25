@@ -6,3 +6,10 @@ environments:
     provider: aws
     region: ap-southeast-1
     path: /tacet/prod
+# GitHub Actions secrets are a PROJECTION of this store, never an origin.
+# Rotate the value in skret and re-run `skret sync --to=github`; setting it
+# with `gh secret set` puts the truth in two places and they drift.
+sync:
+  targets:
+    - type: github
+      repo: n24q02m/tacet
