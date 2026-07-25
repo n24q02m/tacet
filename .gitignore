@@ -40,3 +40,4 @@ site/node_modules/
 site/.astro/
 site/public/paper/
 paper/figures/*.png
+paper-html/
