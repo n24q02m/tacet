@@ -112,5 +112,82 @@ class TestDistiller(unittest.TestCase):
         self.assertIn(("a1", "target", "b1"), kge_facts)
 
 
+class TestTargetInBody(unittest.TestCase):
+    """The length-2 branch may chain the mining target into its own body.
+
+    ``mine_rules`` whitelists ``allowed_body | {target}``, and only the
+    length-1 branch guards against ``r1 == target``. The self-referential
+    candidate that results is mined from the teacher's own write-back edges,
+    so ``allow_target_in_body=False`` suppresses it without touching rules
+    whose body is made of base relations.
+    """
+
+    def _graph(self) -> WorldGraph:
+        # tgt(x, y) is genuinely R1(x, z) & R2(z, y), and the write-back edges
+        # for tgt are present, so tgt <= tgt.tgt is also a well-formed candidate.
+        g = WorldGraph()
+        for i in range(8):
+            g.add_edge(f"x{i}", "R1", f"z{i}")
+            g.add_edge(f"z{i}", "R2", f"y{i}")
+            g.add_edge(f"x{i}", "tgt", f"y{i}")
+        # a chain of tgt edges, so tgt.tgt has groundings of its own
+        for i in range(7):
+            g.add_edge(f"y{i}", "tgt", f"y{i + 1}")
+        return g
+
+    def test_target_reaches_its_own_body_by_default(self) -> None:
+        _, n_default = mine_rules_with_stats(
+            self._graph(), set(), "tgt", min_confidence=0.0, min_support=1
+        )
+        _, n_forbidden = mine_rules_with_stats(
+            self._graph(),
+            set(),
+            "tgt",
+            min_confidence=0.0,
+            min_support=1,
+            allow_target_in_body=False,
+        )
+        # Forbidding it can only remove candidates, never add them.
+        self.assertLess(n_forbidden, n_default)
+
+    def test_forbidding_the_target_drops_only_self_referential_rules(self) -> None:
+        graph = self._graph()
+        kw = dict(min_confidence=0.0, min_support=1, allowed_body={"R1", "R2"})
+        default = mine_rules(graph, set(), "tgt", **kw)
+        forbidden = mine_rules(graph, set(), "tgt", allow_target_in_body=False, **kw)
+
+        def bodies(rules):
+            return {r.rule.name for r in rules}
+
+        # every dropped rule mentions the target in its body
+        for name in bodies(default) - bodies(forbidden):
+            self.assertIn("tgt", name.split("<=", 1)[1])
+        # nothing survives that still mentions the target in its body
+        for rule in forbidden:
+            self.assertNotIn("tgt", {rel for _s, rel, _o in rule.rule.body})
+
+    def test_the_true_base_composition_survives(self) -> None:
+        graph = self._graph()
+        kw = dict(min_confidence=0.9, min_support=3, allowed_body={"R1", "R2"})
+        default = {r.rule.name for r in mine_rules(graph, set(), "tgt", **kw)}
+        forbidden = {
+            r.rule.name for r in mine_rules(graph, set(), "tgt", allow_target_in_body=False, **kw)
+        }
+        self.assertIn("syn:tgt<=R1.R2", default)
+        self.assertIn("syn:tgt<=R1.R2", forbidden)
+
+    def test_default_is_unchanged(self) -> None:
+        # Reproducibility guard: the published runs must replay bit-for-bit, so
+        # the default must behave exactly as the flag-free call did.
+        graph = self._graph()
+        kw = dict(min_confidence=0.5, min_support=2)
+        explicit = mine_rules(graph, set(), "tgt", allow_target_in_body=True, **kw)
+        implicit = mine_rules(graph, set(), "tgt", **kw)
+        self.assertEqual(
+            [(r.rule.name, r.confidence, r.support) for r in explicit],
+            [(r.rule.name, r.confidence, r.support) for r in implicit],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -31,6 +31,10 @@ class CascadeConfig:
     synth_trigger: int = 10  # teacher facts on a relation before mining
     min_confidence: float = 0.95  # rule-mining confidence threshold
     min_support: int = 3  # rule-mining support threshold
+    # Whether a length-2 body may chain the mining target through its own
+    # write-back edges. True is the published behaviour; False keeps the miner
+    # to base relations only, which is what warmup() already says it intends.
+    allow_target_in_body: bool = True
     kge: KGEConfig = field(default_factory=KGEConfig)
     tier_cost: dict[int, float] = field(default_factory=lambda: dict(TIER_COST))
     tier_latency_ms: dict[int, float] = field(default_factory=lambda: dict(TIER_LATENCY_MS))
