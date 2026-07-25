@@ -88,21 +88,42 @@ def build_metadata(
     return meta
 
 
-def replace_file(token: str, draft: dict, pdf: Path) -> None:
-    """Put the built PDF into the draft's bucket, removing any inherited file first."""
-    for existing in _call("GET", f"{API}/deposit/depositions/{draft['id']}/files", token) or []:
-        _call("DELETE", f"{API}/deposit/depositions/{draft['id']}/files/{existing['id']}", token)
+def deposit_filename(draft: dict) -> str | None:
+    """The name a file already carries on the draft, if Zenodo inherited one."""
+    files = draft.get("files") or []
+    return files[0].get("filename") if files else None
+
+
+def replace_file(token: str, draft: dict, pdf: Path, remote_name: str) -> None:
+    """Write the built PDF into the draft's bucket under ``remote_name``.
+
+    A new-version draft inherits the previous version's file, and deleting an
+    inherited file answers 500. Writing the SAME key into the bucket replaces
+    the object instead, so the inherited copy never has to be removed. Anything
+    left over under a different name is deleted, which is a file this run put
+    there and can therefore be removed normally.
+    """
     bucket = draft["links"]["bucket"]
-    _call("PUT", f"{bucket}/{pdf.name}", token, raw=pdf.read_bytes())
+    _call("PUT", f"{bucket}/{remote_name}", token, raw=pdf.read_bytes())
+    for existing in _call("GET", f"{API}/deposit/depositions/{draft['id']}/files", token) or []:
+        if existing.get("filename") != remote_name:
+            _call(
+                "DELETE", f"{API}/deposit/depositions/{draft['id']}/files/{existing['id']}", token
+            )
 
 
-def verify_upload(token: str, draft_id: str, pdf: Path) -> None:
+def verify_upload(token: str, draft_id: str, pdf: Path, remote_name: str) -> None:
     import hashlib
 
     local = hashlib.md5(pdf.read_bytes()).hexdigest()
     files = _call("GET", f"{API}/deposit/depositions/{draft_id}/files", token) or []
     if len(files) != 1:
-        raise ZenodoError(f"expected exactly one file on the draft, found {len(files)}")
+        raise ZenodoError(
+            f"expected exactly one file on the draft, found {len(files)}: "
+            + ", ".join(f.get("filename", "?") for f in files)
+        )
+    if files[0].get("filename") != remote_name:
+        raise ZenodoError(f"draft holds {files[0].get('filename')!r}, expected {remote_name!r}")
     remote = files[0].get("checksum", "").removeprefix("md5:")
     if remote != local:
         raise ZenodoError(f"checksum mismatch: local {local} != remote {remote}")
@@ -156,9 +177,12 @@ def main() -> int:
     _call("PUT", f"{API}/deposit/depositions/{draft_id}", token, body={"metadata": metadata})
     print(f"metadata set: version={args.version} date={date}")
 
-    replace_file(token, draft, args.pdf)
-    verify_upload(token, draft_id, args.pdf)
-    print(f"uploaded {args.pdf.name} ({args.pdf.stat().st_size} bytes), checksum verified")
+    # Keep the deposit's established filename across versions: the bucket key is
+    # what makes a write replace the inherited file rather than sit beside it.
+    remote_name = deposit_filename(draft) or deposit_filename(published) or args.pdf.name
+    replace_file(token, draft, args.pdf, remote_name)
+    verify_upload(token, draft_id, args.pdf, remote_name)
+    print(f"uploaded as {remote_name} ({args.pdf.stat().st_size} bytes), checksum verified")
 
     if not args.publish:
         print("\nDRAFT ONLY. Review it, then re-run with --publish:")
