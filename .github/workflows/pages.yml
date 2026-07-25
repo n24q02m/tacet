@@ -29,7 +29,23 @@ jobs:
       - name: Install LaTeXML
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends latexml
+          sudo apt-get install -y --no-install-recommends latexml poppler-utils
+
+      # The figures are PDFs (matplotlib output, committed). PDF is not a web
+      # image source, so LaTeXML emits <img src=""> for each of them. Rasterise
+      # them next to the originals first: LaTeXML resolves \includegraphics
+      # without the extension and picks the PNG for an HTML target.
+      - name: Rasterise the figures
+        run: |
+          shopt -s nullglob
+          count=0
+          for pdf in paper/figures/*.pdf; do
+            pdftocairo -png -r 200 -singlefile "$pdf" "${pdf%.pdf}"
+            count=$((count + 1))
+          done
+          echo "rasterised $count figure(s)"
+          test "$count" -gt 0
+          ls -la paper/figures/*.png
 
       - name: Render the paper to HTML
         working-directory: paper
@@ -40,6 +56,17 @@ jobs:
             --svg \
             --dest=../site/public/paper/index.html
           test -s ../site/public/paper/index.html
+
+      # An empty src is how the missing-figure bug showed up the first time, so
+      # fail the build on it rather than deploying a paper with blank figures.
+      - name: Check every figure resolved
+        run: |
+          if grep -q '<img src=""' site/public/paper/index.html; then
+            echo "::error::LaTeXML emitted an empty image src -- a figure did not resolve"
+            grep -o '<img src=""[^>]*>' site/public/paper/index.html | head
+            exit 1
+          fi
+          echo "figures referenced: $(grep -c '<img ' site/public/paper/index.html)"
 
       - uses: oven-sh/setup-bun@v2
         with:
