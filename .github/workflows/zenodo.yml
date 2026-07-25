@@ -1,0 +1,85 @@
+name: zenodo
+
+# Deliberately NOT on push. Publishing a version is irreversible and mints a
+# permanent DOI, so it is always a decision, never a side effect of a merge.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label, e.g. v7"
+        required: true
+        type: string
+      publish:
+        description: >-
+          Leave as draft to review on Zenodo first. Choosing publish is
+          IRREVERSIBLE: it mints a permanent DOI.
+        required: true
+        default: draft
+        type: choice
+        options:
+          - draft
+          - publish
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zenodo
+  cancel-in-progress: false
+
+jobs:
+  deposit:
+    runs-on: ubuntu-latest
+    environment: zenodo
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      # Pinned release + checksum, never `curl | sh`: this job holds a token that
+      # can mint a permanent DOI, so an install script fetched at run time would
+      # be arbitrary code execution with that authority if the host were taken.
+      - name: Install tectonic
+        env:
+          TECTONIC_VERSION: "0.16.9"
+          # sha256 of the release asset, downloaded and hashed locally 2026-07-25.
+          # Bump both together; a mismatch must fail the job, not be re-pinned.
+          TECTONIC_SHA256: "60b13a0826ae7ad9ce34b4a2df06bff2cfcfa6dda8a915477c0cbb84e1a4a902"
+        run: |
+          url="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          curl -fsSL --proto '=https' --tlsv1.2 -o tectonic.tar.gz "$url"
+          echo "${TECTONIC_SHA256}  tectonic.tar.gz" | sha256sum --check --status
+          tar -xzf tectonic.tar.gz
+          ./tectonic --version
+
+      - name: Build the paper
+        run: |
+          ./tectonic paper/main.tex --outdir paper/build
+          test -s paper/build/main.pdf
+
+      # The deposit description is the paper's own abstract, taken from a
+      # rendering of the same source as the PDF, so the two cannot disagree.
+      # The whole document is rendered because the abstract cites,
+      # cross-references, and uses preamble macros.
+      - name: Render the abstract for the deposit description
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends latexml
+          python scripts/zenodo_description.py \
+            --tex paper/main.tex --out paper/build/description.html
+          test -s paper/build/description.html
+          head -c 300 paper/build/description.html
+
+      - name: Deposit
+        # The secret is a projection of skret /tacet/prod, pushed by
+        # `skret sync --to=github`. Rotate there, never with `gh secret set`.
+        env:
+          ZENODO_TOKEN: ${{ secrets.TACET_ZENODO_TOKEN }}
+        run: |
+          python scripts/zenodo_release.py \
+            --version "${{ inputs.version }}" \
+            --pdf paper/build/main.pdf \
+            --description-file paper/build/description.html \
+            ${{ inputs.publish == 'publish' && '--publish' || '' }}
