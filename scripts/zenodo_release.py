@@ -75,10 +75,17 @@ def open_draft(token: str) -> dict | None:
     """
     drafts = _call("GET", f"{API}/deposit/depositions?status=draft&size=100", token) or []
     for d in drafts:
-        if str(d.get("conceptrecid")) == CONCEPT_RECORD:
-            # The listing omits `files`; fetch the deposition so callers can see
-            # which filename the draft already carries.
-            return _call("GET", f"{API}/deposit/depositions/{d['id']}", token)
+        if str(d.get("conceptrecid")) != CONCEPT_RECORD:
+            continue
+        # `?status=draft` is not to be trusted: it returns published records too
+        # (observed returning the freshly published v7 at state=done). Reusing one
+        # of those puts every later PUT against a published deposition, which
+        # answers 404. Check the state rather than the query.
+        if d.get("state") != "unsubmitted" or d.get("submitted"):
+            continue
+        # The listing omits `files`; fetch the deposition so callers can see
+        # which filename the draft already carries.
+        return _call("GET", f"{API}/deposit/depositions/{d['id']}", token)
     return None
 
 
