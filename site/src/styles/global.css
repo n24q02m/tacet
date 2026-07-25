@@ -1,0 +1,259 @@
+:root {
+  --paper: #fbfaf8;
+  --panel: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #5d5f5c;
+  --rule: #ddddd6;
+  --accent: #7a4a1e;
+  --accent-soft: #f2ebe2;
+
+  --serif: Cambria, Constantia, "Palatino Linotype", "Times New Roman", Times, serif;
+  --sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14140f;
+    --panel: #1c1c17;
+    --ink: #ececdf;
+    --muted: #a0a196;
+    --rule: #33332a;
+    --accent: #d9a066;
+    --accent-soft: #2a2318;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #14140f;
+  --panel: #1c1c17;
+  --ink: #ececdf;
+  --muted: #a0a196;
+  --rule: #33332a;
+  --accent: #d9a066;
+  --accent-soft: #2a2318;
+}
+
+:root[data-theme="light"] {
+  --paper: #fbfaf8;
+  --panel: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #5d5f5c;
+  --rule: #ddddd6;
+  --accent: #7a4a1e;
+  --accent-soft: #f2ebe2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 1.1rem;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.nav a:hover,
+.nav a:focus-visible {
+  color: var(--accent);
+}
+
+.theme-toggle {
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+main {
+  padding: 2.6rem 0 4rem;
+}
+
+h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 1.1rem + 2vw, 2.3rem);
+  line-height: 1.2;
+  text-wrap: balance;
+  margin: 0 0 0.7rem;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.3rem;
+  text-wrap: balance;
+  margin: 2.4rem 0 0.7rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--rule);
+}
+
+p {
+  max-width: 68ch;
+  margin: 0 0 1.1rem;
+}
+
+.lede {
+  font-size: 1.05rem;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--accent-soft);
+  padding: 0.08em 0.32em;
+  border-radius: 3px;
+}
+
+ul {
+  max-width: 68ch;
+  padding-left: 1.2rem;
+}
+
+li {
+  margin-bottom: 0.4rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 1.6rem 0 0;
+}
+
+.btn {
+  display: inline-block;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--paper);
+  background: var(--accent);
+  padding: 0.45rem 1rem;
+  border-radius: 4px;
+}
+
+.btn.secondary {
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--rule);
+}
+
+.btn:hover,
+.btn:focus-visible {
+  filter: brightness(1.08);
+}
+
+.scroller {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--panel);
+  margin: 0 0 1.1rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+  min-width: 460px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+thead th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+td.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+footer.site-footer {
+  border-top: 1px solid var(--rule);
+  padding: 1.4rem 0 2.4rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
