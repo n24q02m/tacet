@@ -2292,10 +2292,8 @@ label-free test suggests itself: install a candidate at low $\gamma$ in
 agrees with the teacher on $k$ distinct unseen heads, demoting on the first
 disagreement. We pre-registered this test (positive iff mean net teacher-call
 reduction ${\ge}20\%$ across the grid with no accuracy loss and zero junk
-promotions, at $k{=}3$) and ran it offline over the recorded ladder. Of the $33$
-attempted (teacher, seed) cells, $11$ --- the most verbose answerers ($40$--$64$
-tails) --- failed to replay within memory and are excluded, as the
-engine-boundary paragraph below explains. Across the $22$ replayable cells and
+promotions, at $k{=}3$) and ran it offline over the recorded ladder. Across all
+$33$ (teacher, seed) cells and
 $k\in\{2,3,5\}$, \emph{not one rule was ever promoted}:
 every shadow rule agreed with the teacher on \emph{zero} of its unseen-head
 checks. The mechanism is structural. A rule installs precisely on the workloads
@@ -2350,12 +2348,21 @@ $25$), so a structured-output constraint is not even a reliable verbosity
 control. We therefore report no cross-teacher distillability ranking and do not
 pursue a benchmark on one.
 
-\paragraph{An engine boundary on answer width.} Both regimes are bounded from
-below by the engine: a verbose teacher that returns $40$--$64$ candidate tails
-per answer exhausts memory in the Datalog join, which materialises all bindings
-before deduplication. This caps the practical answer width and is tracked as an
-open issue rather than hidden; it also explains why the eleven-teacher sweep is
-reported over the models whose recorded answers replay within memory.
+\paragraph{An engine limit that was ours, not the method's.} An earlier version of
+this work reported the shadow-validation grid over $22$ of the $33$ cells, because
+replaying the remaining eleven exhausted memory during rule mining, and attributed
+that to teacher verbosity. Both halves were wrong. The cause was the Datalog join,
+which materialised the complete binding list for every body atom before moving to
+the next, so peak memory was the \emph{product} of the per-atom fan-outs even
+though the callers consume one binding at a time; yielding depth-first instead
+makes it linear in body length, and all eleven cells then replay. Verbosity was
+also not the discriminant: among the excluded cells the widest answer ranged from
+$33$ to $85$ tails, and among the cells that replayed it ranged from $19$ to $83$,
+so the two groups overlap almost entirely. We report the full $33$-cell grid; the
+verdict is unchanged, and every re-run cell reproduces the pattern of the original
+$22$ --- one shadow check, one demotion, no promotion. We record the episode
+because the misattribution is instructive: an implementation limit presented as a
+property of the method would have made the exclusion look principled.
 
 \subsection{The unifying boundary}
 The two extensions --- together with the forward-dynamics forecaster we
