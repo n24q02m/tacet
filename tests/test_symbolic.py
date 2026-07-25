@@ -316,6 +316,59 @@ class TestRuleEngine(unittest.TestCase):
         ]
         self.assertEqual(rows, [("x0", "z0", "y0"), ("x1", "z1", "y1")])
 
+    def test_join_order_matches_a_level_by_level_reference(self) -> None:
+        # The claim is that yielding depth-first emits bindings in the order the
+        # level-by-level version produced, so materialise() keeps recording the
+        # same first derivation and proof trees do not move. The case above is
+        # too thin to show that: with fan-out of one, every sane order agrees.
+        # Here each atom fans out, and a three-atom body makes depth-first and
+        # breadth-first genuinely disagree unless the property holds.
+        facts: list[tuple[str, str, str]] = []
+        for i in range(3):
+            for j in range(3):
+                facts.append((f"x{i}", "r", f"z{i}{j}"))
+                for k in range(2):
+                    facts.append((f"z{i}{j}", "p", f"w{i}{j}{k}"))
+                    facts.append((f"w{i}{j}{k}", "q", f"y{i}{j}{k}"))
+        idx_all: dict[str, list[tuple[str, str, str]]] = {}
+        idx_subj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
+        idx_obj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
+        for fact in facts:
+            h, r, t = fact
+            idx_all.setdefault(r, []).append(fact)
+            idx_subj.setdefault((r, h), []).append(fact)
+            idx_obj.setdefault((r, t), []).append(fact)
+
+        body = (("?x", "r", "?z"), ("?z", "p", "?w"), ("?w", "q", "?y"))
+
+        def level_by_level() -> list[dict[str, str]]:
+            """The pre-generator implementation, kept here as the reference."""
+            bindings: list[dict[str, str]] = [{}]
+            for s, r, o in body:
+                nxt: list[dict[str, str]] = []
+                for binding in bindings:
+                    s_val = binding.get(s) if s.startswith("?") else s
+                    o_val = binding.get(o) if o.startswith("?") else o
+                    if s_val is not None:
+                        candidates = idx_subj.get((r, s_val), [])
+                    elif o_val is not None:
+                        candidates = idx_obj.get((r, o_val), [])
+                    else:
+                        candidates = idx_all.get(r, [])
+                    for fact in candidates:
+                        merged = symbolic._unify((s, r, o), fact, binding)
+                        if merged is not None:
+                            nxt.append(merged)
+                bindings = nxt
+                if not bindings:
+                    break
+            return bindings
+
+        expected = level_by_level()
+        actual = list(RuleEngine._join(body, idx_all, idx_subj, idx_obj))
+        self.assertEqual(len(actual), 18, "the fixture should produce a real fan-out")
+        self.assertEqual(actual, expected)
+
     def test_add_rule_permissive_on_untyped_ontology(self) -> None:
         # An untyped/empty ontology constrains nothing: every relation defaults to
         # domain/range {"*"}, so any range-restricted rule must be accepted.

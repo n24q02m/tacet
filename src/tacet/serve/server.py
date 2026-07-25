@@ -327,7 +327,24 @@ def build_app(
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-XSS-Protection"] = "0"
-        if request.url.path not in ("/docs", "/redoc", "/openapi.json"):
+        # The API answers JSON, so it needs nothing at all. The two doc pages are
+        # the only place that loads script, and therefore the only place a policy
+        # actually does work -- exempting them would leave the sole script
+        # surface uncovered. They pull Swagger UI and ReDoc from jsDelivr, so
+        # they get a policy naming that origin rather than no policy.
+        # /openapi.json is plain JSON and belongs with everything else.
+        if request.url.path in ("/docs", "/redoc"):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; "
+                "script-src 'self' https://cdn.jsdelivr.net; "
+                "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+                "img-src 'self' https://fastapi.tiangolo.com data:; "
+                "font-src 'self' https://cdn.jsdelivr.net; "
+                "connect-src 'self'; "
+                "worker-src blob:; "
+                "frame-ancestors 'none'"
+            )
+        else:
             response.headers["Content-Security-Policy"] = (
                 "default-src 'none'; frame-ancestors 'none'"
             )
