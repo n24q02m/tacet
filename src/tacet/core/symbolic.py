@@ -101,19 +101,69 @@ class SymbolicResult:
 
 
 def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[str, str] | None:
-    out = dict(binding)
-    for pat, val in zip(pattern, triple, strict=True):
-        if _is_var(pat):
-            if pat in out and out[pat] != val:
+    # ⚡ Bolt Optimization: Unroll pattern matching and defer dictionary copy
+    # to avoid O(N) allocation overhead per triple tested in the join.
+    u0 = u1 = u2 = None
+
+    p0, t0 = pattern[0], triple[0]
+    if p0.startswith("?"):
+        if p0 in binding:
+            if binding[p0] != t0:
                 return None
-            out[pat] = val
-        elif pat != val:
-            return None
+        else:
+            u0 = t0
+    elif p0 != t0:
+        return None
+
+    p1, t1 = pattern[1], triple[1]
+    if p1.startswith("?"):
+        if p1 in binding:
+            if binding[p1] != t1:
+                return None
+        elif u0 is not None and p1 == p0:
+            if u0 != t1:
+                return None
+        else:
+            u1 = t1
+    elif p1 != t1:
+        return None
+
+    p2, t2 = pattern[2], triple[2]
+    if p2.startswith("?"):
+        if p2 in binding:
+            if binding[p2] != t2:
+                return None
+        elif u0 is not None and p2 == p0:
+            if u0 != t2:
+                return None
+        elif u1 is not None and p2 == p1:
+            if u1 != t2:
+                return None
+        else:
+            u2 = t2
+    elif p2 != t2:
+        return None
+
+    if u0 is None and u1 is None and u2 is None:
+        return binding
+
+    out = binding.copy()
+    if u0 is not None:
+        out[p0] = u0
+    if u1 is not None:
+        out[p1] = u1
+    if u2 is not None:
+        out[p2] = u2
     return out
 
 
 def _ground(pattern: Pattern, binding: dict[str, str]) -> Triple:
-    return tuple(binding.get(tok, tok) for tok in pattern)  # type: ignore[return-value]
+    # ⚡ Bolt Optimization: Unroll comprehension to direct lookups.
+    return (
+        binding.get(pattern[0], pattern[0]),
+        binding.get(pattern[1], pattern[1]),
+        binding.get(pattern[2], pattern[2]),
+    )
 
 
 class RuleEngine:

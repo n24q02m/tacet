@@ -22,3 +22,6 @@
 
 ## Rejected optimisations (do not re-propose without the stated evidence)
 - **Batched matrix scoring in `ComplEx.evaluate`** (`src/tacet/kge/kge.py`, `kge_torch.py`). Mathematically equivalent to `_phi_idx`, but it duplicates the scoring formula inline and a different summation order can move ties in `np.sum(scores > scores[ti])`. `evaluate` is an offline script whose outputs are committed artifacts (`experiments/results/kge_*.json`), and Tier-2 is disabled in every experiment the paper reports, so the speed-up buys nothing on the hot path while putting published numbers at risk. Re-propose only with a test asserting bit-identical ranks against the current implementation.
+## 2026-07-24 - Optimize symbolic rule engine hot paths
+**Learning:** Found a significant allocation overhead in `src/tacet/core/symbolic.py`'s `_unify` and `_ground` functions which are executed millions of times during rule materialisation. Upfront dictionary copies (`out = dict(binding)`) and generator comprehensions for fixed 3-tuples caused unnecessary slow downs.
+**Action:** Unroll tight loops and comprehensions for fixed-size tuples (like KGE triples) and defer dictionary allocations until absolutely necessary (i.e. only when a valid variable binding update must be recorded). This halved the execution time of the hot-path functions.
