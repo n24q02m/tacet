@@ -22,3 +22,6 @@
 
 ## Rejected optimisations (do not re-propose without the stated evidence)
 - **Batched matrix scoring in `ComplEx.evaluate`** (`src/tacet/kge/kge.py`, `kge_torch.py`). Mathematically equivalent to `_phi_idx`, but it duplicates the scoring formula inline and a different summation order can move ties in `np.sum(scores > scores[ti])`. `evaluate` is an offline script whose outputs are committed artifacts (`experiments/results/kge_*.json`), and Tier-2 is disabled in every experiment the paper reports, so the speed-up buys nothing on the hot path while putting published numbers at risk. Re-propose only with a test asserting bit-identical ranks against the current implementation.
+## 2024-05-18 - Optimize Python tuples packing overhead
+**Learning:** In symbolic execution or knowledge graph traversal where tuple shapes are fixed (e.g. length-3 Triples), relying on generic iterable unrolling (`for x in zip(...)`) or dictionary copies inside hot inner loops (e.g., `_unify`) creates massive unnecessary Python overhead.
+**Action:** When working on extreme hot paths in Python where structural sizes are guaranteed (e.g., knowledge graph 3-tuples), explicitly unpack variables (`t0, t1, t2 = triple`), manually unroll conditions, and delay any memory allocations (like `dict.copy()`) until *after* all potential failure conditions have been checked.
