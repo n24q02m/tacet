@@ -385,7 +385,11 @@ def build_app(
     def ask(req: AskRequest):
         try:
             out = service.ask(req.head, req.relation)
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
+            # The wrapper is what makes the failure a JSON 500 carrying `detail`
+            # rather than Starlette's plain-text one; clients parse that field.
+            # `_require_api_key` is a route dependency, so a 401 is raised before
+            # this body runs and cannot be caught here.
             logging.error("Operation failed", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error") from e
         return AskResponse(**{k: v for k, v in out.items() if k != "episode_id"})

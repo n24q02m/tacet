@@ -25,8 +25,12 @@ import json
 import re
 from pathlib import Path
 
-GAMMA = 0.50
-TRUE_RULE_ATOMS = ("starred_actors", "directed_by")
+# Defaults describe the committed E16 grid. They are defaults, not assumptions:
+# every one is overridable, and the dataset is checked against the arm reports so
+# the script refuses to run on a workload it would mislabel. See `classify`.
+DEFAULT_GAMMA = 0.50
+DEFAULT_COMPOSITION = ("starred_actors", "directed_by")
+DEFAULT_DATASET = "MetaQA-2hop-test"
 
 # Filenames are either `<vendor>_<model>_hop2_lim300_s<seed>[_forbid]` or one of
 # two short forms used for the first two probe cells.
@@ -64,13 +68,16 @@ def match_key(cell: tuple[str, int]) -> tuple[str, int]:
     return slug.replace(".", ""), seed
 
 
-def classify(rules: list[str]) -> tuple[bool, int, int]:
+def classify(
+    rules: list[str], composition: tuple[str, ...] = DEFAULT_COMPOSITION
+) -> tuple[bool, int, int]:
     """(installed the true composition, self-referential rules, everything else).
 
     Classified from the rule BODY rather than from any stored verdict. Three
     classes, not two, because the paper's claim is about one of them:
 
-    * the world-correct composition -- body is the two base relations;
+    * the world-correct composition -- body is the base relations in
+      `composition`;
     * the SELF-REFERENTIAL junk -- body names the mining target, which is what
       forbidding the target in the body removes;
     * anything else -- a body of legitimate base relations that is nonetheless
@@ -81,6 +88,13 @@ def classify(rules: list[str]) -> tuple[bool, int, int]:
     grid because it is empty here. On a workload that produces a leaky rule it
     would report junk going to zero under an option that cannot remove it, which
     is precisely the conflation the paper's scope limit warns against.
+
+    `composition` is a parameter for the same reason. Hard-coding MetaQA's two
+    relations makes the mislabelling run the other way on another workload: a
+    correct composition mined over different relations lands in `other`, and
+    `true_rule_installs` silently reads 0. The caller states which relations
+    compose, and `main` additionally refuses to run when the arm reports name a
+    dataset other than the one it was told to expect.
     """
     true_installed = False
     self_referential = 0
@@ -89,7 +103,7 @@ def classify(rules: list[str]) -> tuple[bool, int, int]:
         head, _, body = r.partition("<=")
         body = body or head
         target = head.removeprefix("syn:").strip()
-        if all(a in body for a in TRUE_RULE_ATOMS):
+        if all(a in body for a in composition):
             true_installed = True
         elif target and target in body:
             self_referential += 1
@@ -98,16 +112,18 @@ def classify(rules: list[str]) -> tuple[bool, int, int]:
     return true_installed, self_referential, other
 
 
-def read_control(path: Path) -> dict[tuple[str, int], dict]:
+def read_control(
+    path: Path, gamma: float = DEFAULT_GAMMA, composition: tuple[str, ...] = DEFAULT_COMPOSITION
+) -> dict[tuple[str, int], dict]:
     out: dict[tuple[str, int], dict] = {}
     for f in sorted(path.glob("*.json")):
         for cell in json.load(f.open(encoding="utf-8")):
-            if abs(cell.get("gamma", 0) - GAMMA) > 1e-9:
+            if abs(cell.get("gamma", 0) - gamma) > 1e-9:
                 continue
             key = match_key(parse_cell(f.stem))
             slug, seed = parse_cell(f.stem)
             rules = cell.get("synthesised_rules") or []
-            true_installed, self_ref, other = classify(rules)
+            true_installed, self_ref, other = classify(rules, composition)
             out[key] = {
                 "slug": slug,
                 "seed": seed,
@@ -123,14 +139,31 @@ def read_control(path: Path) -> dict[tuple[str, int], dict]:
     return out
 
 
-def read_forbid(path: Path) -> dict[tuple[str, int], dict]:
+def read_forbid(
+    path: Path,
+    composition: tuple[str, ...] = DEFAULT_COMPOSITION,
+    dataset: str = DEFAULT_DATASET,
+) -> dict[tuple[str, int], dict]:
+    """Read the treatment arm, refusing to run on a workload it would mislabel.
+
+    The forbid reports carry `dataset`, so the check costs nothing and turns a
+    silently wrong `true_rule_installs: 0` into a stop. The control replays carry
+    no such field, which is why the guard lives here.
+    """
     out: dict[tuple[str, int], dict] = {}
     for f in sorted(path.glob("*.json")):
         d = json.load(f.open(encoding="utf-8"))
+        found = d.get("dataset")
+        if found is not None and found != dataset:
+            raise SystemExit(
+                f"{f.name}: dataset is {found!r}, expected {dataset!r}. Classifying it with "
+                f"the composition {composition} would report that workload's true rule as "
+                "leakage and its install count as zero. Pass --dataset and --composition."
+            )
         v = d.get("verdict") or {}
         arms = {a["arm"]: a for a in d.get("arms", [])}
         rules = (arms.get("full_distillation") or {}).get("synthesised_rules") or []
-        true_installed, self_ref, other = classify(rules)
+        true_installed, self_ref, other = classify(rules, composition)
         out[match_key(parse_cell(f.stem))] = {
             "calls_saved_pct": v.get("calls_saved_pct"),
             "rule_world_precision": v.get("rule_world_precision"),
@@ -149,9 +182,25 @@ def main() -> int:
     ap.add_argument("--control", type=Path, required=True)
     ap.add_argument("--forbid", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--gamma", type=float, default=DEFAULT_GAMMA)
+    ap.add_argument(
+        "--composition",
+        default=",".join(DEFAULT_COMPOSITION),
+        help="comma-separated base relations whose conjunction is the world-correct rule",
+    )
+    ap.add_argument(
+        "--dataset",
+        default=DEFAULT_DATASET,
+        help="expected `dataset` in the forbid reports; a mismatch stops the run",
+    )
     args = ap.parse_args()
 
-    control, forbid = read_control(args.control), read_forbid(args.forbid)
+    composition = tuple(x.strip() for x in args.composition.split(",") if x.strip())
+    if not composition:
+        raise SystemExit("--composition needs at least one relation")
+
+    control = read_control(args.control, args.gamma, composition)
+    forbid = read_forbid(args.forbid, composition, args.dataset)
     missing = sorted(set(control) - set(forbid))
     if missing:
         raise SystemExit(f"forbid arm is missing cells: {missing}")
@@ -164,7 +213,7 @@ def main() -> int:
             {
                 "slug": slug,
                 "seed": seed,
-                "gamma": GAMMA,
+                "gamma": args.gamma,
                 "control": c,
                 "forbid": f,
                 "savings_identical": (
@@ -197,7 +246,9 @@ def main() -> int:
 
     report = {
         "experiment": "E16 - is the junk rule an artifact of candidate enumeration?",
-        "gamma": GAMMA,
+        "gamma": args.gamma,
+        "dataset": args.dataset,
+        "composition": list(composition),
         "n_cells": len(cells),
         "control_arm": "recorded E11 replays at gamma=0.50",
         "forbid_arm": "same cells replayed with --forbid-target-in-body",

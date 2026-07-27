@@ -563,6 +563,37 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["tier"], 3)
 
+    def test_ask_surfaces_a_service_failure_as_a_json_500_and_logs_it(self) -> None:
+        """A failing service must give the client a JSON 500 carrying `detail`.
+
+        This path had no coverage at all, which is how PR #135 could delete the
+        handler's `try/except` with CI staying green: without the wrapper the
+        exception reaches Starlette's `ServerErrorMiddleware`, which answers
+        `text/plain` `Internal Server Error` instead, so any client reading
+        `detail` breaks. The two halves of the contract are asserted together --
+        the client learns nothing about the failure, the server log records it.
+        """
+        from unittest.mock import patch
+
+        from tacet.serve.server import TACETService
+
+        with (
+            patch.object(TACETService, "ask", side_effect=RuntimeError("teacher exploded")),
+            self.assertLogs(level="ERROR") as logs,
+        ):
+            resp = self.client.post("/ask", json={"head": "Belgium", "relation": "borders"})
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.headers["content-type"].split(";")[0], "application/json")
+        self.assertEqual(resp.json(), {"detail": "Internal server error"})
+        # nothing about the cause may reach the client
+        self.assertNotIn("teacher exploded", resp.text)
+        self.assertNotIn("RuntimeError", resp.text)
+        # but it must reach the server log, with the traceback
+        self.assertTrue(
+            any("teacher exploded" in r.getMessage() or r.exc_info for r in logs.records)
+        )
+
     def test_graph_edges_ingest_and_query(self) -> None:
         resp = self.client.post(
             "/graph/edges",

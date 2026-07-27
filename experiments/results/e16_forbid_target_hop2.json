@@ -1,6 +1,11 @@
 {
   "experiment": "E16 - is the junk rule an artifact of candidate enumeration?",
   "gamma": 0.5,
+  "dataset": "MetaQA-2hop-test",
+  "composition": [
+    "starred_actors",
+    "directed_by"
+  ],
   "n_cells": 22,
   "control_arm": "recorded E11 replays at gamma=0.50",
   "forbid_arm": "same cells replayed with --forbid-target-in-body",

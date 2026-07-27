@@ -12,12 +12,21 @@ that ``--forbid-target-in-body`` had removed -- which it cannot do. The classifi
 test below exercises exactly the case the real grid does not.
 """
 
+import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "experiments"))
 
-from aggregate_e16_forbid import classify, match_key, parse_cell  # noqa: E402
+from aggregate_e16_forbid import (  # noqa: E402
+    DEFAULT_DATASET,
+    classify,
+    match_key,
+    parse_cell,
+    read_forbid,
+)
 
 TARGET = "q2_directors_of_movies_acted_in_by"
 TRUE_RULE = f"syn:{TARGET}<=~starred_actors.directed_by"
@@ -63,6 +72,69 @@ def test_classify_empty_rule_set():
 def test_classify_composition_only_leaves_both_junk_classes_empty():
     """The healthy outcome: the composition installed and nothing else."""
     assert classify([TRUE_RULE]) == (True, 0, 0)
+
+
+def test_classify_takes_the_composition_from_the_caller():
+    """A correct composition over other relations must not be labelled leakage.
+
+    Round 7's finding, and the mirror image of round 6's: with MetaQA's two
+    relations hard-coded, a compliance-workload rule that IS the world-correct
+    composition falls into `other` and `true_rule_installs` silently reads 0.
+    """
+    gdpr = "syn:requires_consent<=~processes_data.subject_to_gdpr"
+    # with the default (MetaQA) composition it is not recognised
+    assert classify([gdpr]) == (False, 0, 1)
+    # told which relations compose, it is
+    assert classify([gdpr], ("processes_data", "subject_to_gdpr")) == (True, 0, 0)
+
+
+def test_classify_composition_change_does_not_disturb_self_reference():
+    """Self-reference is defined by the head, so it survives a composition swap."""
+    assert classify([SELF_REF], ("processes_data", "subject_to_gdpr")) == (False, 1, 0)
+
+
+# ----------------------------------------------------------------- read_forbid
+def _forbid_report(tmp_path, name, dataset, rules):
+    """One synthetic forbid-arm report in the on-disk schema (only read fields)."""
+    (tmp_path / f"{name}.json").write_text(
+        json.dumps(
+            {
+                "dataset": dataset,
+                "verdict": {"calls_saved_pct": 50.0, "accuracy_cache": 1.0, "accuracy_full": 1.0},
+                "arms": [{"arm": "full_distillation", "synthesised_rules": rules}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return tmp_path
+
+
+def test_read_forbid_refuses_a_dataset_it_was_not_told_to_expect(tmp_path):
+    """Wrong workload stops the run instead of producing a mislabelled artifact."""
+    d = _forbid_report(tmp_path, "acme_model-1_hop2_lim300_s0_forbid", "PrivaCI-v2", [])
+    with pytest.raises(SystemExit) as e:
+        read_forbid(d)
+    msg = str(e.value)
+    assert "PrivaCI-v2" in msg
+    assert DEFAULT_DATASET in msg
+
+
+def test_read_forbid_accepts_the_expected_dataset(tmp_path):
+    """The guard is a check, not a blanket refusal."""
+    d = _forbid_report(tmp_path, "acme_model-1_hop2_lim300_s0_forbid", DEFAULT_DATASET, [TRUE_RULE])
+    out = read_forbid(d)
+    assert list(out.values())[0]["true_rule_installed"] is True
+
+
+def test_read_forbid_tolerates_reports_without_a_dataset_field(tmp_path):
+    """Older reports carry no `dataset`; absence must not be read as a mismatch."""
+    (tmp_path / "acme_model-1_hop2_lim300_s0_forbid.json").write_text(
+        json.dumps(
+            {"verdict": {}, "arms": [{"arm": "full_distillation", "synthesised_rules": []}]}
+        ),
+        encoding="utf-8",
+    )
+    assert len(read_forbid(tmp_path)) == 1
 
 
 # ------------------------------------------------------------------ parse_cell
