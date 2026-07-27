@@ -101,19 +101,55 @@ class SymbolicResult:
 
 
 def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[str, str] | None:
-    out = dict(binding)
-    for pat, val in zip(pattern, triple, strict=True):
-        if _is_var(pat):
-            if pat in out and out[pat] != val:
-                return None
-            out[pat] = val
-        elif pat != val:
+    # ⚡ Bolt Optimization: Unpack 3-tuples and delay dict allocation to avoid overhead in hot path
+    p0, p1, p2 = pattern
+    t0, t1, t2 = triple
+
+    if not p0.startswith("?"):
+        if p0 != t0:
             return None
+    elif p0 in binding and binding[p0] != t0:
+        return None
+
+    if not p1.startswith("?"):
+        if p1 != t1:
+            return None
+    elif p1 == p0:
+        if t1 != t0:
+            return None
+    elif p1 in binding and binding[p1] != t1:
+        return None
+
+    if not p2.startswith("?"):
+        if p2 != t2:
+            return None
+    elif p2 == p0:
+        if t2 != t0:
+            return None
+    elif p2 == p1:
+        if t2 != t1:
+            return None
+    elif p2 in binding and binding[p2] != t2:
+        return None
+
+    out = binding.copy()
+    if p0.startswith("?"):
+        out[p0] = t0
+    if p1.startswith("?"):
+        out[p1] = t1
+    if p2.startswith("?"):
+        out[p2] = t2
     return out
 
 
 def _ground(pattern: Pattern, binding: dict[str, str]) -> Triple:
-    return tuple(binding.get(tok, tok) for tok in pattern)  # type: ignore[return-value]
+    # ⚡ Bolt Optimization: Avoid generator expression for 3-tuple
+    p0, p1, p2 = pattern
+    return (
+        binding.get(p0, p0),
+        binding.get(p1, p1),
+        binding.get(p2, p2),
+    )
 
 
 class RuleEngine:
