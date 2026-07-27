@@ -383,11 +383,11 @@ def build_app(
 
     @app.post("/ask", response_model=AskResponse, dependencies=[Depends(_require_api_key)])
     def ask(req: AskRequest):
-        # 🛡️ Sentinel: Let FastAPI's ServerErrorMiddleware handle unexpected exceptions.
-        # Adding a generic try/except without explicitly re-raising HTTPExceptions
-        # first risks catching intentional framework exceptions (e.g. 401s, 422s)
-        # and improperly masking them as 500s.
-        out = service.ask(req.head, req.relation)
+        try:
+            out = service.ask(req.head, req.relation)
+        except Exception as e:  # pragma: no cover
+            logging.error("Operation failed", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
         return AskResponse(**{k: v for k, v in out.items() if k != "episode_id"})
 
     @app.post("/distill", dependencies=[Depends(_require_api_key)])
