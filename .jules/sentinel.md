@@ -23,8 +23,3 @@
 ## Rejected hardening (do not re-propose without the stated evidence)
 - **`X-XSS-Protection: 1; mode=block`.** The auditor has been removed from every current browser, and its blocking mode has itself been an XS-leak vector, so the recommended value is `0`. That is what the middleware sets; raising it to `1` is a regression, not a hardening.
 - **A generic `try/except Exception` around `/distill`, `/consolidate` or `/ingest` to prevent "stack trace leakage".** Starlette does not put a traceback in the response body for an unhandled exception: `ServerErrorMiddleware` returns a plain 500 and logs the trace server-side. Those endpoints leak nothing today, so the wrapper -- and the `except HTTPException: raise` guard that has to come with it -- is error handling for a path that cannot currently be reached, since the service layer never raises `HTTPException`.
-
-## 2026-07-26 - Prevented Framework Exception Obscuration in Endpoints
-**Vulnerability:** The `/ask` endpoint caught all exceptions universally (`except Exception:`) without re-raising framework exceptions like `HTTPException`.
-**Learning:** Broad exception handling used to prevent data leakage (like hiding stack traces in 500 responses) can accidentally catch intentional framework exceptions (e.g., FastAPI's `HTTPException` for 400 Bad Request or 401 Unauthorized), obscuring them as 500 errors and breaking expected API behavior and security checks.
-**Prevention:** When adding generic exception handling to prevent stack trace leaks, always explicitly catch and re-raise framework-specific exceptions (`except HTTPException: raise`) before the generic `except Exception:` block.

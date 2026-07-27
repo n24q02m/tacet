@@ -385,8 +385,6 @@ def build_app(
     def ask(req: AskRequest):
         try:
             out = service.ask(req.head, req.relation)
-        except HTTPException:
-            raise
         except Exception as e:  # pragma: no cover
             logging.error("Operation failed", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error") from e
