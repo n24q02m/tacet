@@ -74,7 +74,7 @@ if _HAS_FASTAPI:
     class DistillRequest(BaseModel):
         head: MaxStr
         relation: MaxStr
-        answers: list[MaxStr] = Field(max_length=1000)
+        answers: list[MaxStr] = Field(..., max_length=1000)
         correct: bool | None = None
 
     class GraphIngestRequest(BaseModel):
