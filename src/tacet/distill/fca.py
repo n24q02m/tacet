@@ -145,7 +145,9 @@ class FormalContext:
         """A' = intersection over g ∈ A of g's attribute set."""
         if not extent:
             return frozenset(range(len(self.attributes)))
-        it = iter(extent)
+        # ⚡ Bolt Optimization: sort objects by the size of their incidence to
+        # intersect the smallest attribute sets first, collapsing the intersection quickly.
+        it = iter(sorted(extent, key=lambda g: len(self.incidence.get(g, ()))))
         first = self.incidence.get(next(it), frozenset())
         common = set(first)
         for g in it:
@@ -168,7 +170,9 @@ class FormalContext:
             # entities that were filtered out of `incidence`.
             return frozenset(self.incidence)
         extents = self._attr_extents()
-        it = iter(intent)
+        # ⚡ Bolt Optimization: sort attributes by extent size to intersect the
+        # smallest extents first, dropping candidate objects as early as possible.
+        it = iter(sorted(intent, key=lambda i: len(extents.get(i, ()))))
         common = set(extents.get(next(it), frozenset()))
         for attr in it:
             common &= extents.get(attr, frozenset())
