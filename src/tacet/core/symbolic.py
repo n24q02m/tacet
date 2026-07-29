@@ -293,23 +293,34 @@ class RuleEngine:
         recorded with — and therefore its proof tree — is unchanged.
         """
 
+        # ⚡ Bolt Optimization: Pre-compute which pattern components are variables
+        # so we don't have to evaluate `.startswith("?")` inside the hot recursive traversal.
+        # This reduces string checking overhead significantly since `_join` is called
+        # once but `extend` executes for every potential matching branch.
+        body_vars = [(s, r, o, s.startswith("?"), o.startswith("?")) for s, r, o in body]
+        body_len = len(body)
+
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
-            if depth == len(body):
+            if depth == body_len:
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+            s, r, o, s_is_var, o_is_var = body_vars[depth]
+
+            s_val = binding.get(s) if s_is_var else s
+            o_val = binding.get(o) if o_is_var else o
+
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
-            for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                candidates = idx_all.get(r)
+
+            if candidates is not None:
+                for fact in candidates:
+                    merged = _unify((s, r, o), fact, binding)
+                    if merged is not None:
+                        yield from extend(depth + 1, merged)
 
         return extend(0, {})
 
