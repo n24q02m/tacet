@@ -109,34 +109,43 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
     # the `p0.startswith("?")` could be pre-computed but `_unify` signature is fixed
     # We'll just do minimal checks and use quick assignments
 
-    p0_var = p0.startswith('?')
+    p0_var = p0.startswith("?")
     if not p0_var:
-        if p0 != t0: return None
+        if p0 != t0:
+            return None
     elif p0 in binding and binding[p0] != t0:
         return None
 
-    p1_var = p1.startswith('?')
+    p1_var = p1.startswith("?")
     if not p1_var:
-        if p1 != t1: return None
+        if p1 != t1:
+            return None
     elif p1 == p0:
-        if t1 != t0: return None
+        if t1 != t0:
+            return None
     elif p1 in binding and binding[p1] != t1:
         return None
 
-    p2_var = p2.startswith('?')
+    p2_var = p2.startswith("?")
     if not p2_var:
-        if p2 != t2: return None
+        if p2 != t2:
+            return None
     elif p2 == p0:
-        if t2 != t0: return None
+        if t2 != t0:
+            return None
     elif p2 == p1:
-        if t2 != t1: return None
+        if t2 != t1:
+            return None
     elif p2 in binding and binding[p2] != t2:
         return None
 
     out = binding.copy()
-    if p0_var: out[p0] = t0
-    if p1_var: out[p1] = t1
-    if p2_var: out[p2] = t2
+    if p0_var:
+        out[p0] = t0
+    if p1_var:
+        out[p1] = t1
+    if p2_var:
+        out[p2] = t2
     return out
 
 
@@ -293,10 +302,7 @@ class RuleEngine:
 
         # ⚡ Bolt Optimization: Pre-compute static pattern properties outside the hot loop
         # and avoid default list() allocations during index lookups.
-        static_props = [
-            (s, r, o, _is_var(s), _is_var(o))
-            for s, r, o in body
-        ]
+        static_props = [(s, r, o, _is_var(s), _is_var(o)) for s, r, o in body]
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
@@ -335,7 +341,7 @@ class RuleEngine:
             idx_subj: dict[tuple[str, str], list[Triple]] = {}
             idx_obj: dict[tuple[str, str], list[Triple]] = {}
 
-            # ⚡ Bolt Optimization: Use direct dictionary assignments with list insertions instead of setdefault
+            # ⚡ Bolt Optimization: Use explicit assignments over setdefault
             # inside the hot loop to reduce overhead when indexing facts.
             for fact in facts:
                 h, r, t = fact
@@ -358,7 +364,9 @@ class RuleEngine:
 
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
-                    if rule.distinct and any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
+                    if rule.distinct and any(
+                        binding.get(a) == binding.get(b) for a, b in rule.distinct
+                    ):
                         continue
                     derived = _ground(rule.head, binding)
                     if derived in facts:
