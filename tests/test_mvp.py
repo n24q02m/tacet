@@ -529,7 +529,19 @@ class TestServerEndpoints(unittest.TestCase):
         # would leave the sole script surface with no policy at all.
         for path in ("/healthz", "/openapi.json", "/docs", "/redoc"):
             with self.subTest(path=path):
-                csp = self.client.get(path).headers.get("Content-Security-Policy")
+                headers = self.client.get(path).headers
+
+                # Check baseline security headers
+                self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
+                self.assertEqual(headers.get("X-Frame-Options"), "DENY")
+                self.assertEqual(
+                    headers.get("Strict-Transport-Security"), "max-age=31536000; includeSubDomains"
+                )
+                self.assertEqual(headers.get("X-XSS-Protection"), "0")
+                self.assertEqual(headers.get("Referrer-Policy"), "no-referrer")
+
+                # Check CSP
+                csp = headers.get("Content-Security-Policy")
                 self.assertIsNotNone(csp, f"{path} served no CSP")
                 self.assertIn("default-src 'none'", csp)
                 self.assertIn("frame-ancestors 'none'", csp)
