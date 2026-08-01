@@ -27,7 +27,7 @@ keywords:
   - llm-cascade
   - cost-amortization
   - complex-embedding
-license: MIT
+license: Apache-2.0
 repository-code: "https://github.com/n24q02m/tacet"
 date-released: 2026-06-30
 version: "1.0.0"

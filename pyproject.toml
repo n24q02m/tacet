@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "TACET: a self-distilling neuro-symbolic cascade that amortises LLM cost in knowledge-graph QA, with auditable Datalog proof trees"
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT"
+license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{ name = "Nguyen Quang Minh", email = "quangminh2402.dev@gmail.com" }]
 keywords = ["neuro-symbolic", "knowledge-graph", "datalog", "proof-trees", "auditable-ai", "rule-distillation", "llm-cascade", "cost-amortization", "kgqa", "llm"]
