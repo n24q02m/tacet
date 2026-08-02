@@ -322,7 +322,16 @@ def build_app(
 
     @app.middleware("http")
     async def add_security_headers(request, call_next):
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except HTTPException:
+            raise
+        except Exception:
+            from fastapi.responses import JSONResponse
+
+            logging.error("Unhandled exception in request", exc_info=True)
+            response = JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
