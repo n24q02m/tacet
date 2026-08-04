@@ -320,19 +320,11 @@ def build_app(
             allow_headers=["*"],
         )
 
-    @app.middleware("http")
-    async def add_security_headers(request, call_next):
-        response = await call_next(request)
+    def apply_security_headers(response, request) -> None:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-XSS-Protection"] = "0"
-        # The API answers JSON, so it needs nothing at all. The two doc pages are
-        # the only place that loads script, and therefore the only place a policy
-        # actually does work -- exempting them would leave the sole script
-        # surface uncovered. They pull Swagger UI and ReDoc from jsDelivr, so
-        # they get a policy naming that origin rather than no policy.
-        # /openapi.json is plain JSON and belongs with everything else.
         if request.url.path in ("/docs", "/redoc"):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'none'; "
@@ -348,6 +340,25 @@ def build_app(
             response.headers["Content-Security-Policy"] = (
                 "default-src 'none'; frame-ancestors 'none'"
             )
+
+    @app.middleware("http")
+    async def add_security_headers(request, call_next):
+        response = await call_next(request)
+        apply_security_headers(response, request)
+        return response
+
+    from fastapi import Request
+    from fastapi.responses import PlainTextResponse
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        from starlette.exceptions import HTTPException as StarletteHTTPException
+
+        if isinstance(exc, (HTTPException, StarletteHTTPException)):
+            raise exc
+        logging.error("Internal Server Error", exc_info=exc)
+        response = PlainTextResponse("Internal Server Error", status_code=500)
+        apply_security_headers(response, request)
         return response
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
