@@ -31,9 +31,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
 try:
-    from fastapi import Depends, FastAPI, Header, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import PlainTextResponse
     from pydantic import BaseModel, Field
+    from starlette.exceptions import HTTPException as StarletteHTTPException
 
     _HAS_FASTAPI = True
 except ImportError:  # pragma: no cover - optional
@@ -349,6 +351,25 @@ def build_app(
                 "default-src 'none'; frame-ancestors 'none'"
             )
         return response
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        # Let FastAPI/Starlette handle explicit HTTP exceptions natively
+        if isinstance(exc, (HTTPException, StarletteHTTPException)):
+            raise exc
+
+        logging.error("Unhandled server error", exc_info=exc)
+
+        # Inject security headers manually for unhandled 500 errors since they
+        # bypass custom middleware if caught by Starlette's ServerErrorMiddleware
+        headers = {
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "X-XSS-Protection": "0",
+            "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+        }
+        return PlainTextResponse("Internal Server Error", status_code=500, headers=headers)
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
         """Gate the mutating / cost-incurring endpoints.
