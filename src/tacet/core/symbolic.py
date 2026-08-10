@@ -298,9 +298,7 @@ class RuleEngine:
         # using idx.get(key) and checking for None.
         body_vars = []
         for s, r, o in body:
-            body_vars.append(
-                (_is_var(s), _is_var(o), _is_var(s), _is_var(r), _is_var(o))
-            )
+            body_vars.append((_is_var(s), _is_var(o), _is_var(s), _is_var(r), _is_var(o)))
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
