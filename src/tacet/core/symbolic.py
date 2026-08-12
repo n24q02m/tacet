@@ -292,24 +292,70 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Pre-compute static properties (is_var) outside the hot `extend` loop
+        # to eliminate constant function call overhead and avoid redundant empty list allocations
+        # during index lookups by using .get(key) and checking for None.
+        # We also inline the Datalog join evaluation _unify logic directly into the recursive loop.
+        precomputed = []
+        for s, r, o in body:
+            precomputed.append((s, r, o, _is_var(s), _is_var(r), _is_var(o)))
+
+        n_atoms = len(precomputed)
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
-            if depth == len(body):
+            if depth == n_atoms:
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+
+            s, r, o, is_s_var, is_r_var, is_o_var = precomputed[depth]
+
+            s_val = binding.get(s) if is_s_var else s
+            o_val = binding.get(o) if is_o_var else o
+
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
+                candidates = idx_all.get(r)
+
+            if candidates is None:
+                return
+
+            r_val = binding.get(r) if is_r_var else r
+
             for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                t0, t1, t2 = fact
+
+                if s_val is not None and s_val != t0:
+                    continue
+                if r_val is not None and r_val != t1:
+                    continue
+                if o_val is not None and o_val != t2:
+                    continue
+
+                merged = None
+                if s_val is None:
+                    merged = binding.copy()
+                    merged[s] = t0
+                if r_val is None:
+                    # Intra-atom consistency check for r
+                    if s_val is None and s == r and t0 != t1:
+                        continue
+                    if merged is None:
+                        merged = binding.copy()
+                    merged[r] = t1
+                if o_val is None:
+                    # Intra-atom consistency check for o
+                    if s_val is None and s == o and t0 != t2:
+                        continue
+                    if r_val is None and r == o and t1 != t2:
+                        continue
+                    if merged is None:
+                        merged = binding.copy()
+                    merged[o] = t2
+
+                yield from extend(depth + 1, binding if merged is None else merged)
 
         return extend(0, {})
 
