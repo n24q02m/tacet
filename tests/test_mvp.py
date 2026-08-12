@@ -529,10 +529,12 @@ class TestServerEndpoints(unittest.TestCase):
         # would leave the sole script surface with no policy at all.
         for path in ("/healthz", "/openapi.json", "/docs", "/redoc"):
             with self.subTest(path=path):
-                csp = self.client.get(path).headers.get("Content-Security-Policy")
+                headers = self.client.get(path).headers
+                csp = headers.get("Content-Security-Policy")
                 self.assertIsNotNone(csp, f"{path} served no CSP")
                 self.assertIn("default-src 'none'", csp)
                 self.assertIn("frame-ancestors 'none'", csp)
+                self.assertEqual(headers.get("Referrer-Policy"), "no-referrer")
 
     def test_doc_pages_allow_their_cdn_and_nothing_else_does(self) -> None:
         docs = self.client.get("/docs").headers["Content-Security-Policy"]
