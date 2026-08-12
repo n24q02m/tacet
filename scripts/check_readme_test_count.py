@@ -2,8 +2,9 @@
 
 The comment has gone stale three times (README says one count, `pytest`
 collects a different one). This script is the root-cause fix: it collects
-the real test count and fails the commit when the README disagrees with it,
-instead of relying on someone remembering to update the comment by hand.
+the canonical all-extras test count and fails the commit when the README
+disagrees with it, instead of relying on someone remembering to update the
+comment by hand.
 
 Run directly:
 
@@ -31,10 +32,17 @@ def readme_count() -> int:
 
 def collected_count() -> int:
     result = subprocess.run(
-        ["uv", "run", "pytest", "--collect-only", "-q"],
+        ["uv", "run", "--all-extras", "pytest", "--collect-only", "-q"],
         capture_output=True,
         text=True,
     )
+    if result.returncode != 0:
+        print(f"ERROR: pytest collection failed with exit code {result.returncode}")
+        if result.stdout:
+            print(result.stdout[-2000:])
+        if result.stderr:
+            print(result.stderr[-2000:], file=sys.stderr)
+        sys.exit(result.returncode)
     match = None
     for line in reversed(result.stdout.splitlines()):
         match = COLLECTED_PATTERN.search(line)
