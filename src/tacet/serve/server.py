@@ -327,6 +327,7 @@ def build_app(
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["X-XSS-Protection"] = "0"
+        response.headers["Referrer-Policy"] = "no-referrer"
         # The API answers JSON, so it needs nothing at all. The two doc pages are
         # the only place that loads script, and therefore the only place a policy
         # actually does work -- exempting them would leave the sole script
