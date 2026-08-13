@@ -77,10 +77,23 @@ class FormalContext:
 
     def __post_init__(self) -> None:
         self.incidence = MappingProxyType(dict(self.incidence))
+        # ⚡ Bolt Optimization: Eagerly pre-compute inverted index to speed up objects_of queries
+        extents: dict[int, set[str]] = {}
+        for g, idxs in self.incidence.items():
+            for i in idxs:
+                extents.setdefault(i, set()).add(g)
+        object.__setattr__(self, "_attr_extents_idx", {i: frozenset(s) for i, s in extents.items()})
 
     def __setattr__(self, name: str, value: object) -> None:
         if name == "incidence" and not isinstance(value, MappingProxyType):
             value = MappingProxyType(dict(value))  # type: ignore[arg-type]
+
+            # Rebuild inverted index when incidence is replaced
+            extents: dict[int, set[str]] = {}
+            for g, idxs in value.items():  # type: ignore[attr-defined]
+                for i in idxs:
+                    extents.setdefault(i, set()).add(g)
+            super().__setattr__("_attr_extents_idx", {i: frozenset(s) for i, s in extents.items()})
         super().__setattr__(name, value)
 
     # --- factories ----------------------------------------------------
@@ -123,29 +136,15 @@ class FormalContext:
         return cls(objects=ents, attributes=kept, incidence=incidence)
 
     # --- Galois operators --------------------------------------------
-    def _attr_extents(self) -> dict[int, frozenset[str]]:
-        """Inverted index attribute -> objects, cached against ``incidence``.
-
-        Caching on the identity of ``incidence`` rather than building once in
-        ``__post_init__`` means a context whose incidence is replaced after
-        construction cannot serve a stale index.
-        """
-        cached = getattr(self, "_extents_cache", None)
-        if cached is not None and cached[0] is self.incidence:
-            return cached[1]
-        extents: dict[int, set[str]] = {}
-        for g, idxs in self.incidence.items():
-            for i in idxs:
-                extents.setdefault(i, set()).add(g)
-        index = {i: frozenset(s) for i, s in extents.items()}
-        object.__setattr__(self, "_extents_cache", (self.incidence, index))
-        return index
-
     def attrs_of(self, extent: frozenset[str]) -> frozenset[int]:
         """A' = intersection over g ∈ A of g's attribute set."""
         if not extent:
             return frozenset(range(len(self.attributes)))
-        it = iter(extent)
+
+        # ⚡ Bolt Optimization: Sort extent by incidence size to intersect smallest sets first
+        sorted_extent = sorted(extent, key=lambda g: len(self.incidence.get(g, ())))
+        it = iter(sorted_extent)
+
         first = self.incidence.get(next(it), frozenset())
         common = set(first)
         for g in it:
@@ -167,8 +166,13 @@ class FormalContext:
             # what the object-wise formulation returned; `objects` may list
             # entities that were filtered out of `incidence`.
             return frozenset(self.incidence)
-        extents = self._attr_extents()
-        it = iter(intent)
+
+        # ⚡ Bolt Optimization: Sort intent by extent size to intersect smallest sets first
+        # This heavily reduces intermediate set sizes and replaces O(|G| x |intent|) linear scans
+        extents = getattr(self, "_attr_extents_idx", {})
+        sorted_intent = sorted(intent, key=lambda attr: len(extents.get(attr, ())))
+        it = iter(sorted_intent)
+
         common = set(extents.get(next(it), frozenset()))
         for attr in it:
             common &= extents.get(attr, frozenset())
