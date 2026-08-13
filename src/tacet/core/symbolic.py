@@ -293,7 +293,8 @@ class RuleEngine:
         recorded with — and therefore its proof tree — is unchanged.
         """
 
-        # ⚡ Bolt Optimization: Pre-compute static pattern properties outside the hot recursive extend loop
+        # ⚡ Bolt Optimization: Pre-compute static pattern properties outside the hot
+        # recursive extend loop
         body_info = []
         for s, r, o in body:
             body_info.append((s, r, o, _is_var(s), _is_var(r), _is_var(o)))
