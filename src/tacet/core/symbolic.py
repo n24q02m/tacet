@@ -292,24 +292,73 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Precompute pattern properties outside the recursive loop
+        # to inline _unify and avoid function call overhead and premature dict allocation.
+        precomputed = []
+        for p0, p1, p2 in body:
+            precomputed.append(
+                (p0, p1, p2, _is_var(p0), _is_var(p1), _is_var(p2), p1 == p0, p2 == p0, p2 == p1)
+            )
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+
+            p0, p1, p2, p0_var, p1_var, p2_var, p1_eq_p0, p2_eq_p0, p2_eq_p1 = precomputed[depth]
+
+            s_val = binding.get(p0) if p0_var else p0
+            o_val = binding.get(p2) if p2_var else p2
+
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((p1, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((p1, o_val))
             else:
-                candidates = idx_all.get(r, [])
-            for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                candidates = idx_all.get(p1)
+
+            if candidates is None:
+                return
+
+            for t0, t1, t2 in candidates:
+                # ⚡ Bolt Optimization: Inlined unification logic skips function call
+                # and avoids copying the binding dict on failure.
+                if not p0_var:
+                    if p0 != t0:
+                        continue
+                elif p0 in binding and binding[p0] != t0:
+                    continue
+
+                if not p1_var:
+                    if p1 != t1:
+                        continue
+                elif p1_eq_p0:
+                    if t1 != t0:
+                        continue
+                elif p1 in binding and binding[p1] != t1:
+                    continue
+
+                if not p2_var:
+                    if p2 != t2:
+                        continue
+                elif p2_eq_p0:
+                    if t2 != t0:
+                        continue
+                elif p2_eq_p1:
+                    if t2 != t1:
+                        continue
+                elif p2 in binding and binding[p2] != t2:
+                    continue
+
+                out = binding.copy()
+                if p0_var:
+                    out[p0] = t0
+                if p1_var:
+                    out[p1] = t1
+                if p2_var:
+                    out[p2] = t2
+
+                yield from extend(depth + 1, out)
 
         return extend(0, {})
 
