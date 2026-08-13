@@ -36,3 +36,11 @@
   | 1044 edges -> 2647 facts | 0.0142s | 0.0131s | -7.7% | 34/41 | -0.0011s vs 0.0018s -- **within** |
 
   So: a small, consistently-signed lean toward #133 that does **not** separate from noise at this sample size. Note that the summary statistic is itself unstable -- a second run of the smaller shape gave -5.2% and 30/41 -- which is the point. An earlier note in this file claimed 0.037s against 0.048s -- roughly 23% -- and that number is **retracted**: it was min-of-7 across separate processes, which picks up the tail of the distribution rather than a difference between the arms. What does hold at every measurement: the two derive identical closures, and the micro-benchmark of `_unify` alone is a real 1.7-2x, diluted at `materialise` level by how often unification actually binds a new variable -- a property of the rule shape, not a constant. A bare speed-up number in this file will be reused on a workload it was never true for.
+
+## 2025-02-21 - Replace `dict.setdefault` with containment checks on hot paths
+**Learning:** Found a measurable performance bottleneck in `src/tacet/core/symbolic.py` where `RuleEngine.materialise` was using `dict.setdefault(key, []).append(...)` inside loops over thousands of triples. This pattern allocates an empty list `[]` on *every single iteration* regardless of whether the key exists, causing high memory churn and python object allocation overhead.
+**Action:** When populating dictionaries with lists in extreme hot paths, always use an explicit containment check `if key in dict: dict[key].append(val) else: dict[key] = [val]` to eliminate redundant memory allocations.
+
+## 2025-02-21 - Optimize string prefix checks using direct indexing
+**Learning:** In `src/tacet/core/symbolic.py`'s `_unify` and `_is_var` functions, the `.startswith("?")` method call was adding measurable overhead within the most frequently called loop in the symbolic engine. Using direct string indexing `token[0] == "?"` avoids the method call overhead.
+**Action:** In pure Python hot paths where strings are being repeatedly checked for single-character prefixes, replace `.startswith(char)` with `bool(string and string[0] == char)` for better performance, ensuring safety against empty strings.

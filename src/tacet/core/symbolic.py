@@ -29,7 +29,7 @@ Pattern = tuple[str, str, str]  # tokens beginning with '?' are variables
 
 
 def _is_var(token: str) -> bool:
-    return token.startswith("?")
+    return bool(token and token[0] == "?")
 
 
 def save_rules_json(rules: list[Rule], path) -> None:  # noqa: ANN001
@@ -105,13 +105,13 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
     p0, p1, p2 = pattern
     t0, t1, t2 = triple
 
-    if not p0.startswith("?"):
+    if not (p0 and p0[0] == "?"):
         if p0 != t0:
             return None
     elif p0 in binding and binding[p0] != t0:
         return None
 
-    if not p1.startswith("?"):
+    if not (p1 and p1[0] == "?"):
         if p1 != t1:
             return None
     elif p1 == p0:
@@ -120,7 +120,7 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
     elif p1 in binding and binding[p1] != t1:
         return None
 
-    if not p2.startswith("?"):
+    if not (p2 and p2[0] == "?"):
         if p2 != t2:
             return None
     elif p2 == p0:
@@ -133,11 +133,11 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
         return None
 
     out = binding.copy()
-    if p0.startswith("?"):
+    if p0 and p0[0] == "?":
         out[p0] = t0
-    if p1.startswith("?"):
+    if p1 and p1[0] == "?":
         out[p1] = t1
-    if p2.startswith("?"):
+    if p2 and p2[0] == "?":
         out[p2] = t2
     return out
 
@@ -328,9 +328,18 @@ class RuleEngine:
             idx_obj: dict[tuple[str, str], list[Triple]] = {}
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                if r in idx_all:
+                    idx_all[r].append(fact)
+                else:
+                    idx_all[r] = [fact]
+                if (r, h) in idx_subj:
+                    idx_subj[(r, h)].append(fact)
+                else:
+                    idx_subj[(r, h)] = [fact]
+                if (r, t) in idx_obj:
+                    idx_obj[(r, t)].append(fact)
+                else:
+                    idx_obj[(r, t)] = [fact]
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
                     if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
