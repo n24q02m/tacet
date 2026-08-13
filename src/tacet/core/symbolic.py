@@ -292,24 +292,31 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Pre-compute static variable checks outside the recursive loop
+        static_props = [(_is_var(s), _is_var(o)) for s, _, o in body]
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
                 yield binding
                 return
             s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+            is_s_var, is_o_var = static_props[depth]
+            s_val = binding.get(s) if is_s_var else s
+            o_val = binding.get(o) if is_o_var else o
+
+            # ⚡ Bolt Optimization: Avoid default empty list allocations during index lookups
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
-            for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                candidates = idx_all.get(r)
+
+            if candidates is not None:
+                for fact in candidates:
+                    merged = _unify((s, r, o), fact, binding)
+                    if merged is not None:
+                        yield from extend(depth + 1, merged)
 
         return extend(0, {})
 
