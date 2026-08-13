@@ -31,8 +31,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
 try:
-    from fastapi import Depends, FastAPI, Header, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
     from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import PlainTextResponse
     from pydantic import BaseModel, Field
 
     _HAS_FASTAPI = True
@@ -320,9 +321,7 @@ def build_app(
             allow_headers=["*"],
         )
 
-    @app.middleware("http")
-    async def add_security_headers(request, call_next):
-        response = await call_next(request)
+    def _apply_security_headers(response: Response, path: str) -> Response:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
@@ -334,7 +333,7 @@ def build_app(
         # surface uncovered. They pull Swagger UI and ReDoc from jsDelivr, so
         # they get a policy naming that origin rather than no policy.
         # /openapi.json is plain JSON and belongs with everything else.
-        if request.url.path in ("/docs", "/redoc"):
+        if path in ("/docs", "/redoc"):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'none'; "
                 "script-src 'self' https://cdn.jsdelivr.net; "
@@ -350,6 +349,16 @@ def build_app(
                 "default-src 'none'; frame-ancestors 'none'"
             )
         return response
+
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next):
+        response = await call_next(request)
+        return _apply_security_headers(response, request.url.path)
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, _exc: Exception) -> Response:
+        response = PlainTextResponse("Internal Server Error", status_code=500)
+        return _apply_security_headers(response, request.url.path)
 
     def _require_api_key(x_api_key: str | None = Header(default=None)) -> None:
         """Gate the mutating / cost-incurring endpoints.
