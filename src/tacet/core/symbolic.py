@@ -102,16 +102,22 @@ class SymbolicResult:
 
 def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[str, str] | None:
     # ⚡ Bolt Optimization: Unpack 3-tuples and delay dict allocation to avoid overhead in hot path
+    # and cache startswith checks since they are static
     p0, p1, p2 = pattern
     t0, t1, t2 = triple
 
-    if not p0.startswith("?"):
+    # the `p0.startswith("?")` could be pre-computed but `_unify` signature is fixed
+    # We'll just do minimal checks and use quick assignments
+
+    p0_var = p0.startswith("?")
+    if not p0_var:
         if p0 != t0:
             return None
     elif p0 in binding and binding[p0] != t0:
         return None
 
-    if not p1.startswith("?"):
+    p1_var = p1.startswith("?")
+    if not p1_var:
         if p1 != t1:
             return None
     elif p1 == p0:
@@ -120,7 +126,8 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
     elif p1 in binding and binding[p1] != t1:
         return None
 
-    if not p2.startswith("?"):
+    p2_var = p2.startswith("?")
+    if not p2_var:
         if p2 != t2:
             return None
     elif p2 == p0:
@@ -133,11 +140,11 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
         return None
 
     out = binding.copy()
-    if p0.startswith("?"):
+    if p0_var:
         out[p0] = t0
-    if p1.startswith("?"):
+    if p1_var:
         out[p1] = t1
-    if p2.startswith("?"):
+    if p2_var:
         out[p2] = t2
     return out
 
@@ -293,23 +300,30 @@ class RuleEngine:
         recorded with — and therefore its proof tree — is unchanged.
         """
 
+        # ⚡ Bolt Optimization: Pre-compute static pattern properties outside the hot loop
+        # and avoid default list() allocations during index lookups.
+        static_props = [(s, r, o, _is_var(s), _is_var(o)) for s, r, o in body]
+
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+            s, r, o, s_is_var, o_is_var = static_props[depth]
+            s_val = binding.get(s) if s_is_var else s
+            o_val = binding.get(o) if o_is_var else o
+
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
-            for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                candidates = idx_all.get(r)
+
+            if candidates is not None:
+                for fact in candidates:
+                    merged = _unify((s, r, o), fact, binding)
+                    if merged is not None:
+                        yield from extend(depth + 1, merged)
 
         return extend(0, {})
 
@@ -326,14 +340,33 @@ class RuleEngine:
             idx_all: dict[str, list[Triple]] = {}
             idx_subj: dict[tuple[str, str], list[Triple]] = {}
             idx_obj: dict[tuple[str, str], list[Triple]] = {}
+
+            # ⚡ Bolt Optimization: Use explicit assignments over setdefault
+            # inside the hot loop to reduce overhead when indexing facts.
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                if r not in idx_all:
+                    idx_all[r] = [fact]
+                else:
+                    idx_all[r].append(fact)
+
+                rh = (r, h)
+                if rh not in idx_subj:
+                    idx_subj[rh] = [fact]
+                else:
+                    idx_subj[rh].append(fact)
+
+                rt = (r, t)
+                if rt not in idx_obj:
+                    idx_obj[rt] = [fact]
+                else:
+                    idx_obj[rt].append(fact)
+
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
-                    if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
+                    if rule.distinct and any(
+                        binding.get(a) == binding.get(b) for a, b in rule.distinct
+                    ):
                         continue
                     derived = _ground(rule.head, binding)
                     if derived in facts:
