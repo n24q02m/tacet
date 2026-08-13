@@ -292,20 +292,28 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Pre-compute static pattern properties outside the
+        # hot recursive `extend` loop and avoid default list() allocations
+        # during index lookups to significantly speed up Datalog join evaluations.
+        body_len = len(body)
+        is_var_s = tuple(_is_var(s) for s, _, _ in body)
+        is_var_o = tuple(_is_var(o) for _, _, o in body)
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
-            if depth == len(body):
+            if depth == body_len:
                 yield binding
                 return
             s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+            s_val = binding.get(s) if is_var_s[depth] else s
+            o_val = binding.get(o) if is_var_o[depth] else o
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
+                candidates = idx_all.get(r)
+            if candidates is None:
+                return
             for fact in candidates:
                 merged = _unify((s, r, o), fact, binding)
                 if merged is not None:
