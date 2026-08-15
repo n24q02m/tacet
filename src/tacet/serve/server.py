@@ -400,7 +400,7 @@ def build_app(
             # rather than Starlette's plain-text one; clients parse that field.
             # `_require_api_key` is a route dependency, so a 401 is raised before
             # this body runs and cannot be caught here.
-            logging.error("Operation failed", exc_info=True)
+            log.error("Operation failed", exc_info=True)
             raise HTTPException(status_code=500, detail="Internal server error") from e
         return AskResponse(**{k: v for k, v in out.items() if k != "episode_id"})
 
