@@ -35,3 +35,8 @@
 **Vulnerability:** The FastAPI application was missing the `Referrer-Policy` security header, which could leak sensitive path information or query parameters via the `Referer` header to external sites when navigating away from the application.
 **Learning:** Even when setting strict `Content-Security-Policy` and `X-Frame-Options`, `Referrer-Policy` is needed to prevent cross-origin information leakage on outbound requests.
 **Prevention:** Always include `Referrer-Policy: no-referrer` in the global security headers middleware to strictly drop referrer information on all outbound requests.
+
+## 2025-02-21 - Use Configured Logger over Root Logger for Security Observability
+**Vulnerability:** The `/ask` endpoint in `src/tacet/serve/server.py` used the root logger (`logging.error`) instead of the module-level configured logger (`log.error`).
+**Learning:** Using the root logger bypasses module-specific formatting, handlers, and filters. This can lead to missing context or unrecorded security incidents in logs, harming security observability and auditing.
+**Prevention:** Always use the configured module-level logger (`log = logging.getLogger(...)`) for logging application events, especially in security-sensitive or error-handling paths.
