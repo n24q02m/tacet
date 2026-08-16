@@ -84,59 +84,69 @@ def mine_compliance_rules(
             atom_index[atom].add(i)
     frequent_atoms = sorted(a for a, n in atom_support.items() if n >= min_support)
 
-    def matches(pattern: tuple[Atom, ...]) -> list[LabeledCase]:
-        if not pattern:
-            return labeled[:]
-
-        # Fast set-intersection using the inverted index
-        # We start with the case indices of the first atom
-        matched_indices = set(atom_index.get(pattern[0], set()))
-        for atom in pattern[1:]:
-            if not matched_indices:
-                break
-            matched_indices &= atom_index.get(atom, set())
-
-        return [labeled[i] for i in sorted(matched_indices)]
-
+    # ⚡ Bolt Optimization: Cache matched indices per pattern to replace expensive repeated
+    # intersections in `matches(pattern)`.
     levels: list[list[tuple[Atom, ...]]] = [[(a,) for a in frequent_atoms]]
+    pattern_matches: dict[tuple[Atom, ...], set[int]] = {}
+
+    for p in levels[0]:
+        pattern_matches[p] = set(atom_index[p[0]])
+
     for _ in range(2, max_atoms + 1):
-        prev = [p for p in levels[-1] if len(matches(p)) >= min_support]
+        prev = levels[-1]
         nxt = set()
         for p in prev:
+            m = pattern_matches[p]
             for a in frequent_atoms:
                 if a > p[-1]:  # canonical order -> no duplicate combos
-                    nxt.add((*p, a))
+                    new_m = m & atom_index.get(a, set())
+                    if len(new_m) >= min_support:
+                        new_p = (*p, a)
+                        nxt.add(new_p)
+                        pattern_matches[new_p] = new_m
         levels.append(sorted(nxt))
 
     # ----- score every (pattern, target) pair -----------------------------
     candidates: list[tuple[tuple[Atom, ...], str, float, int]] = []
     for level in levels:
         for pattern in level:
-            covered = matches(pattern)
-            if len(covered) < min_support:
+            covered_indices = pattern_matches[pattern]
+            if len(covered_indices) < min_support:
                 continue
             target_counts: dict[str, int] = {}
-            for c in covered:
+            for i in covered_indices:
+                c = labeled[i]
                 if c.verdict == "permit":
                     target_counts[PERMIT_TARGET] = target_counts.get(PERMIT_TARGET, 0) + 1
                 for art in c.articles:
                     target_counts[art] = target_counts.get(art, 0) + 1
             for target, hits in target_counts.items():
-                conf = hits / len(covered)
+                conf = hits / len(covered_indices)
                 if conf >= min_confidence and hits >= min_support:
                     candidates.append((pattern, target, conf, hits))
 
     # ----- most-general-first pruning --------------------------------------
     candidates.sort(key=lambda c: (len(c[0]), -c[2], -c[3], c[1], c[0]))
     kept: list[tuple[tuple[Atom, ...], str, float, int]] = []
+
+    # ⚡ Bolt Optimization: Group patterns by target and use an explicit early-exit loop
+    # instead of generator-based `any()` to avoid iterator allocation overhead.
+    kept_patterns_by_target: dict[str, list[tuple[set[Atom], float]]] = {}
+
     for pattern, target, conf, hits in candidates:
         pat = set(pattern)
-        dominated = any(
-            k_target == target and set(k_pattern) < pat and k_conf >= conf
-            for k_pattern, k_target, k_conf, _ in kept
-        )
+        target_kept = kept_patterns_by_target.get(target, [])
+        dominated = False
+        for k_pattern, k_conf in target_kept:
+            if k_conf >= conf and k_pattern < pat:
+                dominated = True
+                break
+
         if not dominated:
             kept.append((pattern, target, conf, hits))
+            if target not in kept_patterns_by_target:
+                kept_patterns_by_target[target] = []
+            kept_patterns_by_target[target].append((pat, conf))
 
     return [
         MinedComplianceRule(
