@@ -35,3 +35,8 @@
 **Vulnerability:** The FastAPI application was missing the `Referrer-Policy` security header, which could leak sensitive path information or query parameters via the `Referer` header to external sites when navigating away from the application.
 **Learning:** Even when setting strict `Content-Security-Policy` and `X-Frame-Options`, `Referrer-Policy` is needed to prevent cross-origin information leakage on outbound requests.
 **Prevention:** Always include `Referrer-Policy: no-referrer` in the global security headers middleware to strictly drop referrer information on all outbound requests.
+
+## 2025-02-21 - [Use Module-Level Logger in Endpoint Exception Handler]
+**Vulnerability:** The `/ask` endpoint exception handler was using the root logger (`logging.error`) directly instead of the configured module-level logger (`log.error`).
+**Learning:** Using the root logger bypasses any module-specific formatting, routing, or security observability configurations set up for that specific component. This can lead to inconsistent logs or missing critical security contexts that are attached at the module level.
+**Prevention:** Always use the initialized module-level logger (`log = logging.getLogger(...)`) within FastAPI endpoints (and across the codebase) to ensure all errors correctly route through the application's configured logging hierarchy and retain necessary security observability context.
