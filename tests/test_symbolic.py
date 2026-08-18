@@ -267,28 +267,36 @@ class TestRuleEngine(unittest.TestCase):
         n = 300
         facts = [(f"x{i}", "r", f"z{i}") for i in range(n)]
         facts += [(f"z{i}", "p", f"y{i}") for i in range(n)]
+
+        calls = {"n": 0}
+
+        class AccessCountingList(list):
+            def __iter__(self):
+                for item in super().__iter__():
+                    calls["n"] += 1
+                    yield item
+
         idx_all: dict[str, list[tuple[str, str, str]]] = {}
         idx_subj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
         idx_obj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
         for fact in facts:
             h, r, t = fact
-            idx_all.setdefault(r, []).append(fact)
-            idx_subj.setdefault((r, h), []).append(fact)
-            idx_obj.setdefault((r, t), []).append(fact)
+            if r not in idx_all:
+                idx_all[r] = AccessCountingList()
+            idx_all[r].append(fact)
+            if (r, h) not in idx_subj:
+                idx_subj[(r, h)] = AccessCountingList()
+            idx_subj[(r, h)].append(fact)
+            if (r, t) not in idx_obj:
+                idx_obj[(r, t)] = AccessCountingList()
+            idx_obj[(r, t)].append(fact)
 
         body = (("?x", "r", "?z"), ("?z", "p", "?y"))
-        calls = {"n": 0}
-        real_unify = symbolic._unify
 
-        def counting_unify(pattern, triple, binding):  # noqa: ANN001, ANN202
-            calls["n"] += 1
-            return real_unify(pattern, triple, binding)
-
-        with unittest.mock.patch.object(symbolic, "_unify", counting_unify):
-            first = next(iter(RuleEngine._join(body, idx_all, idx_subj, idx_obj)))
+        first = next(iter(RuleEngine._join(body, idx_all, idx_subj, idx_obj)))
 
         self.assertEqual(first["?x"], "x0")
-        # One unification per body atom to reach the first row. Materialising the
+        # One item checked per body atom to reach the first row. Materialising the
         # join first would cost ~2n (600) before yielding anything.
         self.assertLessEqual(calls["n"], 2 * len(body))
 
