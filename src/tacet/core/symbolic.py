@@ -292,24 +292,68 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Pre-compute statics to avoid re-evaluating inside hot paths.
+        body_vars = [(s, r, o, _is_var(s), _is_var(o), _is_var(r)) for s, r, o in body]
+        body_len = len(body)
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
-            if depth == len(body):
+            if depth == body_len:
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+            s, r, o, is_var_s, is_var_o, is_var_r = body_vars[depth]
+            s_val = binding.get(s) if is_var_s else s
+            o_val = binding.get(o) if is_var_o else o
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
+                candidates = idx_all.get(r)
+
+            # ⚡ Bolt Optimization: Avoid default list() allocation for empty index lookups
+            if candidates is None:
+                return
+
             for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                # ⚡ Bolt Optimization: Inline _unify and avoid dict copies until bindings match
+                t0, t1, t2 = fact
+
+                if not is_var_s:
+                    if s != t0:
+                        continue
+                elif s in binding and binding[s] != t0:
+                    continue
+
+                if not is_var_r:
+                    if r != t1:
+                        continue
+                elif r == s:
+                    if t1 != t0:
+                        continue
+                elif r in binding and binding[r] != t1:
+                    continue
+
+                if not is_var_o:
+                    if o != t2:
+                        continue
+                elif o == s:
+                    if t2 != t0:
+                        continue
+                elif o == r:
+                    if t2 != t1:
+                        continue
+                elif o in binding and binding[o] != t2:
+                    continue
+
+                merged = binding.copy()
+                if is_var_s and s not in binding:
+                    merged[s] = t0
+                if is_var_r and r not in binding:
+                    merged[r] = t1
+                if is_var_o and o not in binding:
+                    merged[o] = t2
+
+                yield from extend(depth + 1, merged)
 
         return extend(0, {})
 
