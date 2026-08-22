@@ -261,36 +261,50 @@ class TestRuleEngine(unittest.TestCase):
         self.assertLessEqual(len(proof), 16)
 
     def test_join_streams_bindings_instead_of_materialising_them(self) -> None:
-        # Regression for the mining OOM: _join used to build the whole binding
-        # list for every atom, so a high-fanout relation put the entire
-        # intermediate result in memory before the caller saw one row.
+        # The original implementation traversed the body level by level,
+        # materialising all intermediate partial matches before yielding.
+        # This test ensures we lazily yield rows.
         n = 300
         facts = [(f"x{i}", "r", f"z{i}") for i in range(n)]
         facts += [(f"z{i}", "p", f"y{i}") for i in range(n)]
+
+        class AccessCountingList(list):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.access_count = 0
+
+            def __iter__(self):
+                for item in super().__iter__():
+                    self.access_count += 1
+                    yield item
+
         idx_all: dict[str, list[tuple[str, str, str]]] = {}
         idx_subj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
         idx_obj: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
         for fact in facts:
             h, r, t = fact
-            idx_all.setdefault(r, []).append(fact)
-            idx_subj.setdefault((r, h), []).append(fact)
-            idx_obj.setdefault((r, t), []).append(fact)
+            if r not in idx_all:
+                idx_all[r] = AccessCountingList()
+            idx_all[r].append(fact)
+            if (r, h) not in idx_subj:
+                idx_subj[(r, h)] = AccessCountingList()
+            idx_subj[(r, h)].append(fact)
+            if (r, t) not in idx_obj:
+                idx_obj[(r, t)] = AccessCountingList()
+            idx_obj[(r, t)].append(fact)
 
         body = (("?x", "r", "?z"), ("?z", "p", "?y"))
-        calls = {"n": 0}
-        real_unify = symbolic._unify
-
-        def counting_unify(pattern, triple, binding):  # noqa: ANN001, ANN202
-            calls["n"] += 1
-            return real_unify(pattern, triple, binding)
-
-        with unittest.mock.patch.object(symbolic, "_unify", counting_unify):
-            first = next(iter(RuleEngine._join(body, idx_all, idx_subj, idx_obj)))
-
+        first = next(iter(RuleEngine._join(body, idx_all, idx_subj, idx_obj)))
         self.assertEqual(first["?x"], "x0")
-        # One unification per body atom to reach the first row. Materialising the
-        # join first would cost ~2n (600) before yielding anything.
-        self.assertLessEqual(calls["n"], 2 * len(body))
+        # Because it evaluates depth-first and yields immediately, it should only
+        # iterate through a small number of candidates to find the first match,
+        # whereas a fully materialised join would scan ~2n (600) candidates.
+        total_accesses = (
+            sum(lst.access_count for lst in idx_all.values())
+            + sum(lst.access_count for lst in idx_subj.values())
+            + sum(lst.access_count for lst in idx_obj.values())
+        )
+        self.assertLessEqual(total_accesses, 2 * len(body))
 
     def test_join_preserves_binding_order(self) -> None:
         # The order matters: materialise() records the FIRST derivation it sees
