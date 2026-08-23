@@ -292,23 +292,50 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Precalculate static variables outside the hot loop
+        # to eliminate constant function call overhead and premature allocations
+        static_body = [(s, _is_var(s), r, o, _is_var(o)) for s, r, o in body]
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
-            if depth == len(body):
+            if depth == len(static_body):
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+            s, s_is_var, r, o, o_is_var = static_body[depth]
+            s_val = binding.get(s) if s_is_var else s
+            o_val = binding.get(o) if o_is_var else o
+
+            # ⚡ Bolt Optimization: Avoid default list() allocations during index lookups
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
-            for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
+                candidates = idx_all.get(r)
+
+            if candidates is not None:
+                for f_s, _, f_o in candidates:
+                    # ⚡ Bolt Optimization: Inline _unify logic directly into recursive path
+                    # deferring expensive dict.copy() operations until bindings are confirmed
+                    if s_is_var:
+                        if s in binding and binding[s] != f_s:
+                            continue
+                    elif s != f_s:
+                        continue
+
+                    if o_is_var:
+                        if o in binding and binding[o] != f_o:
+                            continue
+                    elif o != f_o:
+                        continue
+
+                    if (s_is_var and s not in binding) or (o_is_var and o not in binding):
+                        merged = binding.copy()
+                        if s_is_var:
+                            merged[s] = f_s
+                        if o_is_var:
+                            merged[o] = f_o
+                    else:
+                        merged = binding
                     yield from extend(depth + 1, merged)
 
         return extend(0, {})
@@ -328,9 +355,24 @@ class RuleEngine:
             idx_obj: dict[tuple[str, str], list[Triple]] = {}
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                # ⚡ Bolt Optimization: Use explicit dict containment checks
+                # instead of setdefault to avoid redundant empty list allocations
+                if r in idx_all:
+                    idx_all[r].append(fact)
+                else:
+                    idx_all[r] = [fact]
+
+                key_subj = (r, h)
+                if key_subj in idx_subj:
+                    idx_subj[key_subj].append(fact)
+                else:
+                    idx_subj[key_subj] = [fact]
+
+                key_obj = (r, t)
+                if key_obj in idx_obj:
+                    idx_obj[key_obj].append(fact)
+                else:
+                    idx_obj[key_obj] = [fact]
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
                     if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
@@ -364,7 +406,12 @@ class RuleEngine:
         self._closure = facts
         index: dict[tuple[str, str], set[str]] = {}
         for h, r, t in facts:
-            index.setdefault((h, r), set()).add(t)
+            # ⚡ Bolt Optimization: Avoid redundant empty set allocations
+            key = (h, r)
+            if key in index:
+                index[key].add(t)
+            else:
+                index[key] = {t}
         self._by_head = index
         return facts
 
@@ -389,7 +436,12 @@ class RuleEngine:
             return False
         self._closure.add(triple)
         h, r, t = triple
-        self._by_head.setdefault((h, r), set()).add(t)
+        # ⚡ Bolt Optimization: Avoid redundant empty set allocations
+        key = (h, r)
+        if key in self._by_head:
+            self._by_head[key].add(t)
+        else:
+            self._by_head[key] = {t}
         return True
 
     def known_rule_names(self) -> set[str]:
