@@ -357,7 +357,9 @@ def test_default_prices_include_e11_model_roster():
     expected = {
         "grok-4.5": (0.002, 0.006),
         "claude-sonnet-5": (0.002, 0.010),
-        "gpt-5.6-luna": (0.001, 0.006),
+        # Re-verified live 2026-08-23 (was $1.00/$6.00 on 2026-07-10): OpenAI
+        # cut the price ~80%; the gateway billed the new rate on every call.
+        "gpt-5.6-luna": (0.0002, 0.0012),
         "glm-5.2": (0.00054, 0.00176),
         "qwen3.7-max": (0.00125, 0.00375),
         "minimax-m3": (0.0003, 0.0012),

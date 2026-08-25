@@ -1,0 +1,146 @@
+{
+  "schema": "tacet.e17.admission/v1",
+  "experiment": "E17 held-out admission test for near-functional leakage",
+  "pre_registration": "tacet-research-ledger.md E17 (locked 2026-08-23)",
+  "dataset": "PrivaCI-Bench-GDPR",
+  "n": 8,
+  "seed": 0,
+  "slug": "deepseek/deepseek-v4-flash-0731",
+  "reasoning_effort": "max",
+  "price_key": "deepseek-v4-flash-0731",
+  "min_support": 5,
+  "min_confidence": 0.9,
+  "split_rule": "sha256(seed:case_id) parity, 50/50 fit/validation",
+  "world_precision_reference": "paper Section rule_precision: firings matching the workload oracle over the full n-case ground truth",
+  "spend_usd": 0.002379,
+  "real_teacher_calls": 8,
+  "truncated_by_budget": false,
+  "teacher_abstains": 0,
+  "heads": {
+    "GDPR-2707": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00010626,
+      "provider_cost_usd": 0.00010626,
+      "prompt_tokens": 209,
+      "completion_tokens": 758,
+      "reasoning_tokens": 752,
+      "cached_tokens": 0
+    },
+    "GDPR-1485": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art25",
+        "art32",
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00159588,
+      "provider_cost_usd": 0.00159588,
+      "prompt_tokens": 315,
+      "completion_tokens": 8726,
+      "reasoning_tokens": 9307,
+      "cached_tokens": 0
+    },
+    "GDPR-2339": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 3.816e-05,
+      "provider_cost_usd": 3.816e-05,
+      "prompt_tokens": 224,
+      "completion_tokens": 365,
+      "reasoning_tokens": 409,
+      "cached_tokens": 0
+    },
+    "GDPR-2216": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15",
+        "art17"
+      ],
+      "cost_usd": 0.00040132,
+      "provider_cost_usd": 0.000401324,
+      "prompt_tokens": 241,
+      "completion_tokens": 3137,
+      "reasoning_tokens": 3122,
+      "cached_tokens": 0
+    },
+    "GDPR-2951": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 4.473e-05,
+      "provider_cost_usd": 4.473e-05,
+      "prompt_tokens": 282,
+      "completion_tokens": 214,
+      "reasoning_tokens": 209,
+      "cached_tokens": 0
+    },
+    "GDPR-1675": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 2.788e-05,
+      "provider_cost_usd": 2.788e-05,
+      "prompt_tokens": 237,
+      "completion_tokens": 230,
+      "reasoning_tokens": 290,
+      "cached_tokens": 0
+    },
+    "GDPR-3030": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 2.666e-05,
+      "provider_cost_usd": 2.6655e-05,
+      "prompt_tokens": 293,
+      "completion_tokens": 164,
+      "reasoning_tokens": 158,
+      "cached_tokens": 0
+    },
+    "GDPR-2243": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00013764,
+      "provider_cost_usd": 0.00013764,
+      "prompt_tokens": 236,
+      "completion_tokens": 382,
+      "reasoning_tokens": 392,
+      "cached_tokens": 0
+    }
+  },
+  "fit_heads": 5,
+  "validation_heads": 3,
+  "mined_candidates": 0,
+  "rules": [],
+  "class_counts": {
+    "composition": 0,
+    "leakage": 0,
+    "middle": 0,
+    "never_fires": 0
+  },
+  "endpoint": {
+    "delta": null,
+    "mean_val_precision_composition": null,
+    "mean_val_precision_leakage": null
+  },
+  "admission_test": {
+    "gamma_candidate": 0.9,
+    "reject_leakage_frac": null,
+    "keep_composition_frac": null,
+    "reject_composition_frac": null
+  },
+  "arm_accuracy_validation": {
+    "hybrid_rule_arm": 1.0,
+    "cache_arm_teacher": 1.0
+  },
+  "decision": "INDETERMINATE_EMPTY_CLASS",
+  "decision_why": "composition_rules=0 leakage_rules=0; the locked POSITIVE/NEGATIVE conditions are undefined without both classes"
+}

@@ -56,9 +56,10 @@ DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # Claude Sonnet 5: $2.00 / 1M input, $10.00 / 1M output (= per-1k below).
     # Source: https://openrouter.ai/anthropic/claude-sonnet-5, verified 2026-07-10.
     "claude-sonnet-5": (0.002, 0.010),
-    # OpenAI GPT-5.6 Luna: $1.00 / 1M input, $6.00 / 1M output (= per-1k below).
-    # Source: https://openrouter.ai/openai/gpt-5.6-luna, verified 2026-07-10.
-    "gpt-5.6-luna": (0.001, 0.006),
+    # OpenAI GPT-5.6 Luna: $0.20 / 1M input, $1.20 / 1M output (= per-1k below).
+    # Source: https://openrouter.ai/api/v1/models, verified 2026-08-23 (was
+    # $1.00/$6.00 on 2026-07-10 — OpenAI cut the price ~80%).
+    "gpt-5.6-luna": (0.0002, 0.0012),
     # Z.ai GLM-5.2: $0.54 / 1M input, $1.76 / 1M output (= per-1k below).
     # Source: https://openrouter.ai/z-ai/glm-5.2, verified 2026-07-10.
     "glm-5.2": (0.00054, 0.00176),
@@ -77,6 +78,15 @@ DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # Xiaomi MiMo v2.5 Pro: $0.435 / 1M input, $0.87 / 1M output (= per-1k below).
     # Source: https://openrouter.ai/xiaomi/mimo-v2.5-pro, verified 2026-07-10.
     "mimo-v2.5-pro": (0.000435, 0.00087),
+    # --- E17 grid (verified live 2026-08-23 via openrouter.ai/api/v1/models) ---
+    # Z.ai GLM-5.3: $1.40 / 1M input, $4.40 / 1M output.
+    "glm-5.3": (0.0014, 0.0044),
+    # Meta Muse Spark 1.2: $1.25 / 1M input, $4.25 / 1M output.
+    "muse-spark-1.2": (0.00125, 0.00425),
+    # Gemini 3.7 Flash: $0.375 / 1M input, $1.875 / 1M output.
+    "gemini-3.7-flash": (0.000375, 0.001875),
+    # DeepSeek V4 Flash 0731: $0.0616 / 1M input, $0.1232 / 1M output.
+    "deepseek-v4-flash-0731": (0.0000616, 0.0001232),
 }
 
 

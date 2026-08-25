@@ -273,6 +273,7 @@ class GrokTeacher(Teacher):
         prompt_template: str | None = None,
         response_format: dict | None = None,
         temperature: float | None = None,
+        extra_body: dict | None = None,
     ) -> None:
         try:
             from openai import OpenAI  # type: ignore[import-not-found]
@@ -295,6 +296,11 @@ class GrokTeacher(Teacher):
         #: (used by the E13 self-consistency recorder) makes repeated calls for the
         #: same pair diverge so a k-sample majority vote is meaningful.
         self._temperature = temperature
+        #: Optional extra request-body fields forwarded verbatim to the
+        #: provider (openai SDK ``extra_body``) — e.g. OpenRouter's
+        #: ``{"reasoning": {"effort": "max"}}``. ``None`` reproduces today's
+        #: request byte-for-byte.
+        self._extra_body = extra_body
         #: xAI/OpenAI-style token usage from the most recent call
         #: (``prompt_tokens`` / ``completion_tokens`` / ``total_tokens``).
         #: ``None`` until the first successful call. Read by
@@ -311,6 +317,8 @@ class GrokTeacher(Teacher):
             kwargs["response_format"] = self._response_format
         if self._temperature is not None:
             kwargs["temperature"] = self._temperature
+        if self._extra_body is not None:
+            kwargs["extra_body"] = self._extra_body
         try:
             resp = self._client.chat.completions.create(**kwargs)
             text = resp.choices[0].message.content or ""
@@ -388,14 +396,20 @@ class OpenRouterTeacher(GrokTeacher):
         prompt_template: str | None = None,
         response_format: dict | None = None,
         temperature: float | None = None,
+        reasoning_effort: str | None = None,
+        base_url: str = "https://openrouter.ai/api/v1",
     ) -> None:
+        extra_body = (
+            {"reasoning": {"effort": reasoning_effort}} if reasoning_effort is not None else None
+        )
         super().__init__(
             api_key,
             model=model,
-            base_url="https://openrouter.ai/api/v1",
+            base_url=base_url,
             prompt_template=prompt_template,
             response_format=response_format,
             temperature=temperature,
+            extra_body=extra_body,
         )
 
 
