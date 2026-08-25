@@ -292,24 +292,72 @@ class RuleEngine:
         order the level-by-level version did, so the derivation a fact is
         recorded with — and therefore its proof tree — is unchanged.
         """
+        # ⚡ Bolt Optimization: Pre-compute static structural properties of the body
+        # outside the hot recursive `extend` loop to avoid repeated `_is_var` calls
+        # and allow inlining unification logic.
+        compiled_body = [(s, r, o, _is_var(s), _is_var(r), _is_var(o)) for (s, r, o) in body]
 
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+
+            s, r, o, vs, vr, vo = compiled_body[depth]
+            s_val = binding.get(s) if vs else s
+            o_val = binding.get(o) if vo else o
+
+            # ⚡ Bolt Optimization: Avoid default `list()` allocations during index
+            # lookups by returning None when the key doesn't exist.
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
-            for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
-                    yield from extend(depth + 1, merged)
+                candidates = idx_all.get(r)
+
+            if candidates is None:
+                return
+
+            # ⚡ Bolt Optimization: Inline _unify directly into the recursive extend loop.
+            # This avoids O(N) function call overhead and defers expensive dict.copy()
+            # until variables are actually bound.
+            for t0, t1, t2 in candidates:
+                if not vs:
+                    if s != t0:
+                        continue
+                elif s in binding and binding[s] != t0:
+                    continue
+
+                if not vr:
+                    if r != t1:
+                        continue
+                elif r == s:
+                    if t1 != t0:
+                        continue
+                elif r in binding and binding[r] != t1:
+                    continue
+
+                if not vo:
+                    if o != t2:
+                        continue
+                elif o == s:
+                    if t2 != t0:
+                        continue
+                elif o == r:
+                    if t2 != t1:
+                        continue
+                elif o in binding and binding[o] != t2:
+                    continue
+
+                out = binding.copy()
+                if vs:
+                    out[s] = t0
+                if vr:
+                    out[r] = t1
+                if vo:
+                    out[o] = t2
+
+                yield from extend(depth + 1, out)
 
         return extend(0, {})
 
