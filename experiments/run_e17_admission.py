@@ -73,6 +73,18 @@ E17_SCHEMA = "tacet.e17.admission/v1"
 E17_PARTIAL_SCHEMA = "tacet.e17.admission.partial/v1"
 
 
+def _check_provenance_match(actual: dict, expected: dict, *, label: str) -> None:
+    """Refuse a warm-load whose stream-shaping provenance differs from this run."""
+    for field, value in expected.items():
+        if actual.get(field) != value:
+            raise ValueError(f"{label} {field}={actual.get(field)!r}, expected {value!r}")
+
+
+def _total_spend(heads: dict[str, dict]) -> float:
+    """Cumulative measured cost of every persisted head, warm or freshly bought."""
+    return sum(float(head["cost_usd"]) for head in heads.values())
+
+
 def load_resume_artifact(
     path: Path,
     *,
@@ -110,18 +122,14 @@ def load_resume_artifact(
         "min_support": min_support,
         "min_confidence": min_confidence,
     }
-    for field, value in expected.items():
-        if record.get(field) != value:
-            raise ValueError(
-                f"resume artifact {path} {field}={record.get(field)!r}, expected {value!r}"
-            )
+    _check_provenance_match(record, expected, label=f"resume artifact {path}")
 
     heads = record.get("heads")
     if not isinstance(heads, dict):
         raise ValueError(f"resume artifact {path} heads is not an object")
     if any(not isinstance(head, dict) or "cost_usd" not in head for head in heads.values()):
         raise ValueError(f"resume artifact {path} has an invalid paid-head row")
-    return heads, sum(float(head["cost_usd"]) for head in heads.values())
+    return heads, _total_spend(heads)
 
 
 def _partial_log_path(path: Path) -> Path:
@@ -131,14 +139,11 @@ def _partial_log_path(path: Path) -> Path:
 def resume_or_start_partial_log(path: Path, provenance: dict) -> tuple[_AnswerLog, list[dict]]:
     """Open an E17 write-ahead log and warm-load its validated durable prefix."""
     log = _AnswerLog(_partial_log_path(path))
-    if not log.exists():
-        log.start({"schema": E17_PARTIAL_SCHEMA, "provenance": provenance})
-        return log, []
-
-    header, rows = log.read()
+    header, rows = log.read() if log.exists() else (None, [])
     if header is None:
         log.start({"schema": E17_PARTIAL_SCHEMA, "provenance": provenance})
         return log, []
+
     if header.get("schema") != E17_PARTIAL_SCHEMA:
         raise ValueError(
             f"partial log {log.path} has schema {header.get('schema')!r}, "
@@ -147,12 +152,7 @@ def resume_or_start_partial_log(path: Path, provenance: dict) -> tuple[_AnswerLo
     logged_provenance = header.get("provenance")
     if not isinstance(logged_provenance, dict):
         raise ValueError(f"partial log {log.path} has no provenance object")
-    for field, value in provenance.items():
-        if logged_provenance.get(field) != value:
-            raise ValueError(
-                f"partial log {log.path} {field}={logged_provenance.get(field)!r}, "
-                f"expected {value!r}"
-            )
+    _check_provenance_match(logged_provenance, provenance, label=f"partial log {log.path}")
     for row in rows:
         if not isinstance(row.get("case_id"), str) or not isinstance(row.get("head"), dict):
             raise ValueError(f"partial log {log.path} has an invalid paid-head row")
@@ -187,21 +187,21 @@ def record_answers(
     checkpoint: Callable[[str, dict], None] | None = None,
 ) -> tuple[dict, bool]:
     """Record only heads not already paid for by a compatible prior artifact."""
-    heads = dict(heads or {})
-    resumed = len(heads)
+    recorded: dict[str, dict] = dict(heads or {})
+    warm = len(recorded)
     fresh = 0
     truncated = False
     t0 = time.time()
     try:
         for case_id in workload:
-            if case_id in heads:
+            if case_id in recorded:
                 continue
             resp = metered.answer(None, bench.case_content[case_id], "verdict")
-            answer = parse_compliance_answer(resp.answers)
+            verdict, articles = parse_compliance_answer(resp.answers)
             usage = dict(getattr(metered, "last_usage", None) or {})
-            heads[case_id] = {
-                "verdict": answer[0],
-                "articles": list(answer[1]),
+            head = {
+                "verdict": verdict,
+                "articles": list(articles),
                 "cost_usd": round(metered.last_cost_usd, 8),
                 "provider_cost_usd": usage.get("cost"),
                 "prompt_tokens": usage.get("prompt_tokens"),
@@ -209,21 +209,22 @@ def record_answers(
                 "reasoning_tokens": usage.get("reasoning_tokens"),
                 "cached_tokens": usage.get("cached_tokens"),
             }
+            recorded[case_id] = head
             fresh += 1
             if checkpoint is not None:
-                checkpoint(case_id, heads[case_id])
+                checkpoint(case_id, head)
             guard.add(metered.last_cost_usd)
             if fresh % 25 == 0:
                 print(
-                    f"  recorded {len(heads)}/{len(workload)} "
-                    f"(+{fresh} new, {resumed} warm) "
+                    f"  recorded {len(recorded)}/{len(workload)} "
+                    f"(+{fresh} new, {warm} warm) "
                     f"spend=${guard.spent_usd:.4f} ({time.time() - t0:.0f}s)",
                     flush=True,
                 )
     except BudgetExceededError as exc:  # pragma: no cover - budget path
         truncated = True
         print(f"[HARD STOP] {exc}")
-    return heads, truncated
+    return recorded, truncated
 
 
 def _score_rule(bench, workload: list[str], rule, seed: int, answered: dict) -> dict:
@@ -437,13 +438,11 @@ def run_admission(
 
 
 def _output_path(out_arg: str | None, slug: str, seed: int, effort: str | None) -> Path:
-    return Path(
-        out_arg
-        or (
-            f"experiments/results/e17_admission_{slug.replace('/', '__')}_s{seed}"
-            f"{'' if effort is None else '_' + effort}.json"
-        )
-    )
+    if out_arg:
+        return Path(out_arg)
+    suffix = "" if effort is None else f"_{effort}"
+    stem = f"e17_admission_{slug.replace('/', '__')}_s{seed}{suffix}"
+    return Path(f"experiments/results/{stem}.json")
 
 
 def _merge_warm_rows(heads: dict[str, dict], rows: list[dict]) -> dict[str, dict]:
@@ -487,10 +486,10 @@ def main() -> None:
     args = ap.parse_args()
 
     out = _output_path(args.out, args.slug, args.seed, args.effort)
-    partial_path = _partial_log_path(out)
-    if not args.resume and (out.exists() or partial_path.exists()):
+    state_exists = out.exists() or _partial_log_path(out).exists()
+    if not args.resume and state_exists:
         raise SystemExit(f"output state exists for {out}; rerun with --resume or choose --out")
-    if args.resume and not out.exists() and not partial_path.exists():
+    if args.resume and not state_exists:
         raise SystemExit(f"no resumable artifact or partial log exists for {out}")
 
     cases = load_privaci(args.privaci, split=args.split)
@@ -502,9 +501,8 @@ def main() -> None:
     atoms = {c.case_id: _case_atoms(normalize_case(c, vocab)) for c in cases}
     workload = list(bench.workload)
     price_key = price_key_for_slug(args.slug)
-    dataset = f"PrivaCI-Bench-{args.split}"
     provenance = {
-        "dataset": dataset,
+        "dataset": f"PrivaCI-Bench-{args.split}",
         "n": len(cases),
         "seed": args.seed,
         "slug": args.slug,
@@ -554,7 +552,7 @@ def main() -> None:
         heads=heads,
         checkpoint=checkpoint,
     )
-    total_spend = sum(float(head["cost_usd"]) for head in heads.values())
+    total_spend = _total_spend(heads)
     complete = not truncated and len(heads) == len(workload)
     abstains = sum(1 for head in heads.values() if head["verdict"] == "abstain")
     print(
@@ -563,8 +561,8 @@ def main() -> None:
         flush=True,
     )
 
-    admission = (
-        run_admission(
+    if complete:
+        admission = run_admission(
             bench,
             workload,
             heads,
@@ -573,9 +571,8 @@ def main() -> None:
             min_confidence=args.min_confidence,
             atoms=atoms,
         )
-        if complete
-        else incomplete_admission(heads=len(heads), expected_heads=len(workload))
-    )
+    else:
+        admission = incomplete_admission(heads=len(heads), expected_heads=len(workload))
     print(
         f"[admission] classes={admission['class_counts']} "
         f"delta={admission['endpoint']['delta']} decision={admission['decision']}",
