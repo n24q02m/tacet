@@ -61,6 +61,7 @@ def mine_rules(
     complete_heads: set[str] | None = None,
     allowed_body: set[str] | None = None,
     allow_target_in_body: bool = True,
+    forbid_target_self_loop: bool = False,
 ) -> list[MinedRule]:
     """Induce Horn rules `body => target(x,y)` from data (body length 1-2).
 
@@ -74,6 +75,10 @@ def mine_rules(
     one synthesised relation into another. `allow_target_in_body` (default
     ``True``, the published behaviour) governs whether the length-2 branch may
     chain `target` into its own body; the length-1 branch never does.
+    `forbid_target_self_loop` (default ``False``) bans only the pure all-target
+    body ``target ⊗ target`` while keeping mixed ``target ⊗ base`` legs — the
+    E18 refined guard for genuinely recursive targets, where the target
+    legitimately belongs in its own body.
     """
     rules, _ = mine_rules_with_stats(
         graph,
@@ -85,6 +90,7 @@ def mine_rules(
         complete_heads,
         allowed_body,
         allow_target_in_body,
+        forbid_target_self_loop,
     )
     return rules
 
@@ -99,6 +105,7 @@ def mine_rules_with_stats(
     complete_heads: set[str] | None = None,
     allowed_body: set[str] | None = None,
     allow_target_in_body: bool = True,
+    forbid_target_self_loop: bool = False,
 ) -> tuple[list[MinedRule], int]:
     """`mine_rules` plus the count of candidate rules *proposed* before filtering.
 
@@ -185,6 +192,12 @@ def mine_rules_with_stats(
             if not p1_items:
                 continue
             for r2 in body_relations:
+                # E18 refined guard: ban only the pure all-target body (both
+                # legs the target, either inversion). Mixed target⊗base legs
+                # survive — that is exactly the shape of a genuinely recursive
+                # rule such as `ancestor <= ancestor.parent`.
+                if forbid_target_self_loop and r1 == target and r2 == target:
+                    continue
                 for inv2 in (False, True):
                     p2 = adj_maps[(r2, inv2)]
                     if not p2:
@@ -234,6 +247,10 @@ class Distiller:
     # target out of its own length-2 body, which is where the self-referential
     # rule comes from; see mine_rules.
     allow_target_in_body: bool = True
+    # Default False = the published behaviour. Set True to ban only the pure
+    # all-target length-2 body while keeping mixed target⊗base legs; see
+    # mine_rules.
+    forbid_target_self_loop: bool = False
     teacher_facts: set[Triple] = field(default_factory=set)
     _complete_heads: dict[str, set[str]] = field(default_factory=dict)
     _synthesised: set[str] = field(default_factory=set)
@@ -266,6 +283,7 @@ class Distiller:
             complete_heads=self._complete_heads.get(relation, set()),
             allowed_body=self.base_relations or None,
             allow_target_in_body=self.allow_target_in_body,
+            forbid_target_self_loop=self.forbid_target_self_loop,
         )
 
     def kge_augmentation(self) -> list[Triple]:

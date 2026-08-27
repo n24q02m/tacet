@@ -1,0 +1,1882 @@
+{
+ "schema": "tacet.e18.recursive/v1",
+ "experiment": "E18 genuinely recursive targets: the registered E16 boundary",
+ "pre_registration": "tacet-research-ledger.md E18 (locked 2026-09-11)",
+ "workload": {
+  "kind": "synthetic DAG, oracle teacher, zero provider calls",
+  "n_nodes": 150,
+  "edge_p": 0.03,
+  "k_heads": 30,
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "gammas": [
+   0.5,
+   0.7,
+   0.9
+  ],
+  "target": "anc (transitive closure of parent)"
+ },
+ "cells": [
+  {
+   "arm": "published",
+   "seed": 0,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 222,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 104,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 95,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 64,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 58,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7065,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 0,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 104,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 64,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.5038,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 0,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 222,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 104,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 64,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 58,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7065,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 0,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 430,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 241,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 165,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 102,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 98,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7521,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 0,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 165,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 98,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.5038,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 0,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 430,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 165,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 102,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 98,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7521,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 0,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 374,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 152,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 137,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 80,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 68,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7087,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 0,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 137,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 80,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.5038,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 0,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 374,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 137,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 80,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 68,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7087,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 1,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 356,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 209,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 124,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 120,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 77,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.781,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 1,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 120,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 77,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.5014,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 1,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 356,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 124,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 120,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 77,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.781,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 1,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 484,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 172,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 163,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 88,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 8,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7907,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 1,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 163,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 88,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.5014,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 1,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 484,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 163,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 88,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 8,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7907,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 1,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 294,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 101,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 85,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 71,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 49,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.6461,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 1,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 101,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 71,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.5014,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 1,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 294,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 101,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 71,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 49,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.6461,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 2,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 160,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 60,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 56,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 54,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 18,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.6044,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 2,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 56,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 54,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.465,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 2,
+   "gamma": 0.5,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 160,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 56,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 54,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 18,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.6044,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 2,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 392,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 198,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 102,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 69,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 66,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7213,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 2,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 102,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 66,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.465,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 2,
+   "gamma": 0.7,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 392,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 102,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 69,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 66,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.7213,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  },
+  {
+   "arm": "published",
+   "seed": 2,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 223,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=anc.anc",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "pure_self_loop",
+     "support": 93,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 68,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 67,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 34,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.6696,
+   "unsound_derivations": 0,
+   "n_installed": 5
+  },
+  {
+   "arm": "e16_ban",
+   "seed": 2,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 68,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 67,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.465,
+   "unsound_derivations": 0,
+   "n_installed": 2
+  },
+  {
+   "arm": "refined",
+   "seed": 2,
+   "gamma": 0.9,
+   "installed": [
+    {
+     "name": "syn:anc<=anc.parent",
+     "legs": [
+      [
+       "anc",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 223,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 68,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.parent",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "parent",
+       false
+      ]
+     ],
+     "shape": "base_only",
+     "support": 67,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    },
+    {
+     "name": "syn:anc<=parent.anc",
+     "legs": [
+      [
+       "parent",
+       false
+      ],
+      [
+       "anc",
+       false
+      ]
+     ],
+     "shape": "mixed_recursive",
+     "support": 34,
+     "confidence": 1.0,
+     "world_precision": 1.0
+    }
+   ],
+   "coverage": 0.6696,
+   "unsound_derivations": 0,
+   "n_installed": 4
+  }
+ ],
+ "e16_metaqa_reread": {
+  "artifact": "e16_forbid_target_hop2.json",
+  "junk_shapes_observed": [
+   "pure_self_loop"
+  ],
+  "true_rule_shapes_observed": [
+   "base_only"
+  ],
+  "refined_guard_would_remove_all_junk": true,
+  "refined_guard_keeps_true_rule": true
+ },
+ "decision": "POSITIVE",
+ "decision_why": "E16 ban loses coverage on every recursive cell (forecloses recursion, confirming the registered limitation); refined guard matches published coverage everywhere; on the committed MetaQA artifact the refined guard classifies all junk as pure self-loops (removable) while the true composition is base-only (kept)."
+}
