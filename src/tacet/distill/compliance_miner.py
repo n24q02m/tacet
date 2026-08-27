@@ -84,18 +84,27 @@ def mine_compliance_rules(
             atom_index[atom].add(i)
     frequent_atoms = sorted(a for a, n in atom_support.items() if n >= min_support)
 
+    pattern_cache: dict[tuple[Atom, ...], set[int]] = {}
+
     def matches(pattern: tuple[Atom, ...]) -> list[LabeledCase]:
         if not pattern:
             return labeled[:]
 
-        # Fast set-intersection using the inverted index
-        # We start with the case indices of the first atom
-        matched_indices = set(atom_index.get(pattern[0], set()))
-        for atom in pattern[1:]:
-            if not matched_indices:
-                break
-            matched_indices &= atom_index.get(atom, set())
+        # ⚡ Bolt Optimization: Use cached prefix matches for O(1) intersections
+        prefix = pattern[:-1]
+        if prefix and prefix in pattern_cache:
+            matched_indices = set(pattern_cache[prefix])
+            matched_indices &= atom_index.get(pattern[-1], set())
+        else:
+            # Fast set-intersection using the inverted index
+            # We start with the case indices of the first atom
+            matched_indices = set(atom_index.get(pattern[0], set()))
+            for atom in pattern[1:]:
+                if not matched_indices:
+                    break
+                matched_indices &= atom_index.get(atom, set())
 
+        pattern_cache[pattern] = matched_indices
         return [labeled[i] for i in sorted(matched_indices)]
 
     levels: list[list[tuple[Atom, ...]]] = [[(a,) for a in frequent_atoms]]
@@ -129,14 +138,21 @@ def mine_compliance_rules(
     # ----- most-general-first pruning --------------------------------------
     candidates.sort(key=lambda c: (len(c[0]), -c[2], -c[3], c[1], c[0]))
     kept: list[tuple[tuple[Atom, ...], str, float, int]] = []
+
+    # ⚡ Bolt Optimization: Group by target and use early-exit loop for dominance testing
+    kept_by_target: dict[str, list[tuple[set[Atom], float]]] = {}
+
     for pattern, target, conf, hits in candidates:
         pat = set(pattern)
-        dominated = any(
-            k_target == target and set(k_pattern) < pat and k_conf >= conf
-            for k_pattern, k_target, k_conf, _ in kept
-        )
+        dominated = False
+        for k_pattern, k_conf in kept_by_target.get(target, []):
+            if k_conf >= conf and k_pattern < pat:
+                dominated = True
+                break
+
         if not dominated:
             kept.append((pattern, target, conf, hits))
+            kept_by_target.setdefault(target, []).append((pat, conf))
 
     return [
         MinedComplianceRule(
