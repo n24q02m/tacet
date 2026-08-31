@@ -293,23 +293,61 @@ class RuleEngine:
         recorded with — and therefore its proof tree — is unchanged.
         """
 
+        # ⚡ Bolt Optimization: Pre-compute static pattern properties outside the hot loop
+        pre = []
+        for s, r, o in body:
+            pre.append((s, r, o, _is_var(s), _is_var(o)))
+
         def extend(depth: int, binding: dict[str, str]) -> Iterator[dict[str, str]]:
             if depth == len(body):
                 yield binding
                 return
-            s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+
+            s, r, o, s_is_var, o_is_var = pre[depth]
+
+            s_val = binding.get(s) if s_is_var else s
+            o_val = binding.get(o) if o_is_var else o
+
+            # ⚡ Bolt Optimization: Avoid default list allocations during index lookups
             if s_val is not None:
-                candidates: list[Triple] = idx_subj.get((r, s_val), [])
+                candidates = idx_subj.get((r, s_val))
             elif o_val is not None:
-                candidates = idx_obj.get((r, o_val), [])
+                candidates = idx_obj.get((r, o_val))
             else:
-                candidates = idx_all.get(r, [])
+                candidates = idx_all.get(r)
+
+            if candidates is None:
+                return
+
             for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
+                # ⚡ Bolt Optimization: Inline _unify logic directly into the recursive loop
+                t0, _, t2 = fact
+
+                if not s_is_var:
+                    if s != t0:
+                        continue
+                elif s in binding and binding[s] != t0:
+                    continue
+
+                if not o_is_var:
+                    if o != t2:
+                        continue
+                elif o == s:
+                    if t2 != t0:
+                        continue
+                elif o in binding and binding[o] != t2:
+                    continue
+
+                # Defers expensive dict.copy() until new variable bindings are actually confirmed
+                if (s_is_var and s not in binding) or (o_is_var and o not in binding):
+                    merged = binding.copy()
+                    if s_is_var:
+                        merged[s] = t0
+                    if o_is_var:
+                        merged[o] = t2
                     yield from extend(depth + 1, merged)
+                else:
+                    yield from extend(depth + 1, binding)
 
         return extend(0, {})
 
