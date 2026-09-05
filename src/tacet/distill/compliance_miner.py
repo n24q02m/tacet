@@ -84,23 +84,33 @@ def mine_compliance_rules(
             atom_index[atom].add(i)
     frequent_atoms = sorted(a for a, n in atom_support.items() if n >= min_support)
 
-    def matches(pattern: tuple[Atom, ...]) -> list[LabeledCase]:
+    pattern_indices: dict[tuple[Atom, ...], set[int]] = {}
+
+    def get_indices(pattern: tuple[Atom, ...]) -> set[int]:
+        # ⚡ Bolt Optimization: Cache matched case indices for prefix patterns to replace
+        # repeated O(N) set intersections with a single O(N) intersection per candidate.
         if not pattern:
-            return labeled[:]
+            return set(range(len(labeled)))
+        if pattern in pattern_indices:
+            return pattern_indices[pattern]
 
-        # Fast set-intersection using the inverted index
-        # We start with the case indices of the first atom
-        matched_indices = set(atom_index.get(pattern[0], set()))
-        for atom in pattern[1:]:
-            if not matched_indices:
-                break
-            matched_indices &= atom_index.get(atom, set())
+        if len(pattern) == 1:
+            indices = set(atom_index.get(pattern[0], set()))
+            pattern_indices[pattern] = indices
+            return indices
 
-        return [labeled[i] for i in sorted(matched_indices)]
+        prefix = pattern[:-1]
+        last_atom = pattern[-1]
+        indices = get_indices(prefix) & atom_index.get(last_atom, set())
+        pattern_indices[pattern] = indices
+        return indices
+
+    def matches(pattern: tuple[Atom, ...]) -> list[LabeledCase]:
+        return [labeled[i] for i in sorted(get_indices(pattern))]
 
     levels: list[list[tuple[Atom, ...]]] = [[(a,) for a in frequent_atoms]]
     for _ in range(2, max_atoms + 1):
-        prev = [p for p in levels[-1] if len(matches(p)) >= min_support]
+        prev = [p for p in levels[-1] if len(get_indices(p)) >= min_support]
         nxt = set()
         for p in prev:
             for a in frequent_atoms:
@@ -129,14 +139,23 @@ def mine_compliance_rules(
     # ----- most-general-first pruning --------------------------------------
     candidates.sort(key=lambda c: (len(c[0]), -c[2], -c[3], c[1], c[0]))
     kept: list[tuple[tuple[Atom, ...], str, float, int]] = []
+    kept_by_target: dict[str, list[tuple[set[Atom], float]]] = {}
+
     for pattern, target, conf, hits in candidates:
         pat = set(pattern)
-        dominated = any(
-            k_target == target and set(k_pattern) < pat and k_conf >= conf
-            for k_pattern, k_target, k_conf, _ in kept
-        )
+        dominated = False
+        target_kept = kept_by_target.get(target, [])
+
+        # ⚡ Bolt Optimization: Use explicit early-exit loop over grouped structures
+        # instead of generator expressions in any() to avoid allocation overhead
+        for k_pattern, k_conf in target_kept:
+            if k_conf >= conf and k_pattern < pat:
+                dominated = True
+                break
+
         if not dominated:
             kept.append((pattern, target, conf, hits))
+            kept_by_target.setdefault(target, []).append((pat, conf))
 
     return [
         MinedComplianceRule(
