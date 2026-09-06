@@ -215,12 +215,18 @@ class FormalContext:
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
+            candidate = {k for k in B if k < m}
+            candidate.add(m)
             closure = self.attrs_of(self.objects_of(frozenset(candidate)))
             # The lectic-next-closure step requires the closure to
             # introduce no attribute smaller than ``m`` that was not
             # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
+            valid = True
+            for k in closure:
+                if k not in candidate and k < m and k not in B:
+                    valid = False
+                    break
+            if valid:
                 return set(closure)
         return None
 
