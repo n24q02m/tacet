@@ -212,16 +212,54 @@ class FormalContext:
 
     def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        extents = self._attr_extents()
+        incidence = self.incidence
+
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
-            # The lectic-next-closure step requires the closure to
-            # introduce no attribute smaller than ``m`` that was not
-            # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
-                return set(closure)
+
+            candidate = {k for k in B if k < m}
+            candidate.add(m)
+
+            it_cand = iter(candidate)
+            try:
+                first_attr = next(it_cand)
+                objects = set(extents.get(first_attr, frozenset()))
+                for attr in it_cand:
+                    objects &= extents.get(attr, frozenset())
+                    if not objects:
+                        break
+            except StopIteration:
+                objects = set(incidence.keys())
+
+            if not objects:
+                valid = True
+                for k in range(m):
+                    if k not in candidate:
+                        valid = False
+                        break
+                if valid:
+                    return set(range(n_attr))
+                continue
+
+            it_obj = iter(objects)
+            common = set(incidence.get(next(it_obj), frozenset()))
+
+            for g in it_obj:
+                common &= incidence.get(g, frozenset())
+                if not common:
+                    break
+
+            valid = True
+            for k in common:
+                if k < m and k not in candidate:
+                    valid = False
+                    break
+
+            if valid:
+                return set(common)
+
         return None
 
     # --- lattice cover (Hasse diagram) ------------------------------
