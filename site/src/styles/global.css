@@ -98,9 +98,14 @@ body {
   text-decoration: none;
 }
 
-.nav a:hover,
+.nav a:hover {
+  color: var(--accent);
+}
+
 .nav a:focus-visible {
   color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .theme-toggle {
@@ -198,9 +203,14 @@ li {
   border: 1px solid var(--rule);
 }
 
-.btn:hover,
+.btn:hover {
+  filter: brightness(1.08);
+}
+
 .btn:focus-visible {
   filter: brightness(1.08);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .scroller {
@@ -209,6 +219,11 @@ li {
   border-radius: 4px;
   background: var(--panel);
   margin: 0 0 1.1rem;
+}
+
+.scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 table {
