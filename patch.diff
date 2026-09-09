@@ -1,0 +1,30 @@
+--- src/tacet/serve/server.py
++++ src/tacet/serve/server.py
+@@ -357,6 +357,7 @@
+
+     @app.exception_handler(Exception)
+     async def unhandled_exception_handler(request: Request, _exc: Exception) -> Response:
++        logging.error("Unhandled exception", exc_info=_exc)
+         response = PlainTextResponse("Internal Server Error", status_code=500)
+         return _apply_security_headers(response, request.url.path)
+
+--- tests/test_mvp.py
++++ tests/test_mvp.py
+@@ -619,6 +619,7 @@
+                 "stats",
+                 side_effect=RuntimeError("private backend failure"),
+             ),
++            self.assertLogs(level="ERROR") as logs,
+             TestClient(self.app, raise_server_exceptions=False) as client,
+         ):
+             resp = client.get("/stats")
+@@ -631,6 +632,9 @@
+             {name: resp.headers.get(name) for name in expected_headers},
+             expected_headers,
+         )
++        self.assertTrue(
++            any("private backend failure" in r.getMessage() or r.exc_info for r in logs.records)
++        )
+
+     def test_graph_edges_ingest_and_query(self) -> None:
+         """End-to-end trace of graph ingestion and consequence visibility."""
