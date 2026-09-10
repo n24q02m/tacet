@@ -35,3 +35,8 @@
 **Vulnerability:** The FastAPI application was missing the `Referrer-Policy` security header, which could leak sensitive path information or query parameters via the `Referer` header to external sites when navigating away from the application.
 **Learning:** Even when setting strict `Content-Security-Policy` and `X-Frame-Options`, `Referrer-Policy` is needed to prevent cross-origin information leakage on outbound requests.
 **Prevention:** Always include `Referrer-Policy: no-referrer` in the global security headers middleware to strictly drop referrer information on all outbound requests.
+
+## 2025-02-21 - [Prevented Silently Swallowed Exceptions]
+**Vulnerability:** The global `@app.exception_handler(Exception)` in `src/tacet/serve/server.py` returned a 500 without logging the exception, silently swallowing server-side tracebacks and preventing incident response.
+**Learning:** Overriding FastAPI's default exception handlers bypasses `ServerErrorMiddleware`'s automatic exception logging. Custom handlers must explicitly log exceptions.
+**Prevention:** Always explicitly log the exception `logging.error(..., exc_info=_exc)` inside a custom global exception handler before returning the secure response.
