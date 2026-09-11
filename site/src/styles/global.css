@@ -103,6 +103,12 @@ body {
   color: var(--accent);
 }
 
+.nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
 .theme-toggle {
   font: inherit;
   font-size: 0.82rem;
@@ -117,6 +123,11 @@ body {
 .theme-toggle:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 main {
@@ -203,12 +214,22 @@ li {
   filter: brightness(1.08);
 }
 
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .scroller {
   overflow-x: auto;
   border: 1px solid var(--rule);
   border-radius: 4px;
   background: var(--panel);
   margin: 0 0 1.1rem;
+}
+
+.scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
 }
 
 table {
