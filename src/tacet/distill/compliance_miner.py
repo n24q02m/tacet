@@ -84,23 +84,19 @@ def mine_compliance_rules(
             atom_index[atom].add(i)
     frequent_atoms = sorted(a for a, n in atom_support.items() if n >= min_support)
 
-    def matches(pattern: tuple[Atom, ...]) -> list[LabeledCase]:
-        if not pattern:
-            return labeled[:]
-
-        # Fast set-intersection using the inverted index
-        # We start with the case indices of the first atom
-        matched_indices = set(atom_index.get(pattern[0], set()))
-        for atom in pattern[1:]:
-            if not matched_indices:
-                break
-            matched_indices &= atom_index.get(atom, set())
-
-        return [labeled[i] for i in sorted(matched_indices)]
-
+    level1_matches = {a: set(atom_index.get(a, set())) for a in frequent_atoms}
     levels: list[list[tuple[Atom, ...]]] = [[(a,) for a in frequent_atoms]]
+    level_matches_cache = {p: level1_matches[p[0]] for p in levels[0]}
+
     for _ in range(2, max_atoms + 1):
-        prev = [p for p in levels[-1] if len(matches(p)) >= min_support]
+        prev = []
+        for p in levels[-1]:
+            if p not in level_matches_cache:
+                parent_match = level_matches_cache[p[:-1]]
+                level_matches_cache[p] = parent_match & level1_matches[p[-1]]
+            if len(level_matches_cache[p]) >= min_support:
+                prev.append(p)
+
         nxt = set()
         for p in prev:
             for a in frequent_atoms:
@@ -112,7 +108,10 @@ def mine_compliance_rules(
     candidates: list[tuple[tuple[Atom, ...], str, float, int]] = []
     for level in levels:
         for pattern in level:
-            covered = matches(pattern)
+            if pattern not in level_matches_cache:
+                parent_match = level_matches_cache[pattern[:-1]]
+                level_matches_cache[pattern] = parent_match & level1_matches[pattern[-1]]
+            covered = [labeled[i] for i in sorted(level_matches_cache[pattern])]
             if len(covered) < min_support:
                 continue
             target_counts: dict[str, int] = {}
@@ -129,14 +128,17 @@ def mine_compliance_rules(
     # ----- most-general-first pruning --------------------------------------
     candidates.sort(key=lambda c: (len(c[0]), -c[2], -c[3], c[1], c[0]))
     kept: list[tuple[tuple[Atom, ...], str, float, int]] = []
+    kept_by_target = {}
     for pattern, target, conf, hits in candidates:
         pat = set(pattern)
-        dominated = any(
-            k_target == target and set(k_pattern) < pat and k_conf >= conf
-            for k_pattern, k_target, k_conf, _ in kept
-        )
+        dominated = False
+        for k_pattern, k_conf in kept_by_target.get(target, []):
+            if k_conf >= conf and set(k_pattern) < pat:
+                dominated = True
+                break
         if not dominated:
             kept.append((pattern, target, conf, hits))
+            kept_by_target.setdefault(target, []).append((pattern, conf))
 
     return [
         MinedComplianceRule(
