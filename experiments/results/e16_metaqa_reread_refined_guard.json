@@ -315,6 +315,7 @@
    "is_true_composition": true
   }
  ],
+ "per_cell_reconciliation": [],
  "refined_totals": {
   "control": {
    "rules": 24,
@@ -376,5 +377,5 @@
   }
  },
  "decision": "REFINED-GUARD-SUBSUMES",
- "decision_why": "every control target-containing rule is a pure self-loop, the forbid arm is clean, every true composition is base-only and all totals reconcile with the published aggregates."
+ "decision_why": "every control target-containing rule is a pure self-loop, the forbid arm is clean, every true composition is base-only and all totals reconcile with the published aggregates at both the aggregate and the per-cell level."
 }

@@ -118,6 +118,38 @@ class TestLockedDecisionRule(unittest.TestCase):
             PUBLISHED.update(old)
         self.assertEqual(out["decision"], "MIXED_RECURSIVE_RESIDUE")
 
+    def test_per_cell_count_mismatch_is_technical_external(self) -> None:
+        # The artifact records the published junk count NEXT TO each cell's
+        # rule list. If the recorded per-cell count disagrees with what the
+        # list actually classifies to, an aggregate-level subsumes claim
+        # would be vacuous: the locked rule demands TECHNICAL_EXTERNAL.
+        control = [_rule_pure(), _rule_true()]
+        forbid = [_rule_true()]
+        grid = _grid(control, forbid)
+        for cell in grid["cells"]:
+            # List carries 1 junk rule, recording claims 2.
+            cell["control"]["self_referential_rules"] = 2
+            cell["control"]["other_rules"] = 0
+            cell["forbid"]["self_referential_rules"] = 0
+            cell["forbid"]["other_rules"] = 0
+        published = {
+            "true_rule_installs": {"control": 2, "forbid": 2},
+            "self_referential_rules": {"control": 4, "forbid": 0},
+            "cells_installing_self_referential": {"control": 2, "forbid": 0},
+            "other_rules": {"control": 0, "forbid": 0},
+        }
+        old = dict(PUBLISHED)
+        PUBLISHED.clear()
+        PUBLISHED.update(published)
+        try:
+            out = replay(grid, "0" * 64)
+        finally:
+            PUBLISHED.clear()
+            PUBLISHED.update(old)
+        self.assertEqual(out["decision"], "TECHNICAL_EXTERNAL")
+        self.assertEqual(len(out["per_cell_reconciliation"]), 2)
+        self.assertIn("per-cell count mismatches", out["decision_why"])
+
     def test_recording_mismatch_is_technical_external(self) -> None:
         # A recording that lost its junk rules reconciles with nothing: the
         # locked rule demands TECHNICAL_EXTERNAL, never a boundary claim.
