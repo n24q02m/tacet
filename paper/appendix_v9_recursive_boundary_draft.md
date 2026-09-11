@@ -3,7 +3,7 @@
 > **Status:** `DRAFT — NOT PUBLISHED`. Cutting a Zenodo v9 with this note is a separate
 > publication decision. Nothing in this file is a claim until that gate opens.
 > Prepared from committed, replayable `$0` artifacts only (E18 synthetic grid + E18-W2
-> classification replay). No provider was contacted at any point.
+> classification replay + E18-W2 generative replay). No provider was contacted at any point.
 
 ## 1. What the published record says today
 
@@ -52,23 +52,39 @@ and is coverage-preserving on genuinely recursive targets. The blunt
 Artifact: `experiments/results/e16_metaqa_reread_refined_guard.json`
 (commit `2ba90bb3`, same branch; contract-tested in `tests/test_e16_replay_refined.py`).
 
-## 4. Explicit non-claims
+## 4. New result 3 — generative re-mining on the real grid (E18-W2, half ii)
 
-1. **Generative half (W2 half ii) is open.** Re-mining the 22 recorded cells under the
-   refined guard byte-identically requires the E11 recorded answer sessions, which are
-   not in the public repo and not on the authoring machine. Until they exist, no
-   generative claim is made; the classification replay above operates on committed
-   artifacts only. (`TECHNICAL_EXTERNAL`, registered in advance.)
-2. **Near-functional leakage is untouched.** This note addresses only structural
+Re-mining all 22 recorded cells at gamma 0.50 under the refined guard — the teacher
+answers replayed from the E11 recordings (recovered from the authoring archive; used
+untracked, never committed to the public repo), zero provider calls:
+
+- control arm reproduces the published shape exactly under the refined taxonomy
+  (**14 `pure_self_loop` rules over exactly the 7 published junk cells; true installs
+  10/10**);
+- refined arm: **0 `pure_self_loop`, 0 `mixed_recursive`** across all 22 cells; true
+  compositions **10/10 kept** with identical per-rule world precision; no valid cell
+  with full accuracy below cache accuracy; 0 invalid cells.
+
+Decision (locked before the run): **GENERATIVE-SUBSUMES** — the refined guard's junk
+removal on the real grid is not a classification artifact of committed rule lists; it
+holds when the miner runs fresh under the guard. Artifact:
+`experiments/results/e18_w2_generative_refined.json` (commit `889df9cd`, same branch;
+runner plumbing and contract test in the same commit).
+
+## 5. Explicit non-claims
+1. **Near-functional leakage is untouched.** This note addresses only structural
    self-reference and recursive targets. The E17 admission-mechanism question for
    near-functional leakage remains closed-inconclusive and is not cited as support.
-3. **Scope:** synthetic DAG + oracle (result 1), classification replay (result 2),
-   miner-level. No deployment, no product, no benchmark beyond MetaQA 2-hop.
+2. **Scope:** synthetic DAG + oracle (result 1), classification replay (result 2),
+   generative replay (result 3), miner-level. No deployment, no product, no benchmark
+   beyond MetaQA 2-hop.
+3. **Data provenance:** the E11 answer recordings stay in the authoring archive; the
+   public artifact carries per-cell outcomes only, never raw paid answers.
 
 ## 5. Reproducibility
-
-Both results are deterministic and replayable at `$0` from the seeds and the committed
-artifact: `experiments/run_e18_recursive.py`,
-`experiments/replay_e16_refined.py`, contract tests
-`tests/test_e18_recursive.py`, `tests/test_e16_replay_refined.py`
-(full suite 524 collected at `2ba90bb3`).
+All three results are deterministic and replayable at `$0` from the seeds and the
+committed artifacts: `experiments/run_e18_recursive.py`,
+`experiments/replay_e16_refined.py`, `experiments/run_real_kg_controlled.py`
+(replay mode), contract tests `tests/test_e18_recursive.py`,
+`tests/test_e16_replay_refined.py`, `tests/test_controlled_selfloop_plumbing.py`
+(full suite 526 collected at `889df9cd`).
