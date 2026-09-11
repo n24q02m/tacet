@@ -596,6 +596,41 @@ class TestServerEndpoints(unittest.TestCase):
             any("teacher exploded" in r.getMessage() or r.exc_info for r in logs.records)
         )
 
+    def test_unhandled_route_exception_returns_hardened_generic_500(self) -> None:
+        """Unhandled route failures keep Starlette's generic 500 plus security headers."""
+        from unittest.mock import patch
+
+        from fastapi.testclient import TestClient
+
+        from tacet.serve.server import TACETService
+
+        expected_headers = {
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "X-XSS-Protection": "0",
+            "Referrer-Policy": "no-referrer",
+            "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+        }
+        with (
+            patch.object(
+                TACETService,
+                "stats",
+                side_effect=RuntimeError("private backend failure"),
+            ),
+            TestClient(self.app, raise_server_exceptions=False) as client,
+        ):
+            resp = client.get("/stats")
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.headers["content-type"].split(";")[0], "text/plain")
+        self.assertEqual(resp.text, "Internal Server Error")
+        self.assertNotIn("private backend failure", resp.text)
+        self.assertEqual(
+            {name: resp.headers.get(name) for name in expected_headers},
+            expected_headers,
+        )
+
     def test_graph_edges_ingest_and_query(self) -> None:
         resp = self.client.post(
             "/graph/edges",
