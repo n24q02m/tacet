@@ -196,17 +196,17 @@ python experiments/run_metaqa.py --metaqa-root data/MetaQA --hop 1 --limit 200
 from tacet import TACET, WorldGraph, Ontology
 from tacet.llm.teacher import CallableTeacher
 
-kg   = WorldGraph.from_json("mygraph.json")     # or .from_triples([...]) / .from_csv(...)
-onto = Ontology.induce(kg)                       # or hand-build a typed ontology
-ak   = TACET(kg, onto, teacher=CallableTeacher(my_llm_fn))
-ak.warmup()                                      # compile rules, train the KGE tier
+kg = WorldGraph.from_json("mygraph.json")  # or .from_triples([...]) / .from_csv(...)
+onto = Ontology.induce(kg)  # or hand-build a typed ontology
+ak = TACET(kg, onto, teacher=CallableTeacher(my_llm_fn))
+ak.warmup()  # compile rules, train the KGE tier
 
-ans = ak.ask("France", "located_in")             # -> Answer(tier, answers, proof, cost)
+ans = ak.ask("France", "located_in")  # -> Answer(tier, answers, proof, cost)
 print(ans.tier, ans.answers, ans.cost)
 
 for head, rel in workload:
     ak.ask(head, rel)
-ak.consolidate()                                 # absorb what the teacher taught
+ak.consolidate()  # absorb what the teacher taught
 print(ak.report())
 ```
 
