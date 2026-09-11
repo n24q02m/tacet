@@ -108,11 +108,10 @@ leakage of Section~\ref{sec:rule_precision}, not a need for gold
 (Section~\ref{sec:threshold-gate}). The one remaining structural foreclosure
 of that regime --- genuinely recursive targets, excluded by the same blunt
 enumeration rule --- is itself removable: a refined guard that bans only the
-pure self-loop body removes every self-referential install while preserving
-the true rule and its savings exactly, on a synthetic transitive-closure grid
-and by classification and generative replay of the real MetaQA grid, so the
-low-threshold regime extends to genuinely recursive targets
-(Appendix~\ref{sec:recursive-boundary}).
+pure self-loop body preserves the published result exactly on the real MetaQA
+grid ($22/22$ cells, by classification and generative replay) and, on a
+synthetic transitive-closure grid with oracle teachers, extends coverage to
+genuinely recursive targets (Appendix~\ref{sec:recursive-boundary}).
 
 Tier-1 answers carry replayable Datalog proof trees,
 and we prove an ontology-preservation guarantee
@@ -2383,9 +2382,10 @@ forecloses genuinely recursive targets, which MetaQA's composed relation is not,
 so the option defaults to the published behaviour and must be enabled
 deliberately. That foreclosure is itself removable: a refined guard forbidding
 only the \emph{pure self-loop} body preserves the E16 behaviour exactly on the
-non-recursive grid and extends junk removal to genuinely recursive targets, by
-classification and generative replay of the real grid and on a synthetic
-transitive-closure grid (Appendix~\ref{sec:recursive-boundary}).
+non-recursive grid --- by classification and generative replay of the real
+grid --- and, on a synthetic transitive-closure grid with oracle teachers,
+extends coverage to genuinely recursive targets
+(Appendix~\ref{sec:recursive-boundary}).
 Within those limits the reading is clear: the low-$\gamma$ regime's
 gold dependency was an artifact of how candidates were enumerated, and the three
 label-free experiments above were searching for a way to recognise something that
