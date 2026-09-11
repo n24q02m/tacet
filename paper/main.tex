@@ -563,7 +563,7 @@ length-two scan over the allowed relations, scored on the complete heads.
   \State $F \gets \textsc{Triples}(G)\cup F_{\mathrm{teacher}}$;\quad
   index $I[r]\gets\{(x,y):(x,r,y)\in F\}$ for each relation $r$
   \State $T \gets I[q]$ \Comment{target pairs}
-  \If{$|T| < \sigma$} \Return $\varnothing$ \EndIf
+  \If{$|T| < \sigma_{\mathrm{min}}$} \Return $\varnothing$ \EndIf
   \State $\textsc{keep}(P)\gets\{(x,y)\in P : x\in H_q\}$
   \Comment{score only on complete heads}
   \State $\mathcal{S} \gets \mathrm{sort}(\,(B\cup\{q\})\cap \mathrm{dom}(I)\,)$;\quad
@@ -571,9 +571,9 @@ length-two scan over the allowed relations, scored on the complete heads.
   \For{$r_1\in\mathcal{S}$ with $r_1\neq q$, \textbf{each} $\mathit{inv}_1\in\{\bot,\top\}$}
     \Comment{length-1 body}
     \State $P \gets \textsc{keep}(\textsc{Dir}(I[r_1],\mathit{inv}_1))$
-    \If{$|P|\ge\sigma$}
+    \If{$|P|\ge\sigma_{\mathrm{min}}$}
       \State $s\gets|P\cap T|$;\quad $c\gets s/|P|$
-      \If{$c\ge\gamma$ \textbf{and} $s\ge\sigma$}
+      \If{$c\ge\gamma$ \textbf{and} $s\ge\sigma_{\mathrm{min}}$}
         $C\gets C\cup\{\langle r_1^{\mathit{inv}_1}\!\Rightarrow q,\,c,\,s\rangle\}$
       \EndIf
     \EndIf
@@ -583,9 +583,9 @@ length-two scan over the allowed relations, scored on the complete heads.
     \State $A_1\gets\textsc{Adj}(\textsc{Dir}(I[r_1],\mathit{inv}_1))$;\quad
     $A_2\gets\textsc{Adj}(\textsc{Dir}(I[r_2],\mathit{inv}_2))$
     \State $P \gets \textsc{keep}(\{(x,y): \exists z,\ z\in A_1[x],\ y\in A_2[z],\ x\neq y\})$
-    \If{$|P|\ge\sigma$}
+    \If{$|P|\ge\sigma_{\mathrm{min}}$}
       \State $s\gets|P\cap T|$;\quad $c\gets s/|P|$
-      \If{$c\ge\gamma$ \textbf{and} $s\ge\sigma$}
+      \If{$c\ge\gamma$ \textbf{and} $s\ge\sigma_{\mathrm{min}}$}
         $C\gets C\cup\{\langle (r_1^{\mathit{inv}_1}\!\circ r_2^{\mathit{inv}_2})\!\Rightarrow q,\,c,\,s\rangle\}$
       \EndIf
     \EndIf
@@ -622,7 +622,7 @@ It does \emph{not} claim a synthesised rule is correct about the world: a
 mining error or a wrong teacher answer can install a flawed rule. The
 confidence threshold $\gamma$, the support threshold $\sigma_{\mathrm{min}}$, the
 complete-head estimator, the inequality guard, and the ontology type check
-all reduce this risk; Section~\ref{sec:results} (E6) measures the residual
+all reduce this risk; Section~\ref{sec:audit} (E6) measures the residual
 effect of a noisy teacher empirically.
 
 \section{Experimental Setup}
@@ -676,7 +676,7 @@ interval. The default workload is 300 queries with a 30\% repeat rate;
 TACET consolidates every 100 queries. Tier costs are
 $c_1{=}10^{-4},c_2{=}10^{-3},c_3{=}5{\times}10^{-2}$ USD; the qualitative
 results depend only on $c_3\!\gg\!c_2\!>\!c_1$. ComplEx uses $64$
-dimensions; mining uses $\gamma{=}0.95,\sigma{=}3$ and triggers after $10$
+dimensions; mining uses $\gamma{=}0.95,\sigma_{\mathrm{min}}{=}3$ and triggers after $10$
 complete heads. Full hyper-parameters and the KGE link-prediction quality
 are in the appendix.
 
@@ -808,7 +808,7 @@ filter --- how many of the proposed candidates does it keep? And is the
 reliable proxy for being \emph{true in the world}? We answer both with three
 counts (\texttt{tacet.eval.rule\_precision}):
 \textbf{proposed}, the number of candidate bodies the miner forms before the
-cut; \textbf{installed}, the rules that pass $\gamma,\sigma$, dedup and the cap
+cut; \textbf{installed}, the rules that pass $\gamma,\sigma_{\mathrm{min}}$, dedup and the cap
 (what the cascade adds to Tier~1); and \textbf{world-correct}, the installed
 rules whose precision on the \emph{full} ground-truth graph is $\ge 0.9$. World
 precision of $b\Rightarrow q(x,y)$ is the fraction of $(x,y)$ pairs satisfying
@@ -1253,9 +1253,9 @@ A semantic cache is, precisely, the \emph{degenerate special case} of
 TACET with rule synthesis and Tier 2 disabled and only fact write-back
 retained. The closest ablation row (the \texttt{no\_rule\_synth}
 configuration of Table~\ref{tab:ablation}) disables synthesis but
-\emph{retains} Tier~2, so the gap it measures against full TACET bundles
-rule synthesis with Tier-2 structural prediction --- it upper-bounds the
-value beyond caching rather than isolating it. We concede the converse honestly: for the \textsc{Novel} class ---
+\emph{retains} Tier~2, so the gap it measures against full TACET isolates
+rule synthesis \emph{given} Tier~2 --- a \emph{lower} bound on the value
+beyond caching: the true degenerate cache also loses Tier~2. We concede the converse honestly: for the \textsc{Novel} class ---
 idiosyncratic facts with no structure --- TACET's write-back genuinely
 \emph{is} a cache and nothing more. The claim is not that TACET is never
 a cache; it is that TACET is a cache \emph{plus} a deductive reasoner
@@ -1683,7 +1683,7 @@ at \texttt{experiments/results/grok\_local\_200q.json}.
 
 \paragraph{MetaQA real-LLM evaluation (Grok 4.3, 100 queries).}
 A 100-query slice of the MetaQA-1hop dev set, with the matcher of
-Section~\ref{sec:tier_a} resolving 100\,\% of templates (158/158
+Section~\ref{sec:mvp} resolving 100\,\% of templates (158/158
 verified against the canonical dev set), was run with Grok 4.3 as
 the Tier-3 teacher.  At a \emph{cold-start} cascade (no synthesised
 rules yet, KGE confidence below threshold on the 43k movie
@@ -1905,7 +1905,7 @@ Section~\ref{sec:related}.
 free. While \emph{verdict} accuracy holds at the iso-accuracy control, the
 \emph{article-level} attribution micro-F1 of the full arm drops to
 \privArtFOneFullGemini--\privArtFOneFullGrok{} against
-${\sim}\privArtFOneLlmGemini{}$ for LLM-only: a synthesised pattern$\to$article
+${\sim}\privArtFOneLlmGrok/\privArtFOneLlmClaude{}$ for the LLM-only arms: a synthesised pattern$\to$article
 rule over-generalises, citing an article that the typed pattern usually but not
 always implies. This is a cost/attribution trade-off, not a verdict-accuracy
 regression, and it is the same over-generalisation failure mode the synthetic
