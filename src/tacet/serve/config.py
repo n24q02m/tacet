@@ -35,6 +35,10 @@ class CascadeConfig:
     # write-back edges. True is the published behaviour; False keeps the miner
     # to base relations only, which is what warmup() already says it intends.
     allow_target_in_body: bool = True
+    # E18 refined guard: ban only the pure all-target length-2 body while keeping
+    # mixed target-by-base legs; see tacet.distill.distill.mine_rules. Default
+    # False = the published behaviour.
+    forbid_target_self_loop: bool = False
     kge: KGEConfig = field(default_factory=KGEConfig)
     tier_cost: dict[int, float] = field(default_factory=lambda: dict(TIER_COST))
     tier_latency_ms: dict[int, float] = field(default_factory=lambda: dict(TIER_LATENCY_MS))

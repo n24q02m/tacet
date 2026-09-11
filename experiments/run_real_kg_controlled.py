@@ -965,6 +965,7 @@ def run_controlled(
     oracle_error_rate: float = 0.0,
     gamma: float = 0.95,
     allow_target_in_body: bool = True,
+    forbid_target_self_loop: bool = False,
     answers_path: str | None = None,
     recorded_at: str | None = None,
     max_items: int | None = None,
@@ -1340,6 +1341,7 @@ def run_controlled(
             l2_threshold=TIER2_OFF,
             min_confidence=gamma,
             allow_target_in_body=allow_target_in_body,
+            forbid_target_self_loop=forbid_target_self_loop,
         )
         r_c = _replay_cascade(
             "full_distillation", stream, bench, ontology, shared, cfg_full, gt_graph=gt_graph
@@ -1434,6 +1436,7 @@ def run_controlled(
         "oracle_error_rate": oracle_error_rate if oracle_mode else None,
         "gamma": gamma,
         "allow_target_in_body": allow_target_in_body,
+        "forbid_target_self_loop": forbid_target_self_loop,
         "noise_mode": "per_key" if oracle_mode else None,
         "teacher_model_called": called_model,
         "priced_as_model": model,
@@ -1499,6 +1502,14 @@ def main() -> None:
         help=(
             "keep the mining target out of its own length-2 body, so the miner "
             "composes base relations only (default: the published behaviour)"
+        ),
+    )
+    ap.add_argument(
+        "--forbid-target-self-loop",
+        action="store_true",
+        help=(
+            "ban only the pure all-target length-2 body while keeping mixed "
+            "target-by-base legs (E18 refined guard; default: the published behaviour)"
         ),
     )
     ap.add_argument("--composition", default=None, choices=sorted(COMPOSITIONS))
@@ -1571,6 +1582,7 @@ def main() -> None:
         oracle_error_rate=oracle_error_rate,
         gamma=args.gamma,
         allow_target_in_body=not args.forbid_target_in_body,
+        forbid_target_self_loop=args.forbid_target_self_loop,
         answers_path=args.answers_path,
         recorded_at=recorded_at,
         max_items=args.max_items,

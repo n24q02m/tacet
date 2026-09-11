@@ -82,6 +82,7 @@ class TACET:
         # synthesis only composes original relations (not synthesised ones).
         self.distiller.base_relations = set(self.graph.relations())
         self.distiller.allow_target_in_body = self.config.allow_target_in_body
+        self.distiller.forbid_target_self_loop = self.config.forbid_target_self_loop
         self.engine.materialise(self.graph)
         self.kge = ComplEx(self.config.kge).fit(self.graph.triples())
         if calibration:

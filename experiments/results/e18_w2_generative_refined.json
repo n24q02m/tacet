@@ -1,0 +1,698 @@
+{
+  "schema": "tacet.e18.w2generative/v1",
+  "experiment": "E18-W2 half (ii): generative re-mining of the 22 recorded E16 MetaQA cells under the refined pure-self-loop guard",
+  "pre_registration": "tacet-research-ledger.md E18-W2 PRE-REGISTRATION (ii) (locked 2026-09-11, ledger branch codex/tacet-e18-ledger-20260911 @ c0f6493286d636825fdf7ef7faf36e6ac1a214f3)",
+  "recording_source": "n24q02m/.private commit 794af569 (rescue of the paid E11 ladder); recordings extracted UNTRACKED to the worktree e11-data/, never committed publicly",
+  "cost_usd_provider": 0.0,
+  "cost_note": "replay mode: zero provider calls; recorded per-pair costs are bookkeeping reproductions only",
+  "control_arm": "published per-cell control blocks of e16_forbid_target_hop2.json (SHA 4b52d91d...) cross-checked against the recovered gamma-0.50 replay rows",
+  "refined_arm": "fresh local runs of run_real_kg_controlled.py --gamma 0.50 --forbid-target-self-loop from the recordings",
+  "totals": {
+    "control": {
+      "pure_self_loop": 14,
+      "mixed_recursive": 0,
+      "base_only": 10
+    },
+    "refined": {
+      "pure_self_loop": 0,
+      "mixed_recursive": 0,
+      "base_only": 10
+    },
+    "junk_cells": {
+      "control": 7,
+      "refined": 0
+    },
+    "true_installs": {
+      "control": 10,
+      "refined": 10,
+      "published_control": 10
+    }
+  },
+  "problems": [],
+  "invalid_cells": [],
+  "accuracy_loss_cells": [],
+  "decision": "GENERATIVE-SUBSUMES",
+  "decision_why": "refined arm: 0 pure_self_loop, 0 mixed_recursive across 22 cells; true installs 10/10 kept; no cell with full<cache; control reproduces published shape (14 junk rules / 7 cells / true 10).",
+  "cells": [
+    {
+      "slug": "anthropic/claude-sonnet-5",
+      "seed": 0,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": 0.0208,
+        "cache_accuracy": 0.5233,
+        "full_accuracy": 0.5233
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.5233,
+        "full_accuracy": 0.5233,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "anthropic/claude-sonnet-5",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.11,
+        "full_accuracy": 0.95
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.11,
+        "full_accuracy": 0.95,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "deepseek/deepseek-v4-pro",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.7067,
+        "full_accuracy": 0.98
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.7067,
+        "full_accuracy": 0.98,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "google/gemini-3.5-flash",
+      "seed": 0,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": 0.0294,
+        "cache_accuracy": 0.5167,
+        "full_accuracy": 0.5167
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.5167,
+        "full_accuracy": 0.5167,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "google/gemini-3.5-flash",
+      "seed": 1,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 1.72,
+        "rule_world_precision": 0.3472,
+        "cache_accuracy": 0.53,
+        "full_accuracy": 0.53
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.53,
+        "full_accuracy": 0.53,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "google/gemini-3.5-flash",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.17,
+        "full_accuracy": 0.95
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.17,
+        "full_accuracy": 0.95,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "minimax/minimax-m3",
+      "seed": 0,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.5,
+        "full_accuracy": 0.5
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.5,
+        "full_accuracy": 0.5,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "minimax/minimax-m3",
+      "seed": 1,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.08,
+        "full_accuracy": 0.08
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.08,
+        "full_accuracy": 0.08,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "minimax/minimax-m3",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.0867,
+        "full_accuracy": 0.95
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.0867,
+        "full_accuracy": 0.95,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "moonshotai/kimi-k2.6",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.61,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.18,
+        "full_accuracy": 0.95
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.61,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.18,
+        "full_accuracy": 0.95,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "openai/gpt-5.6-luna",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.1633,
+        "full_accuracy": 0.9467
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.1633,
+        "full_accuracy": 0.9467,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "qwen/qwen3.7-max",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.61,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.15,
+        "full_accuracy": 0.95
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.61,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.15,
+        "full_accuracy": 0.95,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "x-ai/grok-4.3",
+      "seed": 0,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 81.13,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.6533,
+        "full_accuracy": 0.9667
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 81.13,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.6533,
+        "full_accuracy": 0.9667,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "x-ai/grok-4.3",
+      "seed": 1,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.2367,
+        "full_accuracy": 0.2367
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.2367,
+        "full_accuracy": 0.2367,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "x-ai/grok-4.3",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.1533,
+        "full_accuracy": 0.1533
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.1533,
+        "full_accuracy": 0.1533,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "x-ai/grok-4.5",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.27,
+        "full_accuracy": 0.95
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 83.33,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.27,
+        "full_accuracy": 0.95,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "xiaomi/mimo-v2.5-pro",
+      "seed": 0,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": 0.0208,
+        "cache_accuracy": 0.6033,
+        "full_accuracy": 0.6033
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.6033,
+        "full_accuracy": 0.6033,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "xiaomi/mimo-v2.5-pro",
+      "seed": 1,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": 0.0208,
+        "cache_accuracy": 0.2367,
+        "full_accuracy": 0.2367
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.2367,
+        "full_accuracy": 0.2367,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "xiaomi/mimo-v2.5-pro",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.1,
+        "full_accuracy": 0.1
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.1,
+        "full_accuracy": 0.1,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "z-ai/glm-5.2",
+      "seed": 0,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 1.64,
+        "rule_world_precision": 0.0208,
+        "cache_accuracy": 0.0867,
+        "full_accuracy": 0.0867
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.0867,
+        "full_accuracy": 0.0867,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "z-ai/glm-5.2",
+      "seed": 1,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 2,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "true_rule_installed": false,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": 0.2721,
+        "cache_accuracy": 0.2,
+        "full_accuracy": 0.2
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 0
+        },
+        "rule_installed": false,
+        "cell_valid": true,
+        "calls_saved_pct": 0.0,
+        "rule_world_precision": null,
+        "cache_accuracy": 0.2,
+        "full_accuracy": 0.2,
+        "true_composition_kept": true
+      }
+    },
+    {
+      "slug": "z-ai/glm-5.2",
+      "seed": 2,
+      "control": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "true_rule_installed": true,
+        "calls_saved_pct": 86.11,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.5233,
+        "full_accuracy": 0.9733
+      },
+      "refined": {
+        "shapes": {
+          "pure_self_loop": 0,
+          "mixed_recursive": 0,
+          "base_only": 1
+        },
+        "rule_installed": true,
+        "cell_valid": true,
+        "calls_saved_pct": 86.11,
+        "rule_world_precision": 1.0,
+        "cache_accuracy": 0.5233,
+        "full_accuracy": 0.9733,
+        "true_composition_kept": true
+      }
+    }
+  ]
+}
