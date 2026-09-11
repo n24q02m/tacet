@@ -74,8 +74,9 @@ mechanism is an \emph{online distillation} loop. Whenever the teacher
 answers, TACET mines the answer into Datalog-checkable Horn rules and
 writes the facts back, so routing drifts toward the cheap tiers as the
 workload streams. A synthesised rule generalises to entities the teacher
-never saw; an answer cache cannot do that. On a controlled KGQA benchmark
-(\seeds{} seeds), the cascade answers at \akAcc{} accuracy while reducing
+never saw; an answer cache cannot do that.
+
+On a controlled KGQA benchmark (\seeds{} seeds), the cascade answers at \akAcc{} accuracy while reducing
 blended cost by ${\sim}\costFactor\times$ relative to an LLM-only system
 under a \emph{simulated per-tier cost model}. We then confirm this on real
 data with a real teacher. Streaming MetaQA (a $43$k-entity movie KG)
@@ -104,7 +105,16 @@ of candidate enumeration: excluding the mining target from its own rule body
 removes every junk rule while leaving the true rule and its savings untouched,
 so what still limits the regime is seed-dependence and the near-functional
 leakage of Section~\ref{sec:rule_precision}, not a need for gold
-(Section~\ref{sec:threshold-gate}). Tier-1 answers carry replayable Datalog proof trees,
+(Section~\ref{sec:threshold-gate}). The one remaining structural foreclosure
+of that regime --- genuinely recursive targets, excluded by the same blunt
+enumeration rule --- is itself removable: a refined guard that bans only the
+pure self-loop body removes every self-referential install while preserving
+the true rule and its savings exactly, on a synthetic transitive-closure grid
+and by classification and generative replay of the real MetaQA grid, so the
+low-threshold regime extends to genuinely recursive targets
+(Appendix~\ref{sec:recursive-boundary}).
+
+Tier-1 answers carry replayable Datalog proof trees,
 and we prove an ontology-preservation guarantee
 (Theorem~\ref{thm:soundness}) for the synthesised rules. The
 distillation-over-caching effect that is neutral under the noisy KGQA
@@ -2371,7 +2381,12 @@ legitimate base relations still carries a $\sim\!20$-point confidence/world-prec
 gap; that case still wants the held-out admission test proposed there. It also
 forecloses genuinely recursive targets, which MetaQA's composed relation is not,
 so the option defaults to the published behaviour and must be enabled
-deliberately. Within those limits the reading is clear: the low-$\gamma$ regime's
+deliberately. That foreclosure is itself removable: a refined guard forbidding
+only the \emph{pure self-loop} body preserves the E16 behaviour exactly on the
+non-recursive grid and extends junk removal to genuinely recursive targets, by
+classification and generative replay of the real grid and on a synthetic
+transitive-closure grid (Appendix~\ref{sec:recursive-boundary}).
+Within those limits the reading is clear: the low-$\gamma$ regime's
 gold dependency was an artifact of how candidates were enumerated, and the three
 label-free experiments above were searching for a way to recognise something that
 did not have to be produced.
@@ -2433,4 +2448,5 @@ correctness. This is less a defect of the cascade than its operating
 envelope: the results of this paper sit inside it, and this appendix marks
 its edge.
 
+\input{appendix_recursive_boundary}
 \end{document}

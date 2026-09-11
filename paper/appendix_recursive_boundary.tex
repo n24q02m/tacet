@@ -1,0 +1,77 @@
+\section{Recursive Targets and the Pure-Self-Loop Guard}
+\label{sec:recursive-boundary}
+
+This appendix resolves the registered scope limitation of the structural
+junk rejection (Section~\ref{sec:threshold-gate}): forbidding the mining
+target from length-2 rule bodies removes the self-referential junk rule
+without gold labels, but forecloses genuinely recursive targets
+(\emph{ancestor}~$\leftarrow$~\emph{ancestor.parent}), so the flag stays
+opt-in and licenses ``safe on non-recursive targets'' only. Three locked,
+deterministic, fully replayable results at zero provider cost replace that
+limitation with a strictly better mechanism: a guard that bans \emph{only}
+the pure all-target body (both inversions of
+\emph{target}~$\times$~\emph{target}) while keeping mixed
+\emph{target}~$\times$~\emph{base} legs.
+
+\paragraph{Result 1: the blunt ban measurably forecloses recursion (synthetic).}
+On a seeded random DAG ($n{=}150$, edge probability $0.03$) whose target is
+the genuine transitive closure over a base relation, with oracle teachers
+and a $3$-seed $\times$ $3$-threshold ($\gamma \in \{0.50, 0.70, 0.90\}$)
+$\times$ $3$-arm grid (published / blunt ban / refined guard), the blunt
+arm loses forward-chaining coverage of the full closure on \textbf{9/9
+recursive cells} (e.g.\ $0.7065 \rightarrow 0.5038$), while the refined arm
+preserves published-arm coverage on \textbf{9/9} cells and drops exactly
+the pure self-loop installs, nothing else. Unsound derivations are $0$ in
+every cell: on a genuinely transitive target even the pure self-loop is
+sound --- a subset of the closure --- hence redundant rather than harmful,
+which is why coverage preservation and junk removal can coexist. Artifact:
+\texttt{experiments/results/e18\_recursive\_target\_synthetic.json}.
+
+\paragraph{Result 2: the refined guard subsumes E16 on the real grid (classification).}
+Re-classifying every \texttt{synthesised\_rules} entry of the committed
+MetaQA 2-hop artifact ($22$ cells, both arms), the control arm's
+target-containing rules classify \textbf{14/14} as pure self-loops, spread
+over exactly the $7$ published junk cells; the true compositions are kept
+in \textbf{10/10} cells, every composition rule base-only; and the totals
+reconcile with the published aggregates exactly, per cell as well as in
+aggregate. Locked decision: \textbf{REFINED-GUARD-SUBSUMES} --- the
+refined guard keeps E16's benefit on the non-recursive grid exactly and is
+coverage-preserving on genuinely recursive targets; the blunt
+\texttt{--forbid-target-in-body} flag stays opt-in and non-recursive-only.
+Artifact: \texttt{experiments/results/e16\_metaqa\_reread\_refined\_guard.json},
+contract-tested in \texttt{tests/test\_e16\_replay\_refined.py}.
+
+\paragraph{Result 3: generative re-mining on the real grid.}
+Re-mining all $22$ recorded cells at $\gamma{=}0.50$ under the refined
+guard --- teacher answers replayed from the archived recordings, zero
+provider calls --- the control arm reproduces the published shape exactly
+under the refined taxonomy ($14$ pure-self-loop rules over exactly the $7$
+published junk cells; true installs $10/10$), and the refined arm shows
+\textbf{zero} pure self-loop and \textbf{zero} mixed-recursive rules across
+all $22$ cells, with true compositions kept in \textbf{10/10} at identical
+per-rule world precision, no valid cell losing accuracy, and $0$ invalid
+cells. Locked decision: \textbf{GENERATIVE-SUBSUMES} --- the junk removal
+is not a classification artifact of committed rule lists; it holds when
+the miner runs fresh under the guard. Artifact:
+\texttt{experiments/results/e18\_w2\_generative\_refined.json}; runner
+plumbing and contract test shipped in the same commit.
+
+\paragraph{Explicit non-claims.}
+(1) Near-functional leakage (Section~\ref{sec:rule_precision}) is
+untouched; the admission-mechanism question remains closed-inconclusive
+and is not cited as support. (2) Scope is miner-level: a synthetic
+transitive-closure grid with oracle teachers, a classification replay, and
+a generative replay of the MetaQA 2-hop grid --- no deployment, no
+product, no benchmark beyond MetaQA 2-hop. (3) The archived teacher
+recordings stay in the authoring archive; the public artifacts carry
+per-cell outcomes only, never raw paid answers.
+
+\paragraph{Reproducibility.}
+All three results are deterministic and replayable at zero provider cost
+from the seeds and the committed artifacts:
+\texttt{experiments/run\_e18\_recursive.py},
+\texttt{experiments/replay\_e16\_refined.py}, and
+\texttt{experiments/run\_real\_kg\_controlled.py} (replay mode), with
+contract tests \texttt{tests/test\_e18\_recursive.py},
+\texttt{tests/test\_e16\_replay\_refined.py}, and
+\texttt{tests/test\_controlled\_selfloop\_plumbing.py}.

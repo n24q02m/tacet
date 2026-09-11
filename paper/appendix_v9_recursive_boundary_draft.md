@@ -1,9 +1,10 @@
 # Appendix note — DRAFT for v9: Recursive targets and the pure-self-loop guard
 
-> **Status:** `DRAFT — NOT PUBLISHED`. Cutting a Zenodo v9 with this note is a separate
-> publication decision. Nothing in this file is a claim until that gate opens.
-> Prepared from committed, replayable `$0` artifacts only (E18 synthetic grid + E18-W2
-> classification replay + E18-W2 generative replay). No provider was contacted at any point.
+> **Status:** main-text deltas APPLIED on branch `codex/e18-recursive-boundary-20260911`
+> (abstract 3-paragraph split + v9 sentence, limitation pointer, LaTeX appendix
+> `appendix_recursive_boundary.tex` via `\input`, tectonic build verified). Remaining
+> cut-time steps: `CITATION.cff` v8->v9 + version DOI after Zenodo mints it, then the
+> `zenodo.yml` workflow_dispatch (draft first, publish = irreversible user gate).
 
 ## 1. What the published record says today
 
