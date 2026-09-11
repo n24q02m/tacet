@@ -123,7 +123,7 @@ frontier teachers (gemini-3.5-flash, claude-sonnet-4.6, grok-4.3) over $3$
 seeds at matched verdict accuracy, online rule distillation amortises measured
 teacher cost by $1.5$--$2.1\times$ versus an LLM-only system --- against
 ${\sim}1.1\times$ for an exact-match cache and ${<}1\times$ for a faithful
-in-context-strategy baseline --- with only a ${\sim}9\%$ repeat ceiling, so the
+in-context-strategy baseline --- with only a ${\sim}10\%$ repeat ceiling, so the
 saving is rule \emph{generalisation}, not memoisation. We release the
 implementation, the benchmark generator, and the full experiment grid.
 \end{abstract}
@@ -257,7 +257,7 @@ downward and the blended cost decays toward the symbolic floor.
   amortises measured teacher cost by $1.5$--$2.1\times$ across three frontier
   teachers, against ${\sim}1.1\times$ for an exact-match cache and ${<}1\times$
   for a faithful in-context-strategy baseline (an Inter-Cascade~\citep{intercascade2025}
-  port at the same model); with a ${\sim}9\%$ repeat ceiling the gain is rule
+  port at the same model); with a ${\sim}10\%$ repeat ceiling the gain is rule
   generalisation, not memoisation (Section~\ref{sec:compliance}). This is the
   positive real-(non-oracle)-teacher answer to the question (ii) of
   Section~\ref{sec:realcost} that the KGQA workload leaves neutral.
@@ -540,7 +540,7 @@ one or two over the base relations (and $q$ itself, enabling recursion). A
 candidate's confidence is the fraction of body groundings $(x,y)$ with
 $x\in H_q$ that also satisfy the head; estimating confidence only over
 complete heads avoids penalising a correct rule for as-yet-unobserved heads.
-Rules with confidence $\ge\gamma$ and support $\ge\sigma$ are installed in
+Rules with confidence $\ge\gamma$ and support $\ge\sigma_{\mathrm{min}}$ are installed in
 Tier~1. Each mined rule carries an \emph{inequality guard} $x\neq y$:
 because confidence was measured on non-reflexive pairs, the guard forbids
 the rule from deriving reflexive triples (e.g.\ $\mathit{ancestor}(x,x)$)
@@ -556,10 +556,10 @@ length-two scan over the allowed relations, scored on the complete heads.
 \caption{AMIE-style rule miner (\texttt{tacet.distill.mine\_rules})}
 \label{alg:mine}
 \begin{algorithmic}[1]
-\Function{MineRules}{$G,\,F_{\mathrm{teacher}},\,q,\,H_q,\,B,\,\gamma,\,\sigma,\,m$}
+\Function{MineRules}{$G,\,F_{\mathrm{teacher}},\,q,\,H_q,\,B,\,\gamma,\,\sigma_{\mathrm{min}},\,m$}
   \State \textbf{Input:} graph $G$; teacher facts $F_{\mathrm{teacher}}$; target
   relation $q$; complete heads $H_q$; allowed body relations $B$; confidence
-  $\gamma$, support $\sigma$, cap $m$
+  $\gamma$, support $\sigma_{\mathrm{min}}$, cap $m$
   \State $F \gets \textsc{Triples}(G)\cup F_{\mathrm{teacher}}$;\quad
   index $I[r]\gets\{(x,y):(x,r,y)\in F\}$ for each relation $r$
   \State $T \gets I[q]$ \Comment{target pairs}
@@ -620,7 +620,7 @@ returns an unentailed triple, and abstains otherwise.
 Proposition~\ref{prop:sound} is soundness \emph{relative to the rule set}.
 It does \emph{not} claim a synthesised rule is correct about the world: a
 mining error or a wrong teacher answer can install a flawed rule. The
-confidence threshold $\gamma$, the support threshold $\sigma$, the
+confidence threshold $\gamma$, the support threshold $\sigma_{\mathrm{min}}$, the
 complete-head estimator, the inequality guard, and the ontology type check
 all reduce this risk; Section~\ref{sec:results} (E6) measures the residual
 effect of a noisy teacher empirically.
@@ -716,7 +716,8 @@ theories per depth.
 \centering
 \caption{Deductive reasoning with checkable proofs on ProofWriter (CWA), per
 reasoning depth ($n$ = evaluated questions; Excl.\ = theories excluded for
-rule-body negation).}
+rule-body negation). Depth $4$ is omitted: its per-depth raw counts were not
+retained in the released run artifacts.}
 \label{tab:proofwriter}
 \input{results/tab_proofwriter.tex}
 \end{table}
@@ -801,7 +802,7 @@ Proof validity audits provenance, not world-correctness: a soundly-applied but
 AMIE-style miner \emph{over-produces}: it forms a candidate body for every
 length-one and length-two relation path, scores each on the teacher-answered
 (``complete'') heads, and installs those clearing the confidence threshold
-$\gamma$ and support $\sigma$. Two questions follow. How aggressive is the
+$\gamma$ and support $\sigma_{\mathrm{min}}$. Two questions follow. How aggressive is the
 filter --- how many of the proposed candidates does it keep? And is the
 \emph{confidence} estimate (a partial-data statistic over the answered heads) a
 reliable proxy for being \emph{true in the world}? We answer both with three
@@ -1054,6 +1055,10 @@ voting/agreement check is the natural mitigation.
 
 \section{Discussion and Limitations}
 \label{sec:limitations}
+\noindent\emph{Reading guide:} the failure-mode inventory
+(Appendix~\ref{sec:failure_modes}) and the extension-boundary appendix
+(\ref{sec:boundary}) complement this discussion; together the three sections
+delimit when the cascade does and does not pay off.
 
 \paragraph{External validity.} The main grid is synthetic with an oracle
 teacher --- a deliberate choice that buys exact ground truth and control over
@@ -1216,8 +1221,8 @@ ${\sim}2.5\times$ across the sweep) because an exact-match cache can only
 return an answer it has \emph{literally seen}. A semantic cache would blunt
 this curve only insofar as the distinct queries are near-duplicates of
 prior ones; against \emph{structurally novel} heads (the regime E5 sweeps
-toward) it degrades just as the exact-match cache does. TACET's cost is
-roughly half the cache's at zero repetition. A cache's value is
+toward) it degrades just as the exact-match cache does. TACET's cost at
+zero repetition is $58\%$ of the cache's ($1.7\times$ lower). A cache's value is
 repetition; TACET's value survives its absence.
 
 The gap is produced by what a cache structurally cannot do:
@@ -1246,10 +1251,11 @@ value.
 
 A semantic cache is, precisely, the \emph{degenerate special case} of
 TACET with rule synthesis and Tier 2 disabled and only fact write-back
-retained --- the \texttt{no\_rule\_synth} configuration of
-Table~\ref{tab:ablation}. The measured gap between that row and full
-TACET \emph{is} the value beyond caching; the ablation exists to quantify
-it. We concede the converse honestly: for the \textsc{Novel} class ---
+retained. The closest ablation row (the \texttt{no\_rule\_synth}
+configuration of Table~\ref{tab:ablation}) disables synthesis but
+\emph{retains} Tier~2, so the gap it measures against full TACET bundles
+rule synthesis with Tier-2 structural prediction --- it upper-bounds the
+value beyond caching rather than isolating it. We concede the converse honestly: for the \textsc{Novel} class ---
 idiosyncratic facts with no structure --- TACET's write-back genuinely
 \emph{is} a cache and nothing more. The claim is not that TACET is never
 a cache; it is that TACET is a cache \emph{plus} a deductive reasoner
@@ -1334,13 +1340,15 @@ the standard open-world link-prediction protocol), $L_2$ regularisation
 $10^{-6}$. Confidence temperature fitted on a held-out language split.
 
 \paragraph{Mining.} body length $\le 2$ over base relations; confidence
-threshold $\gamma=0.95$; support threshold $\sigma=3$; synthesis triggers
+threshold $\gamma=0.95$; support threshold $\sigma_{\mathrm{min}}=3$; synthesis triggers
 after 10 complete heads per relation; every mined rule carries the
 $x\neq y$ guard.
 
 \paragraph{Tier-2 link-prediction quality.} The standard filtered KGC
 protocol on the synthetic benchmark (80/10/10 random split, 1{,}162 train /
-145 valid / 146 test triples) at the hyper-parameters above attains
+145 valid / 146 test triples) at the hyper-parameters above, with the
+standalone script's default of $8$ relation-pool negatives per positive as
+recorded in the run config, attains
 \textbf{MRR\,$\approx 0.34$, Hits@1\,$\approx 0.23$, Hits@3\,$\approx 0.38$,
 Hits@10\,$\approx 0.60$} with the NumPy backend
 (\texttt{results/kge\_synthetic\_numpy.json}, regenerated by
@@ -1608,7 +1616,8 @@ this section shows only that the adapters work end-to-end.
 
 We re-ran a slice of the synthetic workload with \textbf{Gemini~2.5~Flash} as
 the Tier-3 teacher (\texttt{experiments/run\_gemini\_smoke.py}); all other
-components (graph, ontology, rules, KGE) are as in the headline grid.
+components (graph, ontology, rules, KGE) are as in the headline grid
+(Table~\ref{tab:gemini}).
 
 \IfFileExists{results/tab_gemini.tex}{\input{results/tab_gemini.tex}}{}
 
@@ -1692,8 +1701,8 @@ slice ships here as the baseline.  Raw report at
 \subsection{Real-LLM Cost Amortisation on a Real-Entity KG}
 \label{sec:realcost}
 The main grid (Section~\ref{sec:results}) reports a $\sim$\costFactor$\times$
-cost reduction under a \emph{simulated} per-tier cost model. The de-scoped
-thesis of this paper is that two claims must be settled on real data with a
+cost reduction under a \emph{simulated} per-tier cost model. The part of the
+thesis this paper de-scopes is that two claims must be settled on real data with a
 real teacher: (i) does the cascade actually amortise \emph{measured dollars}
 the way the cost model predicts, and (ii) does distillation genuinely exceed a
 cache? (We answer (i) affirmatively below; (ii) is neutral on this noisy KGQA teacher,
@@ -1758,9 +1767,11 @@ threshold sweep and shows the operative variable is the installation threshold,
 not teacher quality.
 
 \paragraph{Isolating the mechanism with an oracle teacher.} To show that the
-ceiling here is teacher quality and not the architecture, we re-run the same
-$300$-query 2-hop stream ($78$ distinct heads) with an \emph{oracle} Tier-3
-teacher (gold answers). Now the miner recovers the genuine composition rule
+ceiling here is teacher quality and not the architecture, we re-run the
+$300$-query 2-hop Zipfian workload with an \emph{oracle} Tier-3 teacher
+(gold answers) under the amortisation runner --- a different sampler from
+the controlled streams above ($78$ distinct heads here vs.\
+$53$/$58$/$60$ there). Now the miner recovers the genuine composition rule
 $q2(x,y)\!\leftarrow\!\mathit{starred\_actors}^{-1}(x,z)\wedge\mathit{directed\_by}(z,y)$,
 and Tier~1 answers 2-hop questions for \emph{unseen} heads it has never been
 taught. Distillation then makes only \textbf{10} teacher calls against the
@@ -1849,8 +1860,8 @@ measured teacher cost by \privFullGemini$\times$ (gemini-3.5-flash),
 \privFullClaude$\times$ (claude-sonnet-4.6) and \privFullGrok$\times$
 (grok-4.3) --- positive on all three frontier teachers --- against
 ${\sim}\privCacheGemini\times$ for the exact-match cache. Crucially, of the
-$300$ cases per stream \privDistinct{} are \emph{distinct} (only a
-${\sim}9\%$ repeat ceiling), so the cache is near-useless and the full arm's
+$300$ cases per stream \privDistinct{} are \emph{distinct} on average across
+seeds (only a ${\sim}10\%$ repeat ceiling), so the cache is near-useless and the full arm's
 lead comes from rules that generalise to \emph{unseen} cases --- the
 distillation-beyond-caching effect the KGQA workload could not exhibit under
 a noisy teacher. This is the positive, real-(non-oracle)-teacher answer to
@@ -2036,7 +2047,7 @@ range-restricted rule.  This behaviour is pinned by the regression tests
 synthesised over base relations whose types are pinned by $\pi$, and the
 subset check of~(1) admits such a rule only when its body-induced head
 types fall within the head relation's declared domain and range.  The
-confidence threshold $\gamma$ and support threshold $\sigma$ additionally
+confidence threshold $\gamma$ and support threshold $\sigma_{\mathrm{min}}$ additionally
 filter out coincidental rules that would generate spurious head facts.
 The N3-regulariser baseline of Tier~2 (Lacroix et al.\
 \cite{lacroix2018complex_n3}) plays no role here --- Tier~1 soundness
@@ -2114,6 +2125,10 @@ routed to Tiers~2 and 3.
 
 \section{Failure modes}
 \label{sec:failure_modes}
+\noindent\emph{Reading guide:} this inventory pairs with the limitations of
+Section~\ref{sec:limitations} (measurement-scope caveats) and the
+extension-boundary appendix (\ref{sec:boundary}); the three sections jointly
+delimit the cascade's operating envelope.
 
 The cost story in Section~\ref{sec:results} reports cascade-wins on
 average; this appendix collects the cases where TACET is the wrong
@@ -2142,10 +2157,11 @@ Tier 2 (ComplEx-N3 / RotatE) only ever scores entities in the
 training vocabulary.  A query about an unseen mention --- a person
 whose name appears in the question but never as a node in the KG ---
 will route to Tier 3 regardless of how structurally similar the
-entity is to a known one.  Mitigation: the text-attributed initialisation
-of Section~\ref{sec:tier_a} closes part of the gap for entities that
-carry textual descriptions, since the text encoder generalises across
-surface forms; but the structural embedding still requires the entity
+entity is to a known one.  Mitigation: a text-attributed initialisation
+(shipped as \texttt{tacet.kge.kge\_textual}, not evaluated in the grid)
+closes part of the gap for entities that carry textual descriptions, since
+the text encoder generalises across surface forms; but the structural
+embedding still requires the entity
 to exist in the graph.  Residual loss: per-query latency on
 genuinely novel entities matches the LLM-only baseline.
 
@@ -2185,13 +2201,14 @@ loss: the wrong answer is served for the first $k$ uncorrected
 repeats.
 
 \paragraph{Causal queries under unobserved confounding.}
-The Tier-B causal layer only identifies treatment effects whose graph
-admits a back-door, front-door, or instrumental-variable
-identification (Section~\ref{sec:soundness}).  Models with
+The causal utility module (\texttt{tacet.core.causal},
+Appendix~\ref{sec:extmodules}) only identifies treatment effects whose
+graph admits a back-door, front-door, or instrumental-variable
+adjustment.  Models with
 unobserved confounders that violate all three conditions return
 ``no adjustment set'' from the \texttt{backdoor\_set} /
 \texttt{front\_door\_set} / \texttt{instrumental\_variables} helpers (there is
-no \texttt{identify()} entry point; see Appendix~\ref{sec:extmodules}); the
+no \texttt{identify()} entry point); the
 standard Tian-Pearl ID algorithm for the general semi-Markovian case is
 documented as future work.  Mitigation: the helper returns a
 diagnostic explanation so the caller knows which condition failed.
@@ -2209,6 +2226,11 @@ LLM-only on any workload, but it cannot do worse either.
 
 \section{Beyond Cost-Amortisation: Attempted Extensions and Their Boundary}
 \label{sec:boundary}
+\noindent\emph{Reading guide:} the Discussion's limitations
+(Section~\ref{sec:limitations}) and the failure-mode inventory
+(Appendix~\ref{sec:failure_modes}) state the cost and routing caveats; this
+appendix adds the capability boundary --- when no executable specification
+exists, distillation cannot exceed the teacher.
 
 This appendix delimits the operating envelope of the cascade. The same
 recipe --- distil verified teacher outputs into cheap checkable tiers ---
@@ -2226,9 +2248,12 @@ match it at lower cost: sample $N$ candidates from the frontier teacher,
 keep only those a sound checker accepts, and distil the verified-correct
 outputs. Where an executable checker exists this works. On hard
 competitive-code problems (TACO, checked by input/output tests, a
-grok-4.3 teacher), best-of-$5$ under the sound filter raises accuracy from
+grok-4.3 teacher), best-of-$5$\footnote{Provenance note: these capability
+probes (TACO, MATH-500, text-to-SQL, logic-grid, GDPR-verifier) predate the
+release's artifact-retention standard; their raw per-run records are not in
+\texttt{experiments/results}, and we report them as logged summary numbers.} under the sound filter raises accuracy from
 $0.70$ to $0.90$ ($n{=}20$) and from $0.65$ to $0.88$ ($n{=}60$) --- an
-exceed margin of $+20.0$ and $+23.3$ points. The margin is, however,
+exceed margin of $+20.0$ and $+23.0$ points. The margin is, however,
 exactly the teacher's rate of \emph{recoverable} error, and it vanishes
 when either condition fails. With a weaker teacher there is nothing to
 recover (deepseek and minimax each solve $0/8$ of the same hard set);

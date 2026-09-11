@@ -45,7 +45,8 @@ def load_matrices(results_dir):
 def build_macros(matrices):
     """Return the macros_privaci.tex body as a string."""
     lines = []
-    distinct_max = 0
+    distinct_sum = 0
+    distinct_n = 0
     spend_total = 0.0
     for teacher, (token, _model) in TEACHERS.items():
         data = matrices[teacher]
@@ -61,9 +62,10 @@ def build_macros(matrices):
             f"\\newcommand{{\\privArtFOneFull{token}}}{{{full['article_f1_mean']:.2f}}}",
             f"\\newcommand{{\\privArtFOneLlm{token}}}{{{llm_only_article_f1_mean(runs):.2f}}}",
         ]
-        distinct_max = max(distinct_max, max(r["distinct_patterns"] for r in runs))
+        distinct_sum += sum(r["distinct_patterns"] for r in runs)
+        distinct_n += len(runs)
         spend_total += sum(r["total_measured_spend_usd"] for r in runs)
-    lines.append(f"\\newcommand{{\\privDistinct}}{{{distinct_max}}}")
+    lines.append(f"\\newcommand{{\\privDistinct}}{{{round(distinct_sum / distinct_n)}}}")
     lines.append(f"\\newcommand{{\\privSpendTotal}}{{{spend_total:.1f}}}")
     return "\n".join(lines) + "\n"
 
