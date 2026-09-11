@@ -81,10 +81,33 @@ runner plumbing and contract test in the same commit).
 3. **Data provenance:** the E11 answer recordings stay in the authoring archive; the
    public artifact carries per-cell outcomes only, never raw paid answers.
 
-## 5. Reproducibility
+## 6. Reproducibility
 All three results are deterministic and replayable at `$0` from the seeds and the
 committed artifacts: `experiments/run_e18_recursive.py`,
 `experiments/replay_e16_refined.py`, `experiments/run_real_kg_controlled.py`
 (replay mode), contract tests `tests/test_e18_recursive.py`,
 `tests/test_e16_replay_refined.py`, `tests/test_controlled_selfloop_plumbing.py`
 (full suite 526 collected at `889df9cd`).
+
+## 7. Main-text deltas to apply ONLY at the v9 cut
+
+Kept here so the publication edit is turnkey; none of these touch `main` before the
+Zenodo v9 exists (the published record stays v8-consistent until then):
+
+1. The E16 registered-limitation paragraph in the main text gains a pointer to this
+   appendix: the blunt ban stays opt-in, and the refined pure-self-loop guard is the
+   replacement for workloads with genuinely recursive targets (results 1-3).
+2. Abstract/claims sync: "safe on non-recursive targets only" becomes "junk removal
+   preserved exactly on non-recursive grids and extended to genuinely recursive
+   targets via the refined guard", citing results 1-3.
+3. `CITATION.cff`: version v8 -> v9, version DOI -> the new Zenodo version DOI minted
+   at the cut (concept DOI unchanged).
+4. README claim paragraph + reproducibility commands sync to v9 (suite count at the
+   cut commit, the three artifact files, the three runners).
+
+## 8. What v9 deliberately does NOT contain
+
+- Any E17 admission-mechanism claim (closed-inconclusive; not cited).
+- The E11 answer recordings (authoring archive only; outcomes-only artifact).
+- Anything from the ideas portfolio (E13/E14 replay analyses, E15, VIGIL intake) —
+  none of it is approved research output yet.
