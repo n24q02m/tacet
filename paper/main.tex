@@ -2381,7 +2381,9 @@ gap; that case still wants the held-out admission test proposed there. It also
 forecloses genuinely recursive targets, which MetaQA's composed relation is not,
 so the option defaults to the published behaviour and must be enabled
 deliberately. That foreclosure is itself removable: a refined guard forbidding
-only the \emph{pure self-loop} body preserves the E16 behaviour exactly on the
+only the \emph{pure self-loop} body (a candidate whose body references only
+the mining target itself) preserves the published junk-rejection behaviour
+exactly on the
 non-recursive grid --- by classification and generative replay of the real
 grid --- and, on a synthetic transitive-closure grid with oracle teachers,
 extends coverage to genuinely recursive targets

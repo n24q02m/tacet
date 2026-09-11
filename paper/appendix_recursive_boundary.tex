@@ -27,7 +27,7 @@ sound --- a subset of the closure --- hence redundant rather than harmful,
 which is why coverage preservation and junk removal can coexist. Artifact:
 \texttt{experiments/results/e18\_recursive\_target\_synthetic.json}.
 
-\paragraph{Result 2: the refined guard subsumes E16 on the real grid (classification).}
+\paragraph{Result 2: the refined guard subsumes the published junk rejection on the real grid (classification).}
 Re-classifying every \texttt{synthesised\_rules} entry of the committed
 MetaQA 2-hop artifact ($22$ cells, both arms), the control arm's
 target-containing rules classify \textbf{14/14} as pure self-loops, spread
@@ -35,8 +35,9 @@ over exactly the $7$ published junk cells; the true compositions are kept
 in \textbf{10/10} cells, every composition rule base-only; and the totals
 reconcile with the published aggregates exactly, per cell as well as in
 aggregate. Locked decision: \textbf{REFINED-GUARD-SUBSUMES} --- the
-refined guard keeps E16's benefit on the non-recursive grid exactly and is
-coverage-preserving on genuinely recursive targets; the blunt
+refined guard keeps the published junk-rejection behaviour on the
+non-recursive grid exactly; combined with Result 1, it is
+coverage-preserving on genuinely recursive targets, while the blunt
 \texttt{--forbid-target-in-body} flag stays opt-in and non-recursive-only.
 Artifact: \texttt{experiments/results/e16\_metaqa\_reread\_refined\_guard.json},
 contract-tested in \texttt{tests/test\_e16\_replay\_refined.py}.
