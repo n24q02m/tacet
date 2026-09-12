@@ -1,6 +1,6 @@
 [project]
 name = "tacet"
-version = "1.2.2"
+version = "1.2.3"
 description = "TACET: a self-distilling neuro-symbolic cascade that amortises LLM cost in knowledge-graph QA, with auditable Datalog proof trees"
 readme = "README.md"
 requires-python = ">=3.11"
