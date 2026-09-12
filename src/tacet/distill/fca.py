@@ -212,15 +212,47 @@ class FormalContext:
 
     def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        # Cache to avoid repeatedly calling _attr_extents in the hot path
+        extents_cache = self._attr_extents()
+        incidence = self.incidence
+
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
-            # The lectic-next-closure step requires the closure to
-            # introduce no attribute smaller than ``m`` that was not
-            # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
+
+            # Form candidate
+            candidate = {k for k in B if k < m}
+            candidate.add(m)
+
+            # Inline objects_of and attrs_of to prevent function call overhead
+
+            # objects_of
+            it = iter(candidate)
+            obj_common = set(extents_cache.get(next(it), ()))
+            for attr in it:
+                obj_common.intersection_update(extents_cache.get(attr, ()))
+                if not obj_common:
+                    break
+
+            # attrs_of
+            if not obj_common:
+                closure: frozenset[int] | set[int] = frozenset(range(n_attr))
+            else:
+                it = iter(obj_common)
+                closure_set = set(incidence.get(next(it), ()))
+                for g in it:
+                    closure_set.intersection_update(incidence.get(g, ()))
+                    if not closure_set:
+                        break
+                closure = closure_set
+
+            # Check lectic condition
+            valid = True
+            for k in closure:
+                if k not in candidate and k < m and k not in B:
+                    valid = False
+                    break
+            if valid:
                 return set(closure)
         return None
 
