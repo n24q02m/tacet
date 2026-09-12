@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "tier": 1,
+  "description": "A self-distilling neuro-symbolic cascade that amortises LLM cost across knowledge-graph QA and regulatory-compliance checking, with auditable Datalog proof trees.",
+  "homepage": "https://doi.org/10.5281/zenodo.20621240",
+  "topics": [
+    "auditable-ai",
+    "compliance",
+    "cost-amortization",
+    "datalog",
+    "kgqa",
+    "knowledge-graph",
+    "llm",
+    "llm-cascade",
+    "neuro-symbolic",
+    "proof-trees",
+    "rule-distillation"
+  ]
+}
