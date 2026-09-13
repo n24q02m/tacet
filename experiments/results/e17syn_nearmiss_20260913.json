@@ -1,0 +1,344 @@
+{
+  "schema": "tacet.e17syn.nearmiss/v1",
+  "experiment": "E17-SYN synthetic near-miss-path admission preflight",
+  "pre_registration": {
+    "design_ledger_sha": "1b085c11",
+    "lock_ledger_sha": "25a5891a7daeef79541f3f2bfc411e18ddc0ff15",
+    "decision_rule": "ledger 1457 (POSITIVE/NEGATIVE/NEUTRAL, locked)",
+    "registered_prediction": "POSITIVE at theta<=0.40, estimator within ~0.05"
+  },
+  "operating_point": {
+    "n_cases": 300,
+    "n_entities": 40,
+    "zipf_a": 1.4,
+    "thetas": [
+      0.1,
+      0.25,
+      0.4,
+      0.6
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "gamma": 0.5,
+    "min_support": 3,
+    "max_body_length": 2,
+    "x_ne_y_guard": true,
+    "split_rule": "sha256(seed:case_id) parity, IMPORTED from run_e17_admission"
+  },
+  "cells": [
+    {
+      "theta": 0.1,
+      "seed": 0,
+      "fit_heads": 134,
+      "validation_heads": 166,
+      "comp_fires_validation": 166,
+      "leak_fires_total": 38,
+      "leak_fires_validation": 21,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 1.0,
+        "delta": 0.0,
+        "verdict": "DEAD_ZONE"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.9474,
+        "delta": 0.0526,
+        "verdict": "DEAD_ZONE"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.9
+    },
+    {
+      "theta": 0.1,
+      "seed": 1,
+      "fit_heads": 156,
+      "validation_heads": 144,
+      "comp_fires_validation": 144,
+      "leak_fires_total": 35,
+      "leak_fires_validation": 15,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.8,
+        "delta": 0.2,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.7714,
+        "delta": 0.2286,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.9
+    },
+    {
+      "theta": 0.1,
+      "seed": 2,
+      "fit_heads": 150,
+      "validation_heads": 150,
+      "comp_fires_validation": 150,
+      "leak_fires_total": 30,
+      "leak_fires_validation": 14,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 1.0,
+        "delta": 0.0,
+        "verdict": "DEAD_ZONE"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.9333,
+        "delta": 0.0667,
+        "verdict": "DEAD_ZONE"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.9
+    },
+    {
+      "theta": 0.25,
+      "seed": 0,
+      "fit_heads": 134,
+      "validation_heads": 166,
+      "comp_fires_validation": 166,
+      "leak_fires_total": 88,
+      "leak_fires_validation": 48,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.7292,
+        "delta": 0.2708,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.6932,
+        "delta": 0.3068,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.75
+    },
+    {
+      "theta": 0.25,
+      "seed": 1,
+      "fit_heads": 156,
+      "validation_heads": 144,
+      "comp_fires_validation": 144,
+      "leak_fires_total": 79,
+      "leak_fires_validation": 35,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.8,
+        "delta": 0.2,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.7468,
+        "delta": 0.2532,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.75
+    },
+    {
+      "theta": 0.25,
+      "seed": 2,
+      "fit_heads": 150,
+      "validation_heads": 150,
+      "comp_fires_validation": 150,
+      "leak_fires_total": 70,
+      "leak_fires_validation": 33,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.697,
+        "delta": 0.303,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.7429,
+        "delta": 0.2571,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.75
+    },
+    {
+      "theta": 0.4,
+      "seed": 0,
+      "fit_heads": 134,
+      "validation_heads": 166,
+      "comp_fires_validation": 166,
+      "leak_fires_total": 127,
+      "leak_fires_validation": 68,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.6765,
+        "delta": 0.3235,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.6535,
+        "delta": 0.3465,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.6
+    },
+    {
+      "theta": 0.4,
+      "seed": 1,
+      "fit_heads": 156,
+      "validation_heads": 144,
+      "comp_fires_validation": 144,
+      "leak_fires_total": 113,
+      "leak_fires_validation": 56,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.4821,
+        "delta": 0.5179,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.5664,
+        "delta": 0.4336,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.6
+    },
+    {
+      "theta": 0.4,
+      "seed": 2,
+      "fit_heads": 150,
+      "validation_heads": 150,
+      "comp_fires_validation": 150,
+      "leak_fires_total": 119,
+      "leak_fires_validation": 54,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.5741,
+        "delta": 0.4259,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.5798,
+        "delta": 0.4202,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.6
+    },
+    {
+      "theta": 0.6,
+      "seed": 0,
+      "fit_heads": 134,
+      "validation_heads": 166,
+      "comp_fires_validation": 166,
+      "leak_fires_total": 177,
+      "leak_fires_validation": 103,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.3495,
+        "delta": 0.6505,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.3672,
+        "delta": 0.6328,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.4
+    },
+    {
+      "theta": 0.6,
+      "seed": 1,
+      "fit_heads": 156,
+      "validation_heads": 144,
+      "comp_fires_validation": 144,
+      "leak_fires_total": 182,
+      "leak_fires_validation": 84,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.4405,
+        "delta": 0.5595,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.4286,
+        "delta": 0.5714,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.4
+    },
+    {
+      "theta": 0.6,
+      "seed": 2,
+      "fit_heads": 150,
+      "validation_heads": 150,
+      "comp_fires_validation": 150,
+      "leak_fires_total": 174,
+      "leak_fires_validation": 86,
+      "estimator": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.4186,
+        "delta": 0.5814,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "oracle_exact": {
+        "comp_precision": 1.0,
+        "leak_precision": 0.4655,
+        "delta": 0.5345,
+        "verdict": "ADMIT_COMPOSITION_REJECT_LEAK"
+      },
+      "estimator_matches_oracle": true,
+      "leak_world_precision_nominal": 0.4
+    }
+  ],
+  "theta_response": [
+    {
+      "theta": 0.1,
+      "mean_delta_hat": 0.0667,
+      "mean_leak_precision_exact": 0.884,
+      "estimator_oracle_match_frac": 1.0
+    },
+    {
+      "theta": 0.25,
+      "mean_delta_hat": 0.2579,
+      "mean_leak_precision_exact": 0.7276,
+      "estimator_oracle_match_frac": 1.0
+    },
+    {
+      "theta": 0.4,
+      "mean_delta_hat": 0.4224,
+      "mean_leak_precision_exact": 0.5999,
+      "estimator_oracle_match_frac": 1.0
+    },
+    {
+      "theta": 0.6,
+      "mean_delta_hat": 0.5971,
+      "mean_leak_precision_exact": 0.4204,
+      "estimator_oracle_match_frac": 1.0
+    }
+  ],
+  "prediction_check": {
+    "registered": "POSITIVE at theta<=0.40, estimator within ~0.05 of exact",
+    "observed_consistent": false,
+    "note": "advisory only; the locked decision rule above is the verdict"
+  },
+  "decision": "NEGATIVE",
+  "decision_why": "delta_hat < 0.05 in at least one theta cell \u2014 the held-out estimator is blind even under oracle conditions",
+  "cost_usd": 0.0,
+  "provider_calls": 0
+}
