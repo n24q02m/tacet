@@ -298,18 +298,53 @@ class RuleEngine:
                 yield binding
                 return
             s, r, o = body[depth]
-            s_val = binding.get(s) if _is_var(s) else s
-            o_val = binding.get(o) if _is_var(o) else o
+
+            s_is_var = _is_var(s)
+            o_is_var = _is_var(o)
+
+            s_val = binding.get(s) if s_is_var else s
+            o_val = binding.get(o) if o_is_var else o
+
             if s_val is not None:
                 candidates: list[Triple] = idx_subj.get((r, s_val), [])
             elif o_val is not None:
                 candidates = idx_obj.get((r, o_val), [])
             else:
                 candidates = idx_all.get(r, [])
+
             for fact in candidates:
-                merged = _unify((s, r, o), fact, binding)
-                if merged is not None:
+                t0, t1, t2 = fact
+
+                if not s_is_var:
+                    if s != t0:
+                        continue
+                elif s in binding and binding[s] != t0:
+                    continue
+
+                if r != t1:
+                    continue
+
+                if not o_is_var:
+                    if o != t2:
+                        continue
+                elif o == s:
+                    if t2 != t0:
+                        continue
+                elif o in binding and binding[o] != t2:
+                    continue
+
+                s_needs_binding = s_is_var and s not in binding
+                o_needs_binding = o_is_var and o not in binding
+
+                if s_needs_binding or o_needs_binding:
+                    merged = binding.copy()
+                    if s_needs_binding:
+                        merged[s] = t0
+                    if o_needs_binding:
+                        merged[o] = t2
                     yield from extend(depth + 1, merged)
+                else:
+                    yield from extend(depth + 1, binding)
 
         return extend(0, {})
 
