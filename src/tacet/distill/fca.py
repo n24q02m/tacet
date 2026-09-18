@@ -212,16 +212,46 @@ class FormalContext:
 
     def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        incidence = self.incidence
+        extents = self._attr_extents()
+
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
+
+            candidate = {k for k in B if k < m}
+            candidate.add(m)
+
+            # Inlined self.objects_of(frozenset(candidate))
+            ext_it = iter(candidate)
+            common_ext = set(extents.get(next(ext_it), frozenset()))
+            for attr in ext_it:
+                common_ext.intersection_update(extents.get(attr, frozenset()))
+                if not common_ext:
+                    break
+
+            # Inlined self.attrs_of(frozenset(common_ext))
+            if not common_ext:
+                closure = set(range(n_attr))
+            else:
+                int_it = iter(common_ext)
+                closure = set(incidence.get(next(int_it), frozenset()))
+                for g in int_it:
+                    closure.intersection_update(incidence.get(g, frozenset()))
+                    if not closure:
+                        break
+
             # The lectic-next-closure step requires the closure to
             # introduce no attribute smaller than ``m`` that was not
             # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
-                return set(closure)
+            valid = True
+            for k in closure:
+                if k not in candidate and k < m and k not in B:
+                    valid = False
+                    break
+
+            if valid:
+                return closure
         return None
 
     # --- lattice cover (Hasse diagram) ------------------------------
