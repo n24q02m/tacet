@@ -201,27 +201,70 @@ class FormalContext:
         # Start from the bottom concept (extent=all objects, intent=A').
         concepts: list[ExtentIntent] = [(frozenset(self.objects), bottom_int)]
         current = set(bottom_int)
+
+        incidence = self.incidence
+        extents = self._attr_extents()
+
         while True:
-            nxt = self._next_intent(current, n_attr)
+            nxt = self._next_intent(current, n_attr, extents, incidence)
             if nxt is None:
                 break
-            ext = self.objects_of(frozenset(nxt))
+
+            if not nxt:
+                ext = frozenset(incidence)
+            else:
+                it = iter(nxt)
+                common = set(extents.get(next(it), frozenset()))
+                for attr in it:
+                    common.intersection_update(extents.get(attr, frozenset()))
+                    if not common:
+                        break
+                ext = frozenset(common)
+
             concepts.append((ext, frozenset(nxt)))
             current = nxt
         return concepts
 
-    def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
+    def _next_intent(
+        self,
+        B: set[int],
+        n_attr: int,
+        extents: dict[int, frozenset[str]],
+        incidence: Mapping[str, frozenset[int]],
+    ) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        n_attr_range = set(range(n_attr))
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
-            # The lectic-next-closure step requires the closure to
-            # introduce no attribute smaller than ``m`` that was not
-            # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
-                return set(closure)
+
+            candidate = {k for k in B if k <= m}
+            candidate.add(m)
+
+            it = iter(candidate)
+            common_objects = set(extents.get(next(it), frozenset()))
+            for attr in it:
+                common_objects.intersection_update(extents.get(attr, frozenset()))
+                if not common_objects:
+                    break
+
+            if not common_objects:
+                closure = n_attr_range
+            else:
+                it_obj = iter(common_objects)
+                closure = set(incidence.get(next(it_obj), frozenset()))
+                for obj in it_obj:
+                    closure.intersection_update(incidence.get(obj, frozenset()))
+                    if not closure:
+                        break
+
+            valid = True
+            for k in closure:
+                if k not in candidate and k < m and k not in B:
+                    valid = False
+                    break
+            if valid:
+                return closure
         return None
 
     # --- lattice cover (Hasse diagram) ------------------------------
