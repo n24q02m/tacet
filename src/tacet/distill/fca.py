@@ -149,7 +149,7 @@ class FormalContext:
         first = self.incidence.get(next(it), frozenset())
         common = set(first)
         for g in it:
-            common &= self.incidence.get(g, frozenset())
+            common.intersection_update(self.incidence.get(g, frozenset()))
             if not common:
                 break
         return frozenset(common)
@@ -171,7 +171,7 @@ class FormalContext:
         it = iter(intent)
         common = set(extents.get(next(it), frozenset()))
         for attr in it:
-            common &= extents.get(attr, frozenset())
+            common.intersection_update(extents.get(attr, frozenset()))
             if not common:
                 break
         return frozenset(common)
@@ -212,15 +212,42 @@ class FormalContext:
 
     def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        extents = self._attr_extents()
+        incidence = self.incidence
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
-            # The lectic-next-closure step requires the closure to
-            # introduce no attribute smaller than ``m`` that was not
-            # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
+
+            candidate = [k for k in B if k < m]
+            candidate.append(m)
+
+            # objects_of
+            it = iter(candidate)
+            common_objs = set(extents.get(next(it), frozenset()))
+            for attr in it:
+                common_objs.intersection_update(extents.get(attr, frozenset()))
+                if not common_objs:
+                    break
+
+            # attrs_of
+            if not common_objs:
+                closure = frozenset(range(n_attr))
+            else:
+                it2 = iter(common_objs)
+                closure_set = set(incidence.get(next(it2), frozenset()))
+                for g in it2:
+                    closure_set.intersection_update(incidence.get(g, frozenset()))
+                    if not closure_set:
+                        break
+                closure = closure_set
+
+            # validation
+            valid = True
+            for k in closure:
+                if k < m and k not in B:
+                    valid = False
+                    break
+            if valid:
                 return set(closure)
         return None
 
