@@ -149,7 +149,7 @@ class FormalContext:
         first = self.incidence.get(next(it), frozenset())
         common = set(first)
         for g in it:
-            common &= self.incidence.get(g, frozenset())
+            common.intersection_update(self.incidence.get(g, frozenset()))
             if not common:
                 break
         return frozenset(common)
@@ -171,7 +171,7 @@ class FormalContext:
         it = iter(intent)
         common = set(extents.get(next(it), frozenset()))
         for attr in it:
-            common &= extents.get(attr, frozenset())
+            common.intersection_update(extents.get(attr, frozenset()))
             if not common:
                 break
         return frozenset(common)
@@ -212,16 +212,48 @@ class FormalContext:
 
     def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        incidence = self.incidence
+        extents = self._attr_extents()
+        empty = frozenset()
+
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
+
+            candidate = {k for k in B if k < m}
+            candidate.add(m)
+
+            # inline objects_of
+            it = iter(candidate)
+            common_objs = set(extents.get(next(it), empty))
+            for attr in it:
+                common_objs.intersection_update(extents.get(attr, empty))
+                if not common_objs:
+                    break
+
+            # inline attrs_of
+            if not common_objs:
+                closure = set(range(n_attr))
+            else:
+                it = iter(common_objs)
+                closure = set(incidence.get(next(it), empty))
+                for g in it:
+                    closure.intersection_update(incidence.get(g, empty))
+                    if not closure:
+                        break
+
             # The lectic-next-closure step requires the closure to
             # introduce no attribute smaller than ``m`` that was not
             # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
+            is_valid = True
+            for k in closure:
+                if k < m and k not in candidate:
+                    is_valid = False
+                    break
+
+            if is_valid:
                 return set(closure)
+
         return None
 
     # --- lattice cover (Hasse diagram) ------------------------------
