@@ -87,6 +87,15 @@ DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     "gemini-3.7-flash": (0.000375, 0.001875),
     # DeepSeek V4 Flash 0731: $0.0616 / 1M input, $0.1232 / 1M output.
     "deepseek-v4-flash-0731": (0.0000616, 0.0001232),
+    # --- E17 flash grid (verified live 2026-09-21 via openrouter.ai/api/v1/models) ---
+    # Z.ai GLM-5.3 Flash: $0.09 / 1M input, $0.30 / 1M output.
+    "glm-5.3-flash": (9e-05, 0.0003),
+    # Qwen3.8 Flash: $0.15 / 1M input, $0.47 / 1M output.
+    "qwen3.8-flash": (0.00015, 0.00047),
+    # DeepSeek V4.1 Flash: $0.15 / 1M input, $0.60 / 1M output.
+    "deepseek-v4.1-flash": (0.00015, 0.0006),
+    # Gemini 3.8 Flash: $0.75 / 1M input, $3.75 / 1M output.
+    "gemini-3.8-flash": (0.00075, 0.00375),
 }
 
 
