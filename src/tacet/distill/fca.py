@@ -201,26 +201,66 @@ class FormalContext:
         # Start from the bottom concept (extent=all objects, intent=A').
         concepts: list[ExtentIntent] = [(frozenset(self.objects), bottom_int)]
         current = set(bottom_int)
+
+        incidence = self.incidence
         while True:
             nxt = self._next_intent(current, n_attr)
             if nxt is None:
                 break
-            ext = self.objects_of(frozenset(nxt))
+
+            if not nxt:
+                ext = frozenset(incidence)
+            else:
+                extents = self._attr_extents()
+                it = iter(nxt)
+                common = set(extents.get(next(it), ()))
+                for attr in it:
+                    common.intersection_update(extents.get(attr, ()))
+                    if not common:
+                        break
+                ext = frozenset(common)
+
             concepts.append((ext, frozenset(nxt)))
             current = nxt
         return concepts
 
     def _next_intent(self, B: set[int], n_attr: int) -> set[int] | None:
         """Lectically-next closed intent after ``B`` (Ganter's NextClosure)."""
+        incidence = self.incidence
+        extents = self._attr_extents()
+
         for m in range(n_attr - 1, -1, -1):
             if m in B:
                 continue
-            candidate = (B - {k for k in B if k > m}) | {m}
-            closure = self.attrs_of(self.objects_of(frozenset(candidate)))
+            candidate = {k for k in B if k < m}
+            candidate.add(m)
+
+            it = iter(candidate)
+            common_objects = set(extents.get(next(it), ()))
+            for attr in it:
+                common_objects.intersection_update(extents.get(attr, ()))
+                if not common_objects:
+                    break
+
+            if not common_objects:
+                closure = set(range(n_attr))
+            else:
+                it = iter(common_objects)
+                closure = set(incidence.get(next(it), ()))
+                for g in it:
+                    closure.intersection_update(incidence.get(g, ()))
+                    if not closure:
+                        break
+
             # The lectic-next-closure step requires the closure to
             # introduce no attribute smaller than ``m`` that was not
             # already in B.
-            if all(k >= m or k in B for k in (closure - candidate)):
+            is_valid = True
+            for k in closure:
+                if k not in candidate and k < m and k not in B:
+                    is_valid = False
+                    break
+            if is_valid:
                 return set(closure)
         return None
 
