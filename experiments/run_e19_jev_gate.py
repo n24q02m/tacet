@@ -194,10 +194,21 @@ def finish(args, cells, partial_rules, partial_artifact, spend, truncated, route
         "prereg": (
             "LOCKED 2026-09-21 (ledger E19); gates conf>=0.55 & risk<=0.5; fail-open=escalate"
         ),
+        "rule_representation": (
+            "E17 artifact schema tacet.e17.admission/v1 persists candidate rules "
+            "as name-encoded atoms (target + body bindings) + stats; no full "
+            "Datalog text exists in the artifact. State clips use the "
+            "name-decoded representation — documented prereg-compatible."
+        ),
         "route": route,
         "route_note": (
             "OR alpha/decisions 404 observed 2026-09-22; native "
             "api.typesafe.ai/v1/systemone per LOCKED fallback"
+        ),
+        "state_representation_note": (
+            "artifact schema v1 carries no Datalog body text; rule head/body "
+            "decoded from rules[].name (mined_<target>__<atom>=<value> pairs) — "
+            "the only artifact-complete representation"
         ),
         "call_log_summary": {
             "total": len(CALL_LOG),
