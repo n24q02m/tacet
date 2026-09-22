@@ -35,3 +35,8 @@
 **Vulnerability:** The FastAPI application was missing the `Referrer-Policy` security header, which could leak sensitive path information or query parameters via the `Referer` header to external sites when navigating away from the application.
 **Learning:** Even when setting strict `Content-Security-Policy` and `X-Frame-Options`, `Referrer-Policy` is needed to prevent cross-origin information leakage on outbound requests.
 **Prevention:** Always include `Referrer-Policy: no-referrer` in the global security headers middleware to strictly drop referrer information on all outbound requests.
+
+## 2025-02-23 - Prevent Silent Traces in Global Exception Handlers
+**Vulnerability:** The global Exception handler in `src/tacet/serve/server.py` added security headers but bypassed Starlette's `ServerErrorMiddleware` logging, silently swallowing server-side tracebacks and masking potential attack vectors or critical system failures.
+**Learning:** Overriding the default global exception handler intercepts the request before standard middleware logs the error. Custom exception handlers must explicitly log exceptions.
+**Prevention:** Ensure any custom `Exception` handler explicitly calls `logging.error(..., exc_info=_exc)` so that debugging information and error context are preserved.
