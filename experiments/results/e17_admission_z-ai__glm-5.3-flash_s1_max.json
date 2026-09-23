@@ -1,0 +1,4284 @@
+{
+  "schema": "tacet.e17.admission/v1",
+  "experiment": "E17 held-out admission test for near-functional leakage",
+  "pre_registration": "tacet-research-ledger.md E17 (locked 2026-08-23)",
+  "dataset": "PrivaCI-Bench-GDPR",
+  "n": 300,
+  "seed": 1,
+  "slug": "z-ai/glm-5.3-flash",
+  "reasoning_effort": "max",
+  "price_key": "glm-5.3-flash",
+  "min_support": 5,
+  "min_confidence": 0.9,
+  "split_rule": "sha256(seed:case_id) parity, 50/50 fit/validation",
+  "world_precision_reference": "paper Section rule_precision: firings matching the workload oracle over the full n-case ground truth",
+  "spend_semantics": "spend_usd is the cumulative measured cost of every persisted head; spend_this_process_usd is only the fresh API spend in this invocation",
+  "spend_usd": 0.197493,
+  "spend_this_process_usd": 0.197493,
+  "real_teacher_calls": 300,
+  "new_teacher_calls": 300,
+  "resumed_heads": 0,
+  "truncated_by_budget": false,
+  "recording_state": "complete",
+  "teacher_abstains": 0,
+  "heads": {
+    "GDPR-2357": {
+      "verdict": "prohibit",
+      "articles": [
+        "art17",
+        "art5"
+      ],
+      "cost_usd": 0.0009618,
+      "provider_cost_usd": 0.0009618,
+      "prompt_tokens": 152,
+      "completion_tokens": 1878,
+      "reasoning_tokens": 1864,
+      "cached_tokens": 0
+    },
+    "GDPR-2538": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00035225,
+      "provider_cost_usd": 0.00035225,
+      "prompt_tokens": 155,
+      "completion_tokens": 658,
+      "reasoning_tokens": 653,
+      "cached_tokens": 0
+    },
+    "GDPR-1823": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00036035,
+      "provider_cost_usd": 0.00036035,
+      "prompt_tokens": 179,
+      "completion_tokens": 667,
+      "reasoning_tokens": 665,
+      "cached_tokens": 0
+    },
+    "GDPR-1663": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00101025,
+      "provider_cost_usd": 0.00101025,
+      "prompt_tokens": 175,
+      "completion_tokens": 1968,
+      "reasoning_tokens": 1959,
+      "cached_tokens": 0
+    },
+    "GDPR-1564": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.00040875,
+      "provider_cost_usd": 0.00040875,
+      "prompt_tokens": 205,
+      "completion_tokens": 756,
+      "reasoning_tokens": 751,
+      "cached_tokens": 0
+    },
+    "GDPR-0633": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0002966,
+      "provider_cost_usd": 0.0002966,
+      "prompt_tokens": 194,
+      "completion_tokens": 535,
+      "reasoning_tokens": 521,
+      "cached_tokens": 0
+    },
+    "GDPR-1919": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00069775,
+      "provider_cost_usd": 0.00069775,
+      "prompt_tokens": 195,
+      "completion_tokens": 1337,
+      "reasoning_tokens": 1323,
+      "cached_tokens": 0
+    },
+    "GDPR-0380": {
+      "verdict": "prohibit",
+      "articles": [
+        "art35",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0004914,
+      "provider_cost_usd": 0.0004914,
+      "prompt_tokens": 176,
+      "completion_tokens": 930,
+      "reasoning_tokens": 915,
+      "cached_tokens": 0
+    },
+    "GDPR-2832": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 6.58e-05,
+      "provider_cost_usd": 6.58e-05,
+      "prompt_tokens": 182,
+      "completion_tokens": 77,
+      "reasoning_tokens": 72,
+      "cached_tokens": 0
+    },
+    "GDPR-1270": {
+      "verdict": "prohibit",
+      "articles": [
+        "art17",
+        "art6"
+      ],
+      "cost_usd": 0.0006265,
+      "provider_cost_usd": 0.0006265,
+      "prompt_tokens": 150,
+      "completion_tokens": 1208,
+      "reasoning_tokens": 1198,
+      "cached_tokens": 0
+    },
+    "GDPR-0718": {
+      "verdict": "prohibit",
+      "articles": [
+        "art10",
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00098905,
+      "provider_cost_usd": 0.00098905,
+      "prompt_tokens": 157,
+      "completion_tokens": 1931,
+      "reasoning_tokens": 1913,
+      "cached_tokens": 0
+    },
+    "GDPR-2321": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00042605,
+      "provider_cost_usd": 0.00042605,
+      "prompt_tokens": 177,
+      "completion_tokens": 799,
+      "reasoning_tokens": 781,
+      "cached_tokens": 0
+    },
+    "GDPR-1108": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00053445,
+      "provider_cost_usd": 0.00053445,
+      "prompt_tokens": 153,
+      "completion_tokens": 1023,
+      "reasoning_tokens": 1009,
+      "cached_tokens": 0
+    },
+    "GDPR-2582": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0003217,
+      "provider_cost_usd": 0.0003217,
+      "prompt_tokens": 188,
+      "completion_tokens": 587,
+      "reasoning_tokens": 582,
+      "cached_tokens": 0
+    },
+    "GDPR-0936": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002674,
+      "provider_cost_usd": 0.0002674,
+      "prompt_tokens": 176,
+      "completion_tokens": 482,
+      "reasoning_tokens": 469,
+      "cached_tokens": 0
+    },
+    "GDPR-0423": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 3.1e-05,
+      "provider_cost_usd": 3.1e-05,
+      "prompt_tokens": 160,
+      "completion_tokens": 14,
+      "reasoning_tokens": 0,
+      "cached_tokens": 0
+    },
+    "GDPR-1863": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0001788,
+      "provider_cost_usd": 0.0001788,
+      "prompt_tokens": 152,
+      "completion_tokens": 312,
+      "reasoning_tokens": 298,
+      "cached_tokens": 0
+    },
+    "GDPR-2490": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001368,
+      "provider_cost_usd": 0.0001368,
+      "prompt_tokens": 152,
+      "completion_tokens": 228,
+      "reasoning_tokens": 225,
+      "cached_tokens": 0
+    },
+    "GDPR-0629": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00079,
+      "provider_cost_usd": 0.00079,
+      "prompt_tokens": 160,
+      "completion_tokens": 1532,
+      "reasoning_tokens": 1518,
+      "cached_tokens": 0
+    },
+    "GDPR-1354": {
+      "verdict": "prohibit",
+      "articles": [
+        "art17",
+        "art21",
+        "art6"
+      ],
+      "cost_usd": 0.00032505,
+      "provider_cost_usd": 0.00032505,
+      "prompt_tokens": 167,
+      "completion_tokens": 600,
+      "reasoning_tokens": 582,
+      "cached_tokens": 0
+    },
+    "GDPR-0221": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0002114,
+      "provider_cost_usd": 0.0002114,
+      "prompt_tokens": 146,
+      "completion_tokens": 379,
+      "reasoning_tokens": 367,
+      "cached_tokens": 0
+    },
+    "GDPR-0997": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00028487,
+      "provider_cost_usd": 0.00028487,
+      "prompt_tokens": 201,
+      "completion_tokens": 1119,
+      "reasoning_tokens": 1101,
+      "cached_tokens": 181
+    },
+    "GDPR-2379": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00011995,
+      "provider_cost_usd": 0.00011995,
+      "prompt_tokens": 163,
+      "completion_tokens": 191,
+      "reasoning_tokens": 177,
+      "cached_tokens": 0
+    },
+    "GDPR-0966": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003515,
+      "provider_cost_usd": 0.0003515,
+      "prompt_tokens": 140,
+      "completion_tokens": 661,
+      "reasoning_tokens": 639,
+      "cached_tokens": 0
+    },
+    "GDPR-0986": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00162715,
+      "provider_cost_usd": 0.00162715,
+      "prompt_tokens": 161,
+      "completion_tokens": 3206,
+      "reasoning_tokens": 3192,
+      "cached_tokens": 0
+    },
+    "GDPR-1911": {
+      "verdict": "prohibit",
+      "articles": [
+        "art25",
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0004918,
+      "provider_cost_usd": 0.0004918,
+      "prompt_tokens": 142,
+      "completion_tokens": 941,
+      "reasoning_tokens": 923,
+      "cached_tokens": 0
+    },
+    "GDPR-1673": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0006374,
+      "provider_cost_usd": 0.0006374,
+      "prompt_tokens": 166,
+      "completion_tokens": 1225,
+      "reasoning_tokens": 1212,
+      "cached_tokens": 0
+    },
+    "GDPR-1800": {
+      "verdict": "prohibit",
+      "articles": [
+        "art25",
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0006196,
+      "provider_cost_usd": 0.0006196,
+      "prompt_tokens": 184,
+      "completion_tokens": 1184,
+      "reasoning_tokens": 1162,
+      "cached_tokens": 0
+    },
+    "GDPR-1392": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0012355,
+      "provider_cost_usd": 0.0012355,
+      "prompt_tokens": 160,
+      "completion_tokens": 2423,
+      "reasoning_tokens": 2418,
+      "cached_tokens": 0
+    },
+    "GDPR-2351": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5"
+      ],
+      "cost_usd": 0.0001021,
+      "provider_cost_usd": 0.0001021,
+      "prompt_tokens": 174,
+      "completion_tokens": 152,
+      "reasoning_tokens": 142,
+      "cached_tokens": 0
+    },
+    "GDPR-1726": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0004937,
+      "provider_cost_usd": 0.0004937,
+      "prompt_tokens": 168,
+      "completion_tokens": 937,
+      "reasoning_tokens": 925,
+      "cached_tokens": 0
+    },
+    "GDPR-3003": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001815,
+      "provider_cost_usd": 0.0001814975,
+      "prompt_tokens": 147,
+      "completion_tokens": 338,
+      "reasoning_tokens": 334,
+      "cached_tokens": 0
+    },
+    "GDPR-0291": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.0003642,
+      "provider_cost_usd": 0.0003642,
+      "prompt_tokens": 178,
+      "completion_tokens": 675,
+      "reasoning_tokens": 667,
+      "cached_tokens": 0
+    },
+    "GDPR-1404": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00019465,
+      "provider_cost_usd": 0.00019465,
+      "prompt_tokens": 152,
+      "completion_tokens": 733,
+      "reasoning_tokens": 719,
+      "cached_tokens": 0
+    },
+    "GDPR-1054": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art6"
+      ],
+      "cost_usd": 0.0003365,
+      "provider_cost_usd": 0.0003365,
+      "prompt_tokens": 180,
+      "completion_tokens": 619,
+      "reasoning_tokens": 605,
+      "cached_tokens": 0
+    },
+    "GDPR-2447": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.00025225,
+      "provider_cost_usd": 0.00025225,
+      "prompt_tokens": 155,
+      "completion_tokens": 458,
+      "reasoning_tokens": 448,
+      "cached_tokens": 0
+    },
+    "GDPR-2355": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0001096,
+      "provider_cost_usd": 0.0001096,
+      "prompt_tokens": 164,
+      "completion_tokens": 170,
+      "reasoning_tokens": 157,
+      "cached_tokens": 0
+    },
+    "GDPR-2588": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00027615,
+      "provider_cost_usd": 0.00027615,
+      "prompt_tokens": 161,
+      "completion_tokens": 504,
+      "reasoning_tokens": 499,
+      "cached_tokens": 0
+    },
+    "GDPR-1783": {
+      "verdict": "prohibit",
+      "articles": [
+        "art35",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0011362,
+      "provider_cost_usd": 0.0011362,
+      "prompt_tokens": 168,
+      "completion_tokens": 2222,
+      "reasoning_tokens": 2205,
+      "cached_tokens": 0
+    },
+    "GDPR-1695": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.00037765,
+      "provider_cost_usd": 0.00037765,
+      "prompt_tokens": 151,
+      "completion_tokens": 710,
+      "reasoning_tokens": 703,
+      "cached_tokens": 0
+    },
+    "GDPR-2074": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00521175,
+      "provider_cost_usd": 0.00521175,
+      "prompt_tokens": 235,
+      "completion_tokens": 10353,
+      "reasoning_tokens": 10342,
+      "cached_tokens": 0
+    },
+    "GDPR-2303": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art37",
+        "art5"
+      ],
+      "cost_usd": 0.00056165,
+      "provider_cost_usd": 0.00056165,
+      "prompt_tokens": 181,
+      "completion_tokens": 1069,
+      "reasoning_tokens": 1051,
+      "cached_tokens": 0
+    },
+    "GDPR-2597": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 7.715e-05,
+      "provider_cost_usd": 7.715e-05,
+      "prompt_tokens": 201,
+      "completion_tokens": 94,
+      "reasoning_tokens": 89,
+      "cached_tokens": 0
+    },
+    "GDPR-0190": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00032825,
+      "provider_cost_usd": 0.00032825,
+      "prompt_tokens": 175,
+      "completion_tokens": 604,
+      "reasoning_tokens": 588,
+      "cached_tokens": 0
+    },
+    "GDPR-2713": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00016775,
+      "provider_cost_usd": 0.00016775,
+      "prompt_tokens": 135,
+      "completion_tokens": 295,
+      "reasoning_tokens": 291,
+      "cached_tokens": 0
+    },
+    "GDPR-0251": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00042085,
+      "provider_cost_usd": 0.00042085,
+      "prompt_tokens": 149,
+      "completion_tokens": 797,
+      "reasoning_tokens": 783,
+      "cached_tokens": 0
+    },
+    "GDPR-1060": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.0001576,
+      "provider_cost_usd": 0.0001576,
+      "prompt_tokens": 164,
+      "completion_tokens": 266,
+      "reasoning_tokens": 256,
+      "cached_tokens": 0
+    },
+    "GDPR-2149": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art6"
+      ],
+      "cost_usd": 0.00104515,
+      "provider_cost_usd": 0.00104515,
+      "prompt_tokens": 171,
+      "completion_tokens": 2039,
+      "reasoning_tokens": 2025,
+      "cached_tokens": 0
+    },
+    "GDPR-0020": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00061385,
+      "provider_cost_usd": 0.00061385,
+      "prompt_tokens": 169,
+      "completion_tokens": 1177,
+      "reasoning_tokens": 1164,
+      "cached_tokens": 0
+    },
+    "GDPR-2312": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.0004605,
+      "provider_cost_usd": 0.0004605,
+      "prompt_tokens": 160,
+      "completion_tokens": 873,
+      "reasoning_tokens": 863,
+      "cached_tokens": 0
+    },
+    "GDPR-1666": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0012436,
+      "provider_cost_usd": 0.0012436,
+      "prompt_tokens": 174,
+      "completion_tokens": 2435,
+      "reasoning_tokens": 2421,
+      "cached_tokens": 0
+    },
+    "GDPR-3067": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001109,
+      "provider_cost_usd": 0.0001109,
+      "prompt_tokens": 166,
+      "completion_tokens": 172,
+      "reasoning_tokens": 167,
+      "cached_tokens": 0
+    },
+    "GDPR-2182": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.00056515,
+      "provider_cost_usd": 0.00056515,
+      "prompt_tokens": 161,
+      "completion_tokens": 1082,
+      "reasoning_tokens": 1074,
+      "cached_tokens": 0
+    },
+    "GDPR-1705": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.0015925,
+      "provider_cost_usd": 0.0015925,
+      "prompt_tokens": 180,
+      "completion_tokens": 3131,
+      "reasoning_tokens": 3113,
+      "cached_tokens": 0
+    },
+    "GDPR-0627": {
+      "verdict": "prohibit",
+      "articles": [
+        "art9"
+      ],
+      "cost_usd": 0.00454145,
+      "provider_cost_usd": 0.00454145,
+      "prompt_tokens": 143,
+      "completion_tokens": 9040,
+      "reasoning_tokens": 9031,
+      "cached_tokens": 0
+    },
+    "GDPR-0766": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00035015,
+      "provider_cost_usd": 0.00035015,
+      "prompt_tokens": 141,
+      "completion_tokens": 658,
+      "reasoning_tokens": 649,
+      "cached_tokens": 0
+    },
+    "GDPR-2471": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0004939,
+      "provider_cost_usd": 0.0004939,
+      "prompt_tokens": 246,
+      "completion_tokens": 914,
+      "reasoning_tokens": 893,
+      "cached_tokens": 0
+    },
+    "GDPR-1261": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003878,
+      "provider_cost_usd": 0.0003878,
+      "prompt_tokens": 152,
+      "completion_tokens": 730,
+      "reasoning_tokens": 720,
+      "cached_tokens": 0
+    },
+    "GDPR-2711": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 9.17e-05,
+      "provider_cost_usd": 9.1696e-05,
+      "prompt_tokens": 148,
+      "completion_tokens": 164,
+      "reasoning_tokens": 159,
+      "cached_tokens": 0
+    },
+    "GDPR-0128": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art17"
+      ],
+      "cost_usd": 0.0018084,
+      "provider_cost_usd": 0.0018084,
+      "prompt_tokens": 156,
+      "completion_tokens": 3570,
+      "reasoning_tokens": 3561,
+      "cached_tokens": 0
+    },
+    "GDPR-2034": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.0004805,
+      "provider_cost_usd": 0.0004805,
+      "prompt_tokens": 150,
+      "completion_tokens": 916,
+      "reasoning_tokens": 907,
+      "cached_tokens": 0
+    },
+    "GDPR-2641": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001917,
+      "provider_cost_usd": 0.0001917,
+      "prompt_tokens": 118,
+      "completion_tokens": 348,
+      "reasoning_tokens": 343,
+      "cached_tokens": 0
+    },
+    "GDPR-1593": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 9.315e-05,
+      "provider_cost_usd": 9.315e-05,
+      "prompt_tokens": 172,
+      "completion_tokens": 321,
+      "reasoning_tokens": 303,
+      "cached_tokens": 0
+    },
+    "GDPR-2277": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.00021515,
+      "provider_cost_usd": 0.00021515,
+      "prompt_tokens": 161,
+      "completion_tokens": 382,
+      "reasoning_tokens": 377,
+      "cached_tokens": 0
+    },
+    "GDPR-2520": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001996,
+      "provider_cost_usd": 0.0001996,
+      "prompt_tokens": 124,
+      "completion_tokens": 362,
+      "reasoning_tokens": 359,
+      "cached_tokens": 0
+    },
+    "GDPR-1418": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art6"
+      ],
+      "cost_usd": 0.00031885,
+      "provider_cost_usd": 0.00031885,
+      "prompt_tokens": 159,
+      "completion_tokens": 590,
+      "reasoning_tokens": 576,
+      "cached_tokens": 0
+    },
+    "GDPR-0583": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.0058194,
+      "provider_cost_usd": 0.0058194,
+      "prompt_tokens": 156,
+      "completion_tokens": 11592,
+      "reasoning_tokens": 11584,
+      "cached_tokens": 0
+    },
+    "GDPR-0103": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0001902,
+      "provider_cost_usd": 0.0001902,
+      "prompt_tokens": 138,
+      "completion_tokens": 339,
+      "reasoning_tokens": 325,
+      "cached_tokens": 0
+    },
+    "GDPR-0677": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0003558,
+      "provider_cost_usd": 0.0003558,
+      "prompt_tokens": 162,
+      "completion_tokens": 663,
+      "reasoning_tokens": 646,
+      "cached_tokens": 0
+    },
+    "GDPR-1972": {
+      "verdict": "prohibit",
+      "articles": [
+        "art58"
+      ],
+      "cost_usd": 0.0017727,
+      "provider_cost_usd": 0.0017727,
+      "prompt_tokens": 168,
+      "completion_tokens": 3495,
+      "reasoning_tokens": 3485,
+      "cached_tokens": 0
+    },
+    "GDPR-2248": {
+      "verdict": "prohibit",
+      "articles": [
+        "art15",
+        "art32",
+        "art6"
+      ],
+      "cost_usd": 0.0004432,
+      "provider_cost_usd": 0.0004432,
+      "prompt_tokens": 188,
+      "completion_tokens": 830,
+      "reasoning_tokens": 812,
+      "cached_tokens": 0
+    },
+    "GDPR-0742": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00038395,
+      "provider_cost_usd": 0.00038395,
+      "prompt_tokens": 183,
+      "completion_tokens": 713,
+      "reasoning_tokens": 700,
+      "cached_tokens": 0
+    },
+    "GDPR-0979": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003115,
+      "provider_cost_usd": 0.0003115,
+      "prompt_tokens": 160,
+      "completion_tokens": 575,
+      "reasoning_tokens": 561,
+      "cached_tokens": 0
+    },
+    "GDPR-2612": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0007043,
+      "provider_cost_usd": 0.0007043,
+      "prompt_tokens": 252,
+      "completion_tokens": 1333,
+      "reasoning_tokens": 1315,
+      "cached_tokens": 0
+    },
+    "GDPR-0470": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00042385,
+      "provider_cost_usd": 0.00042385,
+      "prompt_tokens": 149,
+      "completion_tokens": 803,
+      "reasoning_tokens": 793,
+      "cached_tokens": 0
+    },
+    "GDPR-0337": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.0005214,
+      "provider_cost_usd": 0.0005214,
+      "prompt_tokens": 176,
+      "completion_tokens": 990,
+      "reasoning_tokens": 968,
+      "cached_tokens": 0
+    },
+    "GDPR-1616": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00030633,
+      "provider_cost_usd": 0.00030633,
+      "prompt_tokens": 157,
+      "completion_tokens": 974,
+      "reasoning_tokens": 1124,
+      "cached_tokens": 0
+    },
+    "GDPR-0542": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art6"
+      ],
+      "cost_usd": 0.00029675,
+      "provider_cost_usd": 0.00029675,
+      "prompt_tokens": 185,
+      "completion_tokens": 538,
+      "reasoning_tokens": 524,
+      "cached_tokens": 0
+    },
+    "GDPR-1368": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003525,
+      "provider_cost_usd": 0.0003525,
+      "prompt_tokens": 170,
+      "completion_tokens": 654,
+      "reasoning_tokens": 640,
+      "cached_tokens": 0
+    },
+    "GDPR-3039": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00022,
+      "provider_cost_usd": 0.00022,
+      "prompt_tokens": 170,
+      "completion_tokens": 389,
+      "reasoning_tokens": 384,
+      "cached_tokens": 0
+    },
+    "GDPR-1179": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00035131,
+      "provider_cost_usd": 0.00035131,
+      "prompt_tokens": 202,
+      "completion_tokens": 679,
+      "reasoning_tokens": 654,
+      "cached_tokens": 0
+    },
+    "GDPR-2363": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00291925,
+      "provider_cost_usd": 0.00291925,
+      "prompt_tokens": 175,
+      "completion_tokens": 5786,
+      "reasoning_tokens": 5781,
+      "cached_tokens": 0
+    },
+    "GDPR-0762": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002912,
+      "provider_cost_usd": 0.0002912,
+      "prompt_tokens": 178,
+      "completion_tokens": 529,
+      "reasoning_tokens": 513,
+      "cached_tokens": 0
+    },
+    "GDPR-2372": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.0006621,
+      "provider_cost_usd": 0.0006621,
+      "prompt_tokens": 164,
+      "completion_tokens": 1275,
+      "reasoning_tokens": 1261,
+      "cached_tokens": 0
+    },
+    "GDPR-0065": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13"
+      ],
+      "cost_usd": 0.000132,
+      "provider_cost_usd": 0.000132,
+      "prompt_tokens": 200,
+      "completion_tokens": 204,
+      "reasoning_tokens": 194,
+      "cached_tokens": 0
+    },
+    "GDPR-0000": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art33",
+        "art5"
+      ],
+      "cost_usd": 0.00065345,
+      "provider_cost_usd": 0.00065345,
+      "prompt_tokens": 163,
+      "completion_tokens": 1258,
+      "reasoning_tokens": 1242,
+      "cached_tokens": 0
+    },
+    "GDPR-2685": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001233,
+      "provider_cost_usd": 0.0001233,
+      "prompt_tokens": 152,
+      "completion_tokens": 201,
+      "reasoning_tokens": 196,
+      "cached_tokens": 0
+    },
+    "GDPR-2756": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001009,
+      "provider_cost_usd": 0.0001009,
+      "prompt_tokens": 126,
+      "completion_tokens": 164,
+      "reasoning_tokens": 160,
+      "cached_tokens": 0
+    },
+    "GDPR-1861": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00093075,
+      "provider_cost_usd": 0.00093075,
+      "prompt_tokens": 175,
+      "completion_tokens": 1809,
+      "reasoning_tokens": 1799,
+      "cached_tokens": 0
+    },
+    "GDPR-0415": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00067985,
+      "provider_cost_usd": 0.00067985,
+      "prompt_tokens": 159,
+      "completion_tokens": 1312,
+      "reasoning_tokens": 1302,
+      "cached_tokens": 0
+    },
+    "GDPR-1820": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art9"
+      ],
+      "cost_usd": 0.00099825,
+      "provider_cost_usd": 0.00099825,
+      "prompt_tokens": 165,
+      "completion_tokens": 1947,
+      "reasoning_tokens": 1933,
+      "cached_tokens": 0
+    },
+    "GDPR-0025": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00097965,
+      "provider_cost_usd": 0.00097965,
+      "prompt_tokens": 171,
+      "completion_tokens": 1908,
+      "reasoning_tokens": 1903,
+      "cached_tokens": 0
+    },
+    "GDPR-2589": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00088525,
+      "provider_cost_usd": 0.00088525,
+      "prompt_tokens": 235,
+      "completion_tokens": 1700,
+      "reasoning_tokens": 1696,
+      "cached_tokens": 0
+    },
+    "GDPR-0045": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.00012515,
+      "provider_cost_usd": 0.00012515,
+      "prompt_tokens": 171,
+      "completion_tokens": 199,
+      "reasoning_tokens": 189,
+      "cached_tokens": 0
+    },
+    "GDPR-0485": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0001581,
+      "provider_cost_usd": 0.0001581,
+      "prompt_tokens": 154,
+      "completion_tokens": 270,
+      "reasoning_tokens": 253,
+      "cached_tokens": 0
+    },
+    "GDPR-0922": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0034745,
+      "provider_cost_usd": 0.0034745,
+      "prompt_tokens": 160,
+      "completion_tokens": 6901,
+      "reasoning_tokens": 6887,
+      "cached_tokens": 0
+    },
+    "GDPR-2376": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0006937,
+      "provider_cost_usd": 0.0006937,
+      "prompt_tokens": 148,
+      "completion_tokens": 1343,
+      "reasoning_tokens": 1329,
+      "cached_tokens": 0
+    },
+    "GDPR-1456": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0004806,
+      "provider_cost_usd": 0.0004806,
+      "prompt_tokens": 184,
+      "completion_tokens": 906,
+      "reasoning_tokens": 897,
+      "cached_tokens": 0
+    },
+    "GDPR-0278": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0013476,
+      "provider_cost_usd": 0.0013476,
+      "prompt_tokens": 184,
+      "completion_tokens": 2640,
+      "reasoning_tokens": 2626,
+      "cached_tokens": 0
+    },
+    "GDPR-1437": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00132485,
+      "provider_cost_usd": 0.00132485,
+      "prompt_tokens": 139,
+      "completion_tokens": 2608,
+      "reasoning_tokens": 2593,
+      "cached_tokens": 0
+    },
+    "GDPR-2383": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002096,
+      "provider_cost_usd": 0.0002096,
+      "prompt_tokens": 184,
+      "completion_tokens": 364,
+      "reasoning_tokens": 350,
+      "cached_tokens": 0
+    },
+    "GDPR-3094": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0004365,
+      "provider_cost_usd": 0.0004365,
+      "prompt_tokens": 200,
+      "completion_tokens": 813,
+      "reasoning_tokens": 1086,
+      "cached_tokens": 0
+    },
+    "GDPR-2897": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00036325,
+      "provider_cost_usd": 0.00036325,
+      "prompt_tokens": 245,
+      "completion_tokens": 653,
+      "reasoning_tokens": 650,
+      "cached_tokens": 0
+    },
+    "GDPR-1111": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00030645,
+      "provider_cost_usd": 0.00030645,
+      "prompt_tokens": 173,
+      "completion_tokens": 561,
+      "reasoning_tokens": 545,
+      "cached_tokens": 0
+    },
+    "GDPR-1671": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0009955,
+      "provider_cost_usd": 0.0009955,
+      "prompt_tokens": 160,
+      "completion_tokens": 1943,
+      "reasoning_tokens": 1930,
+      "cached_tokens": 0
+    },
+    "GDPR-2389": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art6"
+      ],
+      "cost_usd": 0.0005314,
+      "provider_cost_usd": 0.0005314,
+      "prompt_tokens": 176,
+      "completion_tokens": 1010,
+      "reasoning_tokens": 996,
+      "cached_tokens": 0
+    },
+    "GDPR-2573": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0008391,
+      "provider_cost_usd": 0.0008391,
+      "prompt_tokens": 264,
+      "completion_tokens": 1599,
+      "reasoning_tokens": 1595,
+      "cached_tokens": 0
+    },
+    "GDPR-2500": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 8.807e-05,
+      "provider_cost_usd": 8.8075e-05,
+      "prompt_tokens": 211,
+      "completion_tokens": 289,
+      "reasoning_tokens": 284,
+      "cached_tokens": 0
+    },
+    "GDPR-1185": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.0004652,
+      "provider_cost_usd": 0.0004652,
+      "prompt_tokens": 188,
+      "completion_tokens": 874,
+      "reasoning_tokens": 859,
+      "cached_tokens": 0
+    },
+    "GDPR-1604": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003716,
+      "provider_cost_usd": 0.0003716,
+      "prompt_tokens": 184,
+      "completion_tokens": 688,
+      "reasoning_tokens": 674,
+      "cached_tokens": 0
+    },
+    "GDPR-0393": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15"
+      ],
+      "cost_usd": 0.0001697,
+      "provider_cost_usd": 0.0001697,
+      "prompt_tokens": 158,
+      "completion_tokens": 292,
+      "reasoning_tokens": 280,
+      "cached_tokens": 0
+    },
+    "GDPR-1541": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0003725,
+      "provider_cost_usd": 0.0003725,
+      "prompt_tokens": 210,
+      "completion_tokens": 682,
+      "reasoning_tokens": 669,
+      "cached_tokens": 0
+    },
+    "GDPR-2274": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5"
+      ],
+      "cost_usd": 0.0003762,
+      "provider_cost_usd": 0.0003762,
+      "prompt_tokens": 208,
+      "completion_tokens": 690,
+      "reasoning_tokens": 682,
+      "cached_tokens": 0
+    },
+    "GDPR-1320": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002066,
+      "provider_cost_usd": 0.0002066,
+      "prompt_tokens": 164,
+      "completion_tokens": 364,
+      "reasoning_tokens": 346,
+      "cached_tokens": 0
+    },
+    "GDPR-2631": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 3.935e-05,
+      "provider_cost_usd": 3.935e-05,
+      "prompt_tokens": 149,
+      "completion_tokens": 34,
+      "reasoning_tokens": 29,
+      "cached_tokens": 0
+    },
+    "GDPR-1411": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art9"
+      ],
+      "cost_usd": 0.00041582,
+      "provider_cost_usd": 0.00041582,
+      "prompt_tokens": 150,
+      "completion_tokens": 802,
+      "reasoning_tokens": 784,
+      "cached_tokens": 64
+    },
+    "GDPR-3091": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0002322,
+      "provider_cost_usd": 0.0002322,
+      "prompt_tokens": 198,
+      "completion_tokens": 405,
+      "reasoning_tokens": 400,
+      "cached_tokens": 0
+    },
+    "GDPR-2330": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.00045077,
+      "provider_cost_usd": 0.00045077,
+      "prompt_tokens": 243,
+      "completion_tokens": 844,
+      "reasoning_tokens": 834,
+      "cached_tokens": 64
+    },
+    "GDPR-0108": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00034285,
+      "provider_cost_usd": 0.00034285,
+      "prompt_tokens": 169,
+      "completion_tokens": 635,
+      "reasoning_tokens": 619,
+      "cached_tokens": 0
+    },
+    "GDPR-2327": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.0001595,
+      "provider_cost_usd": 0.0001595,
+      "prompt_tokens": 200,
+      "completion_tokens": 259,
+      "reasoning_tokens": 252,
+      "cached_tokens": 0
+    },
+    "GDPR-2818": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 4.044e-05,
+      "provider_cost_usd": 4.0436e-05,
+      "prompt_tokens": 123,
+      "completion_tokens": 55,
+      "reasoning_tokens": 50,
+      "cached_tokens": 0
+    },
+    "GDPR-2083": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0005337,
+      "provider_cost_usd": 0.0005337,
+      "prompt_tokens": 158,
+      "completion_tokens": 1020,
+      "reasoning_tokens": 1006,
+      "cached_tokens": 0
+    },
+    "GDPR-0589": {
+      "verdict": "prohibit",
+      "articles": [
+        "art44",
+        "art46",
+        "art5"
+      ],
+      "cost_usd": 0.00272115,
+      "provider_cost_usd": 0.00272115,
+      "prompt_tokens": 201,
+      "completion_tokens": 5382,
+      "reasoning_tokens": 5369,
+      "cached_tokens": 0
+    },
+    "GDPR-1412": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00014904,
+      "provider_cost_usd": 0.00014904,
+      "prompt_tokens": 162,
+      "completion_tokens": 486,
+      "reasoning_tokens": 475,
+      "cached_tokens": 0
+    },
+    "GDPR-1912": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00135125,
+      "provider_cost_usd": 0.00135125,
+      "prompt_tokens": 195,
+      "completion_tokens": 2644,
+      "reasoning_tokens": 2634,
+      "cached_tokens": 0
+    },
+    "GDPR-0919": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.0005368,
+      "provider_cost_usd": 0.0005368,
+      "prompt_tokens": 172,
+      "completion_tokens": 1022,
+      "reasoning_tokens": 1012,
+      "cached_tokens": 0
+    },
+    "GDPR-2097": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002136,
+      "provider_cost_usd": 0.0002136,
+      "prompt_tokens": 154,
+      "completion_tokens": 381,
+      "reasoning_tokens": 367,
+      "cached_tokens": 0
+    },
+    "GDPR-2050": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.00015677,
+      "provider_cost_usd": 0.00015677,
+      "prompt_tokens": 153,
+      "completion_tokens": 283,
+      "reasoning_tokens": 273,
+      "cached_tokens": 64
+    },
+    "GDPR-0746": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art21"
+      ],
+      "cost_usd": 0.0007367,
+      "provider_cost_usd": 0.0007367,
+      "prompt_tokens": 198,
+      "completion_tokens": 1414,
+      "reasoning_tokens": 1397,
+      "cached_tokens": 0
+    },
+    "GDPR-2385": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0055562,
+      "provider_cost_usd": 0.0055562,
+      "prompt_tokens": 178,
+      "completion_tokens": 11059,
+      "reasoning_tokens": 11042,
+      "cached_tokens": 0
+    },
+    "GDPR-0996": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00223945,
+      "provider_cost_usd": 0.00223945,
+      "prompt_tokens": 173,
+      "completion_tokens": 4427,
+      "reasoning_tokens": 4413,
+      "cached_tokens": 0
+    },
+    "GDPR-2972": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0005022,
+      "provider_cost_usd": 0.0005022,
+      "prompt_tokens": 168,
+      "completion_tokens": 954,
+      "reasoning_tokens": 949,
+      "cached_tokens": 0
+    },
+    "GDPR-1183": {
+      "verdict": "prohibit",
+      "articles": [
+        "art14",
+        "art17",
+        "art21",
+        "art6"
+      ],
+      "cost_usd": 0.0007428,
+      "provider_cost_usd": 0.0007428,
+      "prompt_tokens": 172,
+      "completion_tokens": 1434,
+      "reasoning_tokens": 1416,
+      "cached_tokens": 0
+    },
+    "GDPR-1803": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00073495,
+      "provider_cost_usd": 0.00073495,
+      "prompt_tokens": 193,
+      "completion_tokens": 1412,
+      "reasoning_tokens": 1403,
+      "cached_tokens": 0
+    },
+    "GDPR-2621": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00017155,
+      "provider_cost_usd": 0.00017155,
+      "prompt_tokens": 167,
+      "completion_tokens": 293,
+      "reasoning_tokens": 289,
+      "cached_tokens": 0
+    },
+    "GDPR-0195": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00037785,
+      "provider_cost_usd": 0.00037785,
+      "prompt_tokens": 159,
+      "completion_tokens": 708,
+      "reasoning_tokens": 690,
+      "cached_tokens": 0
+    },
+    "GDPR-2387": {
+      "verdict": "prohibit",
+      "articles": [
+        "art10",
+        "art12",
+        "art13",
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00052925,
+      "provider_cost_usd": 0.00052925,
+      "prompt_tokens": 205,
+      "completion_tokens": 997,
+      "reasoning_tokens": 967,
+      "cached_tokens": 0
+    },
+    "GDPR-1460": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0004966,
+      "provider_cost_usd": 0.0004966,
+      "prompt_tokens": 174,
+      "completion_tokens": 941,
+      "reasoning_tokens": 927,
+      "cached_tokens": 0
+    },
+    "GDPR-1046": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5"
+      ],
+      "cost_usd": 0.00520725,
+      "provider_cost_usd": 0.00520725,
+      "prompt_tokens": 165,
+      "completion_tokens": 10365,
+      "reasoning_tokens": 10356,
+      "cached_tokens": 0
+    },
+    "GDPR-1420": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.0007685,
+      "provider_cost_usd": 0.0007685,
+      "prompt_tokens": 180,
+      "completion_tokens": 1483,
+      "reasoning_tokens": 1475,
+      "cached_tokens": 0
+    },
+    "GDPR-1345": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00032415,
+      "provider_cost_usd": 0.00032415,
+      "prompt_tokens": 151,
+      "completion_tokens": 603,
+      "reasoning_tokens": 589,
+      "cached_tokens": 0
+    },
+    "GDPR-1605": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0003237,
+      "provider_cost_usd": 0.0003237,
+      "prompt_tokens": 220,
+      "completion_tokens": 1013,
+      "reasoning_tokens": 1114,
+      "cached_tokens": 0
+    },
+    "GDPR-2637": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 8.43e-05,
+      "provider_cost_usd": 8.43e-05,
+      "prompt_tokens": 132,
+      "completion_tokens": 129,
+      "reasoning_tokens": 124,
+      "cached_tokens": 0
+    },
+    "GDPR-1661": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00111945,
+      "provider_cost_usd": 0.00111945,
+      "prompt_tokens": 163,
+      "completion_tokens": 2190,
+      "reasoning_tokens": 2176,
+      "cached_tokens": 0
+    },
+    "GDPR-2168": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00031185,
+      "provider_cost_usd": 0.00031185,
+      "prompt_tokens": 169,
+      "completion_tokens": 573,
+      "reasoning_tokens": 560,
+      "cached_tokens": 0
+    },
+    "GDPR-2787": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00011065,
+      "provider_cost_usd": 0.00011065,
+      "prompt_tokens": 151,
+      "completion_tokens": 176,
+      "reasoning_tokens": 171,
+      "cached_tokens": 0
+    },
+    "GDPR-2723": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00014915,
+      "provider_cost_usd": 0.00014915,
+      "prompt_tokens": 111,
+      "completion_tokens": 265,
+      "reasoning_tokens": 263,
+      "cached_tokens": 0
+    },
+    "GDPR-0156": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art44",
+        "art46",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0014626,
+      "provider_cost_usd": 0.0014626,
+      "prompt_tokens": 184,
+      "completion_tokens": 2870,
+      "reasoning_tokens": 2849,
+      "cached_tokens": 0
+    },
+    "GDPR-2839": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001407,
+      "provider_cost_usd": 0.0001407,
+      "prompt_tokens": 158,
+      "completion_tokens": 234,
+      "reasoning_tokens": 229,
+      "cached_tokens": 0
+    },
+    "GDPR-3093": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001503,
+      "provider_cost_usd": 0.0001503,
+      "prompt_tokens": 122,
+      "completion_tokens": 264,
+      "reasoning_tokens": 260,
+      "cached_tokens": 0
+    },
+    "GDPR-0577": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 6.936e-05,
+      "provider_cost_usd": 6.936e-05,
+      "prompt_tokens": 164,
+      "completion_tokens": 182,
+      "reasoning_tokens": 217,
+      "cached_tokens": 0
+    },
+    "GDPR-2990": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00089965,
+      "provider_cost_usd": 0.00089965,
+      "prompt_tokens": 221,
+      "completion_tokens": 1733,
+      "reasoning_tokens": 1716,
+      "cached_tokens": 0
+    },
+    "GDPR-2169": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00033875,
+      "provider_cost_usd": 0.00033875,
+      "prompt_tokens": 165,
+      "completion_tokens": 628,
+      "reasoning_tokens": 618,
+      "cached_tokens": 0
+    },
+    "GDPR-0308": {
+      "verdict": "prohibit",
+      "articles": [
+        "art24",
+        "art28",
+        "art44",
+        "art46",
+        "art5"
+      ],
+      "cost_usd": 0.0021539,
+      "provider_cost_usd": 0.0021539,
+      "prompt_tokens": 206,
+      "completion_tokens": 4246,
+      "reasoning_tokens": 4224,
+      "cached_tokens": 0
+    },
+    "GDPR-2120": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0005807,
+      "provider_cost_usd": 0.0005807,
+      "prompt_tokens": 178,
+      "completion_tokens": 1108,
+      "reasoning_tokens": 1094,
+      "cached_tokens": 0
+    },
+    "GDPR-0968": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003382,
+      "provider_cost_usd": 0.0003382,
+      "prompt_tokens": 178,
+      "completion_tokens": 623,
+      "reasoning_tokens": 607,
+      "cached_tokens": 0
+    },
+    "GDPR-2885": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0002186,
+      "provider_cost_usd": 0.0002186,
+      "prompt_tokens": 164,
+      "completion_tokens": 388,
+      "reasoning_tokens": 383,
+      "cached_tokens": 0
+    },
+    "GDPR-0269": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.00040585,
+      "provider_cost_usd": 0.00040585,
+      "prompt_tokens": 149,
+      "completion_tokens": 767,
+      "reasoning_tokens": 761,
+      "cached_tokens": 0
+    },
+    "GDPR-1203": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00096595,
+      "provider_cost_usd": 0.00096595,
+      "prompt_tokens": 163,
+      "completion_tokens": 1883,
+      "reasoning_tokens": 1870,
+      "cached_tokens": 0
+    },
+    "GDPR-1798": {
+      "verdict": "prohibit",
+      "articles": [
+        "art35",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0006372,
+      "provider_cost_usd": 0.0006372,
+      "prompt_tokens": 228,
+      "completion_tokens": 1206,
+      "reasoning_tokens": 1188,
+      "cached_tokens": 0
+    },
+    "GDPR-2632": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00010535,
+      "provider_cost_usd": 0.00010535,
+      "prompt_tokens": 209,
+      "completion_tokens": 148,
+      "reasoning_tokens": 143,
+      "cached_tokens": 0
+    },
+    "GDPR-0634": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13"
+      ],
+      "cost_usd": 0.00013255,
+      "provider_cost_usd": 0.00013255,
+      "prompt_tokens": 217,
+      "completion_tokens": 200,
+      "reasoning_tokens": 190,
+      "cached_tokens": 0
+    },
+    "GDPR-0541": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.0006599,
+      "provider_cost_usd": 0.0006599,
+      "prompt_tokens": 156,
+      "completion_tokens": 1273,
+      "reasoning_tokens": 1267,
+      "cached_tokens": 0
+    },
+    "GDPR-0353": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.0001637,
+      "provider_cost_usd": 0.0001637,
+      "prompt_tokens": 148,
+      "completion_tokens": 283,
+      "reasoning_tokens": 316,
+      "cached_tokens": 0
+    },
+    "GDPR-0535": {
+      "verdict": "prohibit",
+      "articles": [
+        "art58",
+        "art83"
+      ],
+      "cost_usd": 0.002926,
+      "provider_cost_usd": 0.002926,
+      "prompt_tokens": 200,
+      "completion_tokens": 5792,
+      "reasoning_tokens": 5783,
+      "cached_tokens": 0
+    },
+    "GDPR-1435": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00037035,
+      "provider_cost_usd": 0.00037035,
+      "prompt_tokens": 159,
+      "completion_tokens": 693,
+      "reasoning_tokens": 688,
+      "cached_tokens": 0
+    },
+    "GDPR-0947": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15"
+      ],
+      "cost_usd": 0.00015275,
+      "provider_cost_usd": 0.00015275,
+      "prompt_tokens": 185,
+      "completion_tokens": 250,
+      "reasoning_tokens": 236,
+      "cached_tokens": 0
+    },
+    "GDPR-0112": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15"
+      ],
+      "cost_usd": 0.0002322,
+      "provider_cost_usd": 0.0002322,
+      "prompt_tokens": 148,
+      "completion_tokens": 420,
+      "reasoning_tokens": 408,
+      "cached_tokens": 0
+    },
+    "GDPR-0719": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00211106,
+      "provider_cost_usd": 0.00211106,
+      "prompt_tokens": 164,
+      "completion_tokens": 4918,
+      "reasoning_tokens": 4904,
+      "cached_tokens": 0
+    },
+    "GDPR-1310": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.000486,
+      "provider_cost_usd": 0.000486,
+      "prompt_tokens": 180,
+      "completion_tokens": 918,
+      "reasoning_tokens": 905,
+      "cached_tokens": 0
+    },
+    "GDPR-1978": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art28",
+        "art32"
+      ],
+      "cost_usd": 0.0005227,
+      "provider_cost_usd": 0.0005227,
+      "prompt_tokens": 168,
+      "completion_tokens": 995,
+      "reasoning_tokens": 977,
+      "cached_tokens": 0
+    },
+    "GDPR-2006": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.0005102,
+      "provider_cost_usd": 0.0005102,
+      "prompt_tokens": 168,
+      "completion_tokens": 970,
+      "reasoning_tokens": 960,
+      "cached_tokens": 0
+    },
+    "GDPR-0863": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0006973,
+      "provider_cost_usd": 0.0006973,
+      "prompt_tokens": 162,
+      "completion_tokens": 1346,
+      "reasoning_tokens": 1332,
+      "cached_tokens": 0
+    },
+    "GDPR-3048": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00101935,
+      "provider_cost_usd": 0.00101935,
+      "prompt_tokens": 199,
+      "completion_tokens": 1979,
+      "reasoning_tokens": 1965,
+      "cached_tokens": 0
+    },
+    "GDPR-3028": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001842,
+      "provider_cost_usd": 0.0001842,
+      "prompt_tokens": 128,
+      "completion_tokens": 330,
+      "reasoning_tokens": 327,
+      "cached_tokens": 0
+    },
+    "GDPR-0610": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art88"
+      ],
+      "cost_usd": 0.0003729,
+      "provider_cost_usd": 0.0003729,
+      "prompt_tokens": 126,
+      "completion_tokens": 708,
+      "reasoning_tokens": 692,
+      "cached_tokens": 0
+    },
+    "GDPR-1426": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art17",
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00071525,
+      "provider_cost_usd": 0.00071525,
+      "prompt_tokens": 165,
+      "completion_tokens": 1381,
+      "reasoning_tokens": 1355,
+      "cached_tokens": 0
+    },
+    "GDPR-0219": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00025665,
+      "provider_cost_usd": 0.00025665,
+      "prompt_tokens": 131,
+      "completion_tokens": 474,
+      "reasoning_tokens": 461,
+      "cached_tokens": 0
+    },
+    "GDPR-2931": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.000485,
+      "provider_cost_usd": 0.000485,
+      "prompt_tokens": 140,
+      "completion_tokens": 928,
+      "reasoning_tokens": 924,
+      "cached_tokens": 0
+    },
+    "GDPR-2191": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art7",
+        "art9"
+      ],
+      "cost_usd": 0.00044635,
+      "provider_cost_usd": 0.00044635,
+      "prompt_tokens": 179,
+      "completion_tokens": 839,
+      "reasoning_tokens": 821,
+      "cached_tokens": 0
+    },
+    "GDPR-0094": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00023755,
+      "provider_cost_usd": 0.00023755,
+      "prompt_tokens": 147,
+      "completion_tokens": 431,
+      "reasoning_tokens": 419,
+      "cached_tokens": 0
+    },
+    "GDPR-0657": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art17"
+      ],
+      "cost_usd": 0.0003844,
+      "provider_cost_usd": 0.0003844,
+      "prompt_tokens": 156,
+      "completion_tokens": 722,
+      "reasoning_tokens": 708,
+      "cached_tokens": 0
+    },
+    "GDPR-0650": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.000171,
+      "provider_cost_usd": 0.000171,
+      "prompt_tokens": 150,
+      "completion_tokens": 297,
+      "reasoning_tokens": 283,
+      "cached_tokens": 0
+    },
+    "GDPR-0224": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.0003238,
+      "provider_cost_usd": 0.0003238,
+      "prompt_tokens": 152,
+      "completion_tokens": 602,
+      "reasoning_tokens": 596,
+      "cached_tokens": 0
+    },
+    "GDPR-0768": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.0003391,
+      "provider_cost_usd": 0.0003391,
+      "prompt_tokens": 154,
+      "completion_tokens": 632,
+      "reasoning_tokens": 618,
+      "cached_tokens": 0
+    },
+    "GDPR-2556": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00040065,
+      "provider_cost_usd": 0.00040065,
+      "prompt_tokens": 111,
+      "completion_tokens": 768,
+      "reasoning_tokens": 754,
+      "cached_tokens": 0
+    },
+    "GDPR-0967": {
+      "verdict": "prohibit",
+      "articles": [
+        "art14",
+        "art15"
+      ],
+      "cost_usd": 0.00537355,
+      "provider_cost_usd": 0.00537355,
+      "prompt_tokens": 157,
+      "completion_tokens": 10700,
+      "reasoning_tokens": 10686,
+      "cached_tokens": 0
+    },
+    "GDPR-0775": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0003105,
+      "provider_cost_usd": 0.0003105,
+      "prompt_tokens": 150,
+      "completion_tokens": 576,
+      "reasoning_tokens": 567,
+      "cached_tokens": 0
+    },
+    "GDPR-1047": {
+      "verdict": "prohibit",
+      "articles": [
+        "art25",
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00056105,
+      "provider_cost_usd": 0.00056105,
+      "prompt_tokens": 167,
+      "completion_tokens": 1072,
+      "reasoning_tokens": 1054,
+      "cached_tokens": 0
+    },
+    "GDPR-0429": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00017235,
+      "provider_cost_usd": 0.000172349,
+      "prompt_tokens": 169,
+      "completion_tokens": 316,
+      "reasoning_tokens": 302,
+      "cached_tokens": 0
+    },
+    "GDPR-2131": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.0001947,
+      "provider_cost_usd": 0.0001947,
+      "prompt_tokens": 178,
+      "completion_tokens": 336,
+      "reasoning_tokens": 324,
+      "cached_tokens": 0
+    },
+    "GDPR-1403": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00026315,
+      "provider_cost_usd": 0.00026315,
+      "prompt_tokens": 171,
+      "completion_tokens": 475,
+      "reasoning_tokens": 458,
+      "cached_tokens": 0
+    },
+    "GDPR-2219": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0002084,
+      "provider_cost_usd": 0.0002084,
+      "prompt_tokens": 156,
+      "completion_tokens": 370,
+      "reasoning_tokens": 360,
+      "cached_tokens": 0
+    },
+    "GDPR-2638": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001138,
+      "provider_cost_usd": 0.0001138,
+      "prompt_tokens": 152,
+      "completion_tokens": 182,
+      "reasoning_tokens": 180,
+      "cached_tokens": 0
+    },
+    "GDPR-0133": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00037894,
+      "provider_cost_usd": 0.000378935,
+      "prompt_tokens": 151,
+      "completion_tokens": 1503,
+      "reasoning_tokens": 1489,
+      "cached_tokens": 148
+    },
+    "GDPR-1140": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00036595,
+      "provider_cost_usd": 0.00036595,
+      "prompt_tokens": 143,
+      "completion_tokens": 689,
+      "reasoning_tokens": 680,
+      "cached_tokens": 0
+    },
+    "GDPR-1422": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15",
+        "art5"
+      ],
+      "cost_usd": 0.000334,
+      "provider_cost_usd": 0.000334,
+      "prompt_tokens": 170,
+      "completion_tokens": 617,
+      "reasoning_tokens": 602,
+      "cached_tokens": 0
+    },
+    "GDPR-2721": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 8.942e-05,
+      "provider_cost_usd": 8.9424e-05,
+      "prompt_tokens": 203,
+      "completion_tokens": 276,
+      "reasoning_tokens": 271,
+      "cached_tokens": 64
+    },
+    "GDPR-0679": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15"
+      ],
+      "cost_usd": 0.00744055,
+      "provider_cost_usd": 0.00744055,
+      "prompt_tokens": 157,
+      "completion_tokens": 14834,
+      "reasoning_tokens": 14820,
+      "cached_tokens": 0
+    },
+    "GDPR-1657": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art35",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0003281,
+      "provider_cost_usd": 0.0003281,
+      "prompt_tokens": 184,
+      "completion_tokens": 601,
+      "reasoning_tokens": 582,
+      "cached_tokens": 0
+    },
+    "GDPR-2698": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00022775,
+      "provider_cost_usd": 0.00022775,
+      "prompt_tokens": 135,
+      "completion_tokens": 415,
+      "reasoning_tokens": 410,
+      "cached_tokens": 0
+    },
+    "GDPR-1093": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00025675,
+      "provider_cost_usd": 0.00025675,
+      "prompt_tokens": 155,
+      "completion_tokens": 467,
+      "reasoning_tokens": 450,
+      "cached_tokens": 0
+    },
+    "GDPR-3078": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 5.93e-05,
+      "provider_cost_usd": 5.93e-05,
+      "prompt_tokens": 132,
+      "completion_tokens": 79,
+      "reasoning_tokens": 74,
+      "cached_tokens": 0
+    },
+    "GDPR-1500": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0003188,
+      "provider_cost_usd": 0.0003188,
+      "prompt_tokens": 152,
+      "completion_tokens": 592,
+      "reasoning_tokens": 583,
+      "cached_tokens": 0
+    },
+    "GDPR-2470": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0008368,
+      "provider_cost_usd": 0.0008368,
+      "prompt_tokens": 212,
+      "completion_tokens": 1610,
+      "reasoning_tokens": 1593,
+      "cached_tokens": 0
+    },
+    "GDPR-0426": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art14",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002751,
+      "provider_cost_usd": 0.0002751,
+      "prompt_tokens": 154,
+      "completion_tokens": 504,
+      "reasoning_tokens": 482,
+      "cached_tokens": 0
+    },
+    "GDPR-2806": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001487,
+      "provider_cost_usd": 0.0001487,
+      "prompt_tokens": 148,
+      "completion_tokens": 253,
+      "reasoning_tokens": 248,
+      "cached_tokens": 0
+    },
+    "GDPR-0882": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.0004297,
+      "provider_cost_usd": 0.0004297,
+      "prompt_tokens": 168,
+      "completion_tokens": 809,
+      "reasoning_tokens": 792,
+      "cached_tokens": 0
+    },
+    "GDPR-0782": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0002704,
+      "provider_cost_usd": 0.0002704,
+      "prompt_tokens": 166,
+      "completion_tokens": 491,
+      "reasoning_tokens": 478,
+      "cached_tokens": 0
+    },
+    "GDPR-2487": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0002767,
+      "provider_cost_usd": 0.0002767,
+      "prompt_tokens": 158,
+      "completion_tokens": 506,
+      "reasoning_tokens": 502,
+      "cached_tokens": 0
+    },
+    "GDPR-2254": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00053015,
+      "provider_cost_usd": 0.00053015,
+      "prompt_tokens": 181,
+      "completion_tokens": 1006,
+      "reasoning_tokens": 991,
+      "cached_tokens": 0
+    },
+    "GDPR-3110": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001814,
+      "provider_cost_usd": 0.0001814,
+      "prompt_tokens": 136,
+      "completion_tokens": 322,
+      "reasoning_tokens": 318,
+      "cached_tokens": 0
+    },
+    "GDPR-0686": {
+      "verdict": "prohibit",
+      "articles": [
+        "art17",
+        "art5"
+      ],
+      "cost_usd": 0.0003153,
+      "provider_cost_usd": 0.0003153,
+      "prompt_tokens": 162,
+      "completion_tokens": 582,
+      "reasoning_tokens": 568,
+      "cached_tokens": 0
+    },
+    "GDPR-1501": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.0005904,
+      "provider_cost_usd": 0.0005904,
+      "prompt_tokens": 166,
+      "completion_tokens": 1131,
+      "reasoning_tokens": 1122,
+      "cached_tokens": 0
+    },
+    "GDPR-2942": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0002224,
+      "provider_cost_usd": 0.0002224,
+      "prompt_tokens": 156,
+      "completion_tokens": 398,
+      "reasoning_tokens": 395,
+      "cached_tokens": 0
+    },
+    "GDPR-1232": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art58"
+      ],
+      "cost_usd": 0.00102015,
+      "provider_cost_usd": 0.00102015,
+      "prompt_tokens": 181,
+      "completion_tokens": 1986,
+      "reasoning_tokens": 1974,
+      "cached_tokens": 0
+    },
+    "GDPR-0455": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00030335,
+      "provider_cost_usd": 0.00030335,
+      "prompt_tokens": 159,
+      "completion_tokens": 559,
+      "reasoning_tokens": 546,
+      "cached_tokens": 0
+    },
+    "GDPR-1269": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31",
+        "art58"
+      ],
+      "cost_usd": 0.00364095,
+      "provider_cost_usd": 0.00364095,
+      "prompt_tokens": 163,
+      "completion_tokens": 7233,
+      "reasoning_tokens": 7223,
+      "cached_tokens": 0
+    },
+    "GDPR-2916": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 6.22e-05,
+      "provider_cost_usd": 6.22e-05,
+      "prompt_tokens": 168,
+      "completion_tokens": 74,
+      "reasoning_tokens": 69,
+      "cached_tokens": 0
+    },
+    "GDPR-0683": {
+      "verdict": "prohibit",
+      "articles": [
+        "art37",
+        "art38",
+        "art39"
+      ],
+      "cost_usd": 0.00046315,
+      "provider_cost_usd": 0.00046315,
+      "prompt_tokens": 191,
+      "completion_tokens": 869,
+      "reasoning_tokens": 854,
+      "cached_tokens": 0
+    },
+    "GDPR-2774": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.000158,
+      "provider_cost_usd": 0.000158,
+      "prompt_tokens": 210,
+      "completion_tokens": 253,
+      "reasoning_tokens": 248,
+      "cached_tokens": 0
+    },
+    "GDPR-2230": {
+      "verdict": "prohibit",
+      "articles": [
+        "art58"
+      ],
+      "cost_usd": 0.00109655,
+      "provider_cost_usd": 0.00109655,
+      "prompt_tokens": 147,
+      "completion_tokens": 2149,
+      "reasoning_tokens": 2139,
+      "cached_tokens": 0
+    },
+    "GDPR-0355": {
+      "verdict": "prohibit",
+      "articles": [
+        "art17"
+      ],
+      "cost_usd": 0.0002548,
+      "provider_cost_usd": 0.0002548,
+      "prompt_tokens": 152,
+      "completion_tokens": 464,
+      "reasoning_tokens": 459,
+      "cached_tokens": 0
+    },
+    "GDPR-3033": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00024515,
+      "provider_cost_usd": 0.00024515,
+      "prompt_tokens": 141,
+      "completion_tokens": 448,
+      "reasoning_tokens": 445,
+      "cached_tokens": 0
+    },
+    "GDPR-2477": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0003437,
+      "provider_cost_usd": 0.0003437,
+      "prompt_tokens": 168,
+      "completion_tokens": 637,
+      "reasoning_tokens": 807,
+      "cached_tokens": 0
+    },
+    "GDPR-1844": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0007791,
+      "provider_cost_usd": 0.0007791,
+      "prompt_tokens": 194,
+      "completion_tokens": 1500,
+      "reasoning_tokens": 1487,
+      "cached_tokens": 0
+    },
+    "GDPR-2039": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0003533,
+      "provider_cost_usd": 0.0003533,
+      "prompt_tokens": 142,
+      "completion_tokens": 664,
+      "reasoning_tokens": 652,
+      "cached_tokens": 0
+    },
+    "GDPR-1001": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00021515,
+      "provider_cost_usd": 0.00021515,
+      "prompt_tokens": 161,
+      "completion_tokens": 382,
+      "reasoning_tokens": 370,
+      "cached_tokens": 0
+    },
+    "GDPR-2314": {
+      "verdict": "prohibit",
+      "articles": [
+        "art16",
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0038997,
+      "provider_cost_usd": 0.0038997,
+      "prompt_tokens": 168,
+      "completion_tokens": 7749,
+      "reasoning_tokens": 7731,
+      "cached_tokens": 0
+    },
+    "GDPR-2871": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00066025,
+      "provider_cost_usd": 0.00066025,
+      "prompt_tokens": 125,
+      "completion_tokens": 1283,
+      "reasoning_tokens": 1269,
+      "cached_tokens": 0
+    },
+    "GDPR-0331": {
+      "verdict": "prohibit",
+      "articles": [
+        "art25",
+        "art35",
+        "art5"
+      ],
+      "cost_usd": 0.000123,
+      "provider_cost_usd": 0.000123,
+      "prompt_tokens": 160,
+      "completion_tokens": 198,
+      "reasoning_tokens": 182,
+      "cached_tokens": 0
+    },
+    "GDPR-1814": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0004101,
+      "provider_cost_usd": 0.0004101,
+      "prompt_tokens": 124,
+      "completion_tokens": 783,
+      "reasoning_tokens": 770,
+      "cached_tokens": 0
+    },
+    "GDPR-2829": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001043,
+      "provider_cost_usd": 0.0001043,
+      "prompt_tokens": 172,
+      "completion_tokens": 157,
+      "reasoning_tokens": 152,
+      "cached_tokens": 0
+    },
+    "GDPR-1327": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00023705,
+      "provider_cost_usd": 0.00023705,
+      "prompt_tokens": 167,
+      "completion_tokens": 424,
+      "reasoning_tokens": 410,
+      "cached_tokens": 0
+    },
+    "GDPR-2780": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 6.87e-05,
+      "provider_cost_usd": 6.87e-05,
+      "prompt_tokens": 128,
+      "completion_tokens": 99,
+      "reasoning_tokens": 94,
+      "cached_tokens": 0
+    },
+    "GDPR-3032": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0005612,
+      "provider_cost_usd": 0.0005612,
+      "prompt_tokens": 308,
+      "completion_tokens": 1030,
+      "reasoning_tokens": 1027,
+      "cached_tokens": 0
+    },
+    "GDPR-0120": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00034248,
+      "provider_cost_usd": 0.00034248,
+      "prompt_tokens": 152,
+      "completion_tokens": 1096,
+      "reasoning_tokens": 1311,
+      "cached_tokens": 0
+    },
+    "GDPR-2699": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0009753,
+      "provider_cost_usd": 0.0009753,
+      "prompt_tokens": 222,
+      "completion_tokens": 1884,
+      "reasoning_tokens": 1879,
+      "cached_tokens": 0
+    },
+    "GDPR-2876": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00100605,
+      "provider_cost_usd": 0.00100605,
+      "prompt_tokens": 157,
+      "completion_tokens": 1965,
+      "reasoning_tokens": 1948,
+      "cached_tokens": 0
+    },
+    "GDPR-3129": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00129535,
+      "provider_cost_usd": 0.00129535,
+      "prompt_tokens": 149,
+      "completion_tokens": 2546,
+      "reasoning_tokens": 2542,
+      "cached_tokens": 0
+    },
+    "GDPR-2601": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00012665,
+      "provider_cost_usd": 0.00012665,
+      "prompt_tokens": 171,
+      "completion_tokens": 202,
+      "reasoning_tokens": 198,
+      "cached_tokens": 0
+    },
+    "GDPR-0613": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.0038963,
+      "provider_cost_usd": 0.0038963,
+      "prompt_tokens": 152,
+      "completion_tokens": 7747,
+      "reasoning_tokens": 7737,
+      "cached_tokens": 0
+    },
+    "GDPR-2112": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.00053035,
+      "provider_cost_usd": 0.000530348,
+      "prompt_tokens": 168,
+      "completion_tokens": 1078,
+      "reasoning_tokens": 1068,
+      "cached_tokens": 0
+    },
+    "GDPR-2436": {
+      "verdict": "prohibit",
+      "articles": [
+        "art14",
+        "art27",
+        "art6"
+      ],
+      "cost_usd": 0.00052355,
+      "provider_cost_usd": 0.00052355,
+      "prompt_tokens": 187,
+      "completion_tokens": 991,
+      "reasoning_tokens": 975,
+      "cached_tokens": 0
+    },
+    "GDPR-2258": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art17"
+      ],
+      "cost_usd": 0.00075635,
+      "provider_cost_usd": 0.00075635,
+      "prompt_tokens": 169,
+      "completion_tokens": 1462,
+      "reasoning_tokens": 1448,
+      "cached_tokens": 0
+    },
+    "GDPR-0127": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art15"
+      ],
+      "cost_usd": 0.0002903,
+      "provider_cost_usd": 0.0002903,
+      "prompt_tokens": 152,
+      "completion_tokens": 535,
+      "reasoning_tokens": 521,
+      "cached_tokens": 0
+    },
+    "GDPR-2889": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00019625,
+      "provider_cost_usd": 0.00019625,
+      "prompt_tokens": 155,
+      "completion_tokens": 346,
+      "reasoning_tokens": 342,
+      "cached_tokens": 0
+    },
+    "GDPR-0458": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001494,
+      "provider_cost_usd": 0.0001494,
+      "prompt_tokens": 156,
+      "completion_tokens": 252,
+      "reasoning_tokens": 247,
+      "cached_tokens": 0
+    },
+    "GDPR-2825": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00223377,
+      "provider_cost_usd": 0.002233769,
+      "prompt_tokens": 159,
+      "completion_tokens": 4705,
+      "reasoning_tokens": 4700,
+      "cached_tokens": 0
+    },
+    "GDPR-2495": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 9.655e-05,
+      "provider_cost_usd": 9.655e-05,
+      "prompt_tokens": 237,
+      "completion_tokens": 122,
+      "reasoning_tokens": 117,
+      "cached_tokens": 0
+    },
+    "GDPR-3132": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001213,
+      "provider_cost_usd": 0.0001213,
+      "prompt_tokens": 152,
+      "completion_tokens": 197,
+      "reasoning_tokens": 192,
+      "cached_tokens": 0
+    },
+    "GDPR-2681": {
+      "verdict": "prohibit",
+      "articles": [
+        "art21",
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0003135,
+      "provider_cost_usd": 0.0003135,
+      "prompt_tokens": 110,
+      "completion_tokens": 1012,
+      "reasoning_tokens": 1072,
+      "cached_tokens": 0
+    },
+    "GDPR-0005": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00026185,
+      "provider_cost_usd": 0.00026185,
+      "prompt_tokens": 149,
+      "completion_tokens": 479,
+      "reasoning_tokens": 470,
+      "cached_tokens": 0
+    },
+    "GDPR-2619": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001301,
+      "provider_cost_usd": 0.000130096,
+      "prompt_tokens": 156,
+      "completion_tokens": 230,
+      "reasoning_tokens": 225,
+      "cached_tokens": 0
+    },
+    "GDPR-1703": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00033405,
+      "provider_cost_usd": 0.00033405,
+      "prompt_tokens": 197,
+      "completion_tokens": 609,
+      "reasoning_tokens": 591,
+      "cached_tokens": 0
+    },
+    "GDPR-2738": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 5.81e-05,
+      "provider_cost_usd": 5.81e-05,
+      "prompt_tokens": 164,
+      "completion_tokens": 67,
+      "reasoning_tokens": 62,
+      "cached_tokens": 0
+    },
+    "GDPR-2657": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00033732,
+      "provider_cost_usd": 0.000337319,
+      "prompt_tokens": 229,
+      "completion_tokens": 649,
+      "reasoning_tokens": 644,
+      "cached_tokens": 0
+    },
+    "GDPR-2961": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00022945,
+      "provider_cost_usd": 0.00022945,
+      "prompt_tokens": 183,
+      "completion_tokens": 404,
+      "reasoning_tokens": 401,
+      "cached_tokens": 0
+    },
+    "GDPR-1575": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00035915,
+      "provider_cost_usd": 0.00035915,
+      "prompt_tokens": 241,
+      "completion_tokens": 646,
+      "reasoning_tokens": 632,
+      "cached_tokens": 0
+    },
+    "GDPR-1839": {
+      "verdict": "prohibit",
+      "articles": [
+        "art21",
+        "art6"
+      ],
+      "cost_usd": 0.0004181,
+      "provider_cost_usd": 0.0004181,
+      "prompt_tokens": 164,
+      "completion_tokens": 787,
+      "reasoning_tokens": 777,
+      "cached_tokens": 0
+    },
+    "GDPR-1353": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art9"
+      ],
+      "cost_usd": 0.00038505,
+      "provider_cost_usd": 0.00038505,
+      "prompt_tokens": 167,
+      "completion_tokens": 720,
+      "reasoning_tokens": 702,
+      "cached_tokens": 0
+    },
+    "GDPR-1997": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00027763,
+      "provider_cost_usd": 0.000277629,
+      "prompt_tokens": 139,
+      "completion_tokens": 549,
+      "reasoning_tokens": 535,
+      "cached_tokens": 0
+    },
+    "GDPR-0640": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0012113,
+      "provider_cost_usd": 0.0012113,
+      "prompt_tokens": 162,
+      "completion_tokens": 2374,
+      "reasoning_tokens": 2360,
+      "cached_tokens": 0
+    },
+    "GDPR-1440": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00129782,
+      "provider_cost_usd": 0.001297824,
+      "prompt_tokens": 212,
+      "completion_tokens": 2886,
+      "reasoning_tokens": 2868,
+      "cached_tokens": 0
+    },
+    "GDPR-2040": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00025225,
+      "provider_cost_usd": 0.00025225,
+      "prompt_tokens": 165,
+      "completion_tokens": 455,
+      "reasoning_tokens": 437,
+      "cached_tokens": 0
+    },
+    "GDPR-3089": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0005155,
+      "provider_cost_usd": 0.0005155,
+      "prompt_tokens": 140,
+      "completion_tokens": 989,
+      "reasoning_tokens": 986,
+      "cached_tokens": 0
+    },
+    "GDPR-0752": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art17"
+      ],
+      "cost_usd": 0.00020935,
+      "provider_cost_usd": 0.00020935,
+      "prompt_tokens": 159,
+      "completion_tokens": 371,
+      "reasoning_tokens": 357,
+      "cached_tokens": 0
+    },
+    "GDPR-0500": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00018165,
+      "provider_cost_usd": 0.00018165,
+      "prompt_tokens": 181,
+      "completion_tokens": 309,
+      "reasoning_tokens": 296,
+      "cached_tokens": 0
+    },
+    "GDPR-1658": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.0005619,
+      "provider_cost_usd": 0.0005619,
+      "prompt_tokens": 266,
+      "completion_tokens": 1044,
+      "reasoning_tokens": 1030,
+      "cached_tokens": 0
+    },
+    "GDPR-2878": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00017955,
+      "provider_cost_usd": 0.00017955,
+      "prompt_tokens": 137,
+      "completion_tokens": 318,
+      "reasoning_tokens": 313,
+      "cached_tokens": 0
+    },
+    "GDPR-0575": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art32"
+      ],
+      "cost_usd": 0.0005843,
+      "provider_cost_usd": 0.0005843,
+      "prompt_tokens": 212,
+      "completion_tokens": 1105,
+      "reasoning_tokens": 1096,
+      "cached_tokens": 0
+    },
+    "GDPR-2529": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001434,
+      "provider_cost_usd": 0.0001434,
+      "prompt_tokens": 176,
+      "completion_tokens": 234,
+      "reasoning_tokens": 229,
+      "cached_tokens": 0
+    },
+    "GDPR-1249": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art30",
+        "art32",
+        "art35",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00031345,
+      "provider_cost_usd": 0.00031345,
+      "prompt_tokens": 173,
+      "completion_tokens": 575,
+      "reasoning_tokens": 548,
+      "cached_tokens": 0
+    },
+    "GDPR-1077": {
+      "verdict": "prohibit",
+      "articles": [
+        "art6"
+      ],
+      "cost_usd": 0.0004035,
+      "provider_cost_usd": 0.0004035,
+      "prompt_tokens": 150,
+      "completion_tokens": 762,
+      "reasoning_tokens": 752,
+      "cached_tokens": 0
+    },
+    "GDPR-0328": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00045025,
+      "provider_cost_usd": 0.00045025,
+      "prompt_tokens": 165,
+      "completion_tokens": 851,
+      "reasoning_tokens": 835,
+      "cached_tokens": 0
+    },
+    "GDPR-0621": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00026076,
+      "provider_cost_usd": 0.000260756,
+      "prompt_tokens": 166,
+      "completion_tokens": 505,
+      "reasoning_tokens": 487,
+      "cached_tokens": 0
+    },
+    "GDPR-0446": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art9"
+      ],
+      "cost_usd": 0.00045725,
+      "provider_cost_usd": 0.00045725,
+      "prompt_tokens": 155,
+      "completion_tokens": 868,
+      "reasoning_tokens": 852,
+      "cached_tokens": 0
+    },
+    "GDPR-0057": {
+      "verdict": "prohibit",
+      "articles": [
+        "art31"
+      ],
+      "cost_usd": 0.00201195,
+      "provider_cost_usd": 0.00201195,
+      "prompt_tokens": 173,
+      "completion_tokens": 3972,
+      "reasoning_tokens": 3962,
+      "cached_tokens": 0
+    },
+    "GDPR-0839": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5"
+      ],
+      "cost_usd": 0.00111625,
+      "provider_cost_usd": 0.00111625,
+      "prompt_tokens": 150,
+      "completion_tokens": 2305,
+      "reasoning_tokens": 2292,
+      "cached_tokens": 0
+    },
+    "GDPR-0208": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32"
+      ],
+      "cost_usd": 0.0001463,
+      "provider_cost_usd": 0.0001463,
+      "prompt_tokens": 152,
+      "completion_tokens": 247,
+      "reasoning_tokens": 240,
+      "cached_tokens": 0
+    },
+    "GDPR-0984": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00054565,
+      "provider_cost_usd": 0.00054565,
+      "prompt_tokens": 201,
+      "completion_tokens": 1031,
+      "reasoning_tokens": 1017,
+      "cached_tokens": 0
+    },
+    "GDPR-1900": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00031285,
+      "provider_cost_usd": 0.00031285,
+      "prompt_tokens": 179,
+      "completion_tokens": 572,
+      "reasoning_tokens": 558,
+      "cached_tokens": 0
+    },
+    "GDPR-0002": {
+      "verdict": "prohibit",
+      "articles": [
+        "art21",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0009499,
+      "provider_cost_usd": 0.0009499,
+      "prompt_tokens": 166,
+      "completion_tokens": 1850,
+      "reasoning_tokens": 1837,
+      "cached_tokens": 0
+    },
+    "GDPR-2952": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.00017597,
+      "provider_cost_usd": 0.000175968,
+      "prompt_tokens": 218,
+      "completion_tokens": 309,
+      "reasoning_tokens": 304,
+      "cached_tokens": 0
+    },
+    "GDPR-1524": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art44",
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.00114135,
+      "provider_cost_usd": 0.00114135,
+      "prompt_tokens": 229,
+      "completion_tokens": 2214,
+      "reasoning_tokens": 2193,
+      "cached_tokens": 0
+    },
+    "GDPR-1070": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00024106,
+      "provider_cost_usd": 0.000241064,
+      "prompt_tokens": 156,
+      "completion_tokens": 831,
+      "reasoning_tokens": 817,
+      "cached_tokens": 64
+    },
+    "GDPR-0888": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00043,
+      "provider_cost_usd": 0.00043,
+      "prompt_tokens": 150,
+      "completion_tokens": 815,
+      "reasoning_tokens": 806,
+      "cached_tokens": 0
+    },
+    "GDPR-2042": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00035156,
+      "provider_cost_usd": 0.00035156,
+      "prompt_tokens": 150,
+      "completion_tokens": 703,
+      "reasoning_tokens": 689,
+      "cached_tokens": 0
+    },
+    "GDPR-0600": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0001583,
+      "provider_cost_usd": 0.0001583,
+      "prompt_tokens": 162,
+      "completion_tokens": 268,
+      "reasoning_tokens": 256,
+      "cached_tokens": 0
+    },
+    "GDPR-0558": {
+      "verdict": "prohibit",
+      "articles": [
+        "art12",
+        "art13",
+        "art14",
+        "art5"
+      ],
+      "cost_usd": 0.00042709,
+      "provider_cost_usd": 0.000427089,
+      "prompt_tokens": 179,
+      "completion_tokens": 855,
+      "reasoning_tokens": 833,
+      "cached_tokens": 0
+    },
+    "GDPR-2309": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5"
+      ],
+      "cost_usd": 0.00078565,
+      "provider_cost_usd": 0.00078565,
+      "prompt_tokens": 181,
+      "completion_tokens": 1517,
+      "reasoning_tokens": 1508,
+      "cached_tokens": 0
+    },
+    "GDPR-1364": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00038615,
+      "provider_cost_usd": 0.00038615,
+      "prompt_tokens": 161,
+      "completion_tokens": 724,
+      "reasoning_tokens": 715,
+      "cached_tokens": 0
+    },
+    "GDPR-2624": {
+      "verdict": "permit",
+      "articles": [],
+      "cost_usd": 0.0001651,
+      "provider_cost_usd": 0.0001651,
+      "prompt_tokens": 154,
+      "completion_tokens": 284,
+      "reasoning_tokens": 279,
+      "cached_tokens": 0
+    },
+    "GDPR-0420": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art28",
+        "art5"
+      ],
+      "cost_usd": 0.00064975,
+      "provider_cost_usd": 0.00064975,
+      "prompt_tokens": 235,
+      "completion_tokens": 1229,
+      "reasoning_tokens": 1215,
+      "cached_tokens": 0
+    },
+    "GDPR-0004": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.0006724,
+      "provider_cost_usd": 0.0006724,
+      "prompt_tokens": 166,
+      "completion_tokens": 1295,
+      "reasoning_tokens": 1280,
+      "cached_tokens": 0
+    },
+    "GDPR-0464": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00089395,
+      "provider_cost_usd": 0.00089395,
+      "prompt_tokens": 153,
+      "completion_tokens": 1742,
+      "reasoning_tokens": 1731,
+      "cached_tokens": 0
+    },
+    "GDPR-1700": {
+      "verdict": "prohibit",
+      "articles": [
+        "art13",
+        "art5",
+        "art6"
+      ],
+      "cost_usd": 0.00035565,
+      "provider_cost_usd": 0.00035565,
+      "prompt_tokens": 161,
+      "completion_tokens": 663,
+      "reasoning_tokens": 647,
+      "cached_tokens": 0
+    },
+    "GDPR-0356": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5"
+      ],
+      "cost_usd": 4.88e-05,
+      "provider_cost_usd": 4.88e-05,
+      "prompt_tokens": 142,
+      "completion_tokens": 55,
+      "reasoning_tokens": 45,
+      "cached_tokens": 0
+    },
+    "GDPR-0593": {
+      "verdict": "prohibit",
+      "articles": [
+        "art32",
+        "art33",
+        "art34",
+        "art5"
+      ],
+      "cost_usd": 0.0002862,
+      "provider_cost_usd": 0.0002862,
+      "prompt_tokens": 148,
+      "completion_tokens": 528,
+      "reasoning_tokens": 506,
+      "cached_tokens": 0
+    },
+    "GDPR-1931": {
+      "verdict": "prohibit",
+      "articles": [
+        "art5",
+        "art6",
+        "art7"
+      ],
+      "cost_usd": 0.0003528,
+      "provider_cost_usd": 0.0003528,
+      "prompt_tokens": 212,
+      "completion_tokens": 642,
+      "reasoning_tokens": 628,
+      "cached_tokens": 0
+    }
+  },
+  "fit_heads": 156,
+  "validation_heads": 144,
+  "mined_candidates": 29,
+  "rules": [
+    {
+      "name": "mined_art5__sender_role-employee_or_internal_staff",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 14,
+      "gate_rejected": false,
+      "fired_all": 27,
+      "match_all_vs_oracle": 26,
+      "world_precision": 0.963,
+      "fired_validation": 13,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 12,
+      "val_precision": 0.9231,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__subject_role-employee_or_worker",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 9,
+      "gate_rejected": false,
+      "fired_all": 18,
+      "match_all_vs_oracle": 18,
+      "world_precision": 1.0,
+      "fired_validation": 9,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 9,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__purpose-employment_and_hr_management",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 8,
+      "gate_rejected": false,
+      "fired_all": 13,
+      "match_all_vs_oracle": 13,
+      "world_precision": 1.0,
+      "fired_validation": 5,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 5,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art32__recipient_role-malicious_actor",
+      "target": "art32",
+      "confidence": 1.0,
+      "support": 7,
+      "gate_rejected": false,
+      "fired_all": 10,
+      "match_all_vs_oracle": 10,
+      "world_precision": 1.0,
+      "fired_validation": 3,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 3,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__purpose-healthcare_and_medical_services",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 12,
+      "match_all_vs_oracle": 12,
+      "world_precision": 1.0,
+      "fired_validation": 7,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 7,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__recipient_role-technical_system_or_device",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 10,
+      "match_all_vs_oracle": 6,
+      "world_precision": 0.6,
+      "fired_validation": 5,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 4,
+      "val_precision": 0.8,
+      "class": "leakage",
+      "admitted": false
+    },
+    {
+      "name": "mined_art5__sender_role-public_authority_or_government",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 9,
+      "match_all_vs_oracle": 9,
+      "world_precision": 1.0,
+      "fired_validation": 4,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 4,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art6__purpose-public_interest_and_journalism",
+      "target": "art6",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 7,
+      "match_all_vs_oracle": 7,
+      "world_precision": 1.0,
+      "fired_validation": 2,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 2,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art6__recipient_role-technical_system_or_device",
+      "target": "art6",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 10,
+      "match_all_vs_oracle": 6,
+      "world_precision": 0.6,
+      "fired_validation": 5,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 4,
+      "val_precision": 0.8,
+      "class": "leakage",
+      "admitted": false
+    },
+    {
+      "name": "mined_art5__consent_form-authorization__purpose-security_and_fraud_prevention",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 8,
+      "gate_rejected": false,
+      "fired_all": 24,
+      "match_all_vs_oracle": 23,
+      "world_precision": 0.9583,
+      "fired_validation": 16,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 15,
+      "val_precision": 0.9375,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__consent_form-authorization__recipient_role-data_processor",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 7,
+      "gate_rejected": false,
+      "fired_all": 15,
+      "match_all_vs_oracle": 15,
+      "world_precision": 1.0,
+      "fired_validation": 8,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 8,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__recipient_role-general_public__sender_role-data_controller_or_processor",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 7,
+      "gate_rejected": false,
+      "fired_all": 12,
+      "match_all_vs_oracle": 12,
+      "world_precision": 1.0,
+      "fired_validation": 5,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 5,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_permit__consent_form-consent__recipient_role-external_service_provider",
+      "target": "permit",
+      "confidence": 1.0,
+      "support": 6,
+      "gate_rejected": false,
+      "fired_all": 12,
+      "match_all_vs_oracle": 12,
+      "world_precision": 1.0,
+      "fired_validation": 6,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 5,
+      "val_precision": 0.8333,
+      "class": "composition",
+      "admitted": false
+    },
+    {
+      "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-data_subject",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 15,
+      "match_all_vs_oracle": 15,
+      "world_precision": 1.0,
+      "fired_validation": 10,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 10,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__information_type-identity_and_contact_information__recipient_role-general_public",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 7,
+      "match_all_vs_oracle": 7,
+      "world_precision": 1.0,
+      "fired_validation": 2,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 2,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__purpose-security_and_fraud_prevention__recipient_role-data_subject",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 14,
+      "match_all_vs_oracle": 14,
+      "world_precision": 1.0,
+      "fired_validation": 9,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 9,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_permit__information_type-online_activity_and_interaction_data__recipient_role-data_subject",
+      "target": "permit",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 7,
+      "match_all_vs_oracle": 5,
+      "world_precision": 0.7143,
+      "fired_validation": 2,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 0,
+      "val_precision": 0.0,
+      "class": "leakage",
+      "admitted": false
+    },
+    {
+      "name": "mined_permit__purpose-analytics_and_service_improvement__subject_role-other",
+      "target": "permit",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 15,
+      "match_all_vs_oracle": 13,
+      "world_precision": 0.8667,
+      "fired_validation": 10,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 8,
+      "val_precision": 0.8,
+      "class": "middle",
+      "admitted": false
+    },
+    {
+      "name": "mined_art5__information_type-audiovisual_and_multimedia_data__purpose-security_and_fraud_prevention",
+      "target": "art5",
+      "confidence": 0.9412,
+      "support": 16,
+      "gate_rejected": false,
+      "fired_all": 37,
+      "match_all_vs_oracle": 37,
+      "world_precision": 1.0,
+      "fired_validation": 20,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 20,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__information_type-audiovisual_and_multimedia_data__subject_role-other",
+      "target": "art5",
+      "confidence": 0.9412,
+      "support": 16,
+      "gate_rejected": false,
+      "fired_all": 37,
+      "match_all_vs_oracle": 37,
+      "world_precision": 1.0,
+      "fired_validation": 20,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 20,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data",
+      "target": "art5",
+      "confidence": 0.9333,
+      "support": 14,
+      "gate_rejected": false,
+      "fired_all": 38,
+      "match_all_vs_oracle": 38,
+      "world_precision": 1.0,
+      "fired_validation": 23,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 23,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__information_type-audiovisual_and_multimedia_data__sender_role-data_controller_or_processor",
+      "target": "art5",
+      "confidence": 0.9286,
+      "support": 13,
+      "gate_rejected": false,
+      "fired_all": 33,
+      "match_all_vs_oracle": 33,
+      "world_precision": 1.0,
+      "fired_validation": 19,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 19,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__consent_form-none__information_type-audiovisual_and_multimedia_data",
+      "target": "art5",
+      "confidence": 0.9,
+      "support": 9,
+      "gate_rejected": false,
+      "fired_all": 16,
+      "match_all_vs_oracle": 16,
+      "world_precision": 1.0,
+      "fired_validation": 6,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 6,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data__subject_role-other",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 8,
+      "gate_rejected": false,
+      "fired_all": 24,
+      "match_all_vs_oracle": 24,
+      "world_precision": 1.0,
+      "fired_validation": 16,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 16,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data__sender_role-data_controller_or_processor",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 6,
+      "gate_rejected": false,
+      "fired_all": 20,
+      "match_all_vs_oracle": 20,
+      "world_precision": 1.0,
+      "fired_validation": 14,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 14,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_permit__consent_form-consent__recipient_role-data_processor__sender_role-data_controller_or_processor",
+      "target": "permit",
+      "confidence": 1.0,
+      "support": 6,
+      "gate_rejected": false,
+      "fired_all": 13,
+      "match_all_vs_oracle": 12,
+      "world_precision": 0.9231,
+      "fired_validation": 7,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 6,
+      "val_precision": 0.8571,
+      "class": "middle",
+      "admitted": false
+    },
+    {
+      "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-general_public__subject_role-other",
+      "target": "art5",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 7,
+      "match_all_vs_oracle": 7,
+      "world_precision": 1.0,
+      "fired_validation": 2,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 2,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    },
+    {
+      "name": "mined_permit__consent_form-consent__information_type-online_activity_and_interaction_data__subject_role-other",
+      "target": "permit",
+      "confidence": 1.0,
+      "support": 5,
+      "gate_rejected": false,
+      "fired_all": 11,
+      "match_all_vs_oracle": 10,
+      "world_precision": 0.9091,
+      "fired_validation": 6,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 4,
+      "val_precision": 0.6667,
+      "class": "middle",
+      "admitted": false
+    },
+    {
+      "name": "mined_art6__information_type-audiovisual_and_multimedia_data__sender_role-data_controller_or_processor__subject_role-other",
+      "target": "art6",
+      "confidence": 0.9,
+      "support": 9,
+      "gate_rejected": false,
+      "fired_all": 28,
+      "match_all_vs_oracle": 28,
+      "world_precision": 1.0,
+      "fired_validation": 18,
+      "teacher_abstain_validation": 0,
+      "match_validation_vs_teacher": 18,
+      "val_precision": 1.0,
+      "class": "composition",
+      "admitted": true
+    }
+  ],
+  "class_counts": {
+    "composition": 23,
+    "leakage": 3,
+    "middle": 3,
+    "never_fires": 0
+  },
+  "endpoint": {
+    "delta": 0.4534,
+    "mean_val_precision_composition": 0.9867,
+    "mean_val_precision_leakage": 0.5333
+  },
+  "admission_test": {
+    "gamma_candidate": 0.9,
+    "reject_leakage_frac": 1.0,
+    "keep_composition_frac": 0.9565,
+    "reject_composition_frac": 0.0435
+  },
+  "arm_accuracy_validation": {
+    "hybrid_rule_arm": 0.9306,
+    "cache_arm_teacher": 0.9722
+  },
+  "decision": "NEUTRAL",
+  "decision_why": "delta=0.4534 reject_leak=1.0 keep_comp=0.9565217391304348 reject_comp=0.043478260869565216 hybrid_acc=0.9305555555555556 cache_acc=0.9722222222222222"
+}
