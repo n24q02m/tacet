@@ -1,0 +1,112 @@
+{
+ "schema": "tacet.e22.cheap_gate/v1",
+ "prereg": "LOCKED 2026-09-22; v2 arms=E17-grid (user 2026-09-23); v3 unit=per-rule replay of E19's 132 states (user 2026-09-23)",
+ "route": "openrouter chat completions, json_schema structured output",
+ "budget_usd": 2.0,
+ "spend_usd": 0.340811,
+ "truncated": false,
+ "jev_baseline": {
+  "delta_jev": 0.9707366666666667,
+  "cost_per_call": 2.5203007518796992e-05
+ },
+ "arms": {
+  "deepseek/deepseek-v4.1-flash": {
+   "cells": 7,
+   "calls": 132,
+   "parse_failure_rate": 0.0152,
+   "invalid": false,
+   "delta_cheap": 0.9989178571428572,
+   "reject_leakage_mean": 1.0,
+   "keep_composition_mean": 0.5297729763842296,
+   "cell_stats": [
+    {
+     "artifact": "e17_admission_deepseek__deepseek-v4.1-flash_s0_max.json",
+     "n_rules": 22,
+     "reject_leakage": null,
+     "keep_composition": 0.5909090909090909,
+     "delta": 1.0
+    },
+    {
+     "artifact": "e17_admission_google__gemini-3.8-flash_s0_max.json",
+     "n_rules": 15,
+     "reject_leakage": null,
+     "keep_composition": 0.5,
+     "delta": 1.0
+    },
+    {
+     "artifact": "e17_admission_openai__gpt-5.6-luna_s0_high.json",
+     "n_rules": 18,
+     "reject_leakage": 1.0,
+     "keep_composition": 0.375,
+     "delta": 1.0
+    },
+    {
+     "artifact": "e17_admission_qwen__qwen3.8-flash_s0.json",
+     "n_rules": 4,
+     "reject_leakage": null,
+     "keep_composition": 0.0,
+     "delta": null
+    },
+    {
+     "artifact": "e17_admission_z-ai__glm-5.3-flash_s0_max.json",
+     "n_rules": 24,
+     "reject_leakage": 1.0,
+     "keep_composition": 0.6363636363636364,
+     "delta": 1.0
+    },
+    {
+     "artifact": "e17_admission_z-ai__glm-5.3-flash_s1_max.json",
+     "n_rules": 29,
+     "reject_leakage": 1.0,
+     "keep_composition": 0.782608695652174,
+     "delta": 1.0
+    },
+    {
+     "artifact": "e17_admission_z-ai__glm-5.3-flash_s2_max.json",
+     "n_rules": 20,
+     "reject_leakage": 1.0,
+     "keep_composition": 0.8235294117647058,
+     "delta": 0.9935071428571429
+    }
+   ],
+   "cost_per_call": 0.0025819
+  },
+  "z-ai/glm-5.3-flash": {
+   "cells": 0,
+   "calls": 0,
+   "parse_failure_rate": 0.0,
+   "invalid": false,
+   "delta_cheap": null,
+   "reject_leakage_mean": null,
+   "keep_composition_mean": null,
+   "cell_stats": []
+  },
+  "qwen/qwen3.8-flash": {
+   "cells": 0,
+   "calls": 0,
+   "parse_failure_rate": 0.0,
+   "invalid": false,
+   "delta_cheap": null,
+   "reject_leakage_mean": null,
+   "keep_composition_mean": null,
+   "cell_stats": []
+  }
+ },
+ "verdict": "NEUTRAL",
+ "call_log_summary": {
+  "total": 132,
+  "failed": 2,
+  "failures": [
+   {
+    "model": "deepseek/deepseek-v4.1-flash",
+    "ok": false,
+    "err": "parse"
+   },
+   {
+    "model": "deepseek/deepseek-v4.1-flash",
+    "ok": false,
+    "err": "TimeoutError"
+   }
+  ]
+ }
+}
