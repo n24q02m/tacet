@@ -1,0 +1,1569 @@
+{
+ "schema": "tacet.e21.ruletier_gate/v1",
+ "prereg": "v2 LOCKED 2026-09-24 (user-ratified, amendment #1/1): conf=miner confidence; risk=1-match_validation_vs_teacher/fired_validation (fired=0->1.0); gates conf>=0.55 & risk<=0.5; 132 rule-states of E19; $0",
+ "contamination_disclosure": "v2 mapping selected after offline probes showed all three schema-faithful v1 readings degenerate (0 or ~132/132 admits) and after v2's delta distribution was observed (0.16-0.95); ratified with disclosure 2026-09-24",
+ "spend_usd": 0.0,
+ "delta_jev_baseline": 0.9707366666666667,
+ "missing_field_frac": 0.0,
+ "verdict": "TACET-TIER-INSUFFICIENT",
+ "cells": [
+  {
+   "artifact": "e17_admission_deepseek__deepseek-v4.1-flash_s0_max.json",
+   "slug": "deepseek/deepseek-v4.1-flash",
+   "seed": 0,
+   "rules": [
+    {
+     "name": "mined_art6__purpose-public_interest_and_journalism",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__sender_role-real_estate_and_housing_entity",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__subject_role-resident_tenant_or_owner",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__purpose-dispute_resolution_and_litigation",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__sender_role-real_estate_and_housing_entity",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__subject_role-resident_tenant_or_owner",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__subject_role-employee_or_worker",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__information_type-financial_and_transaction_data",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__information_type-health_and_medical_data__information_type-identity_and_contact_information",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-general_public",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-health_and_medical_data__information_type-identity_and_contact_information",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art6__consent_form-none__information_type-audiovisual_and_multimedia_data",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-financial_and_transaction_data__information_type-identity_and_contact_information",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__recipient_role-general_public__sender_role-media_and_creative_professional",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__recipient_role-general_public__subject_role-other",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_permit__consent_form-consent__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.5455,
+     "confidence": 0.9091,
+     "risk": 0.454545,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art21__information_type-identity_and_contact_information__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art21__purpose-marketing_and_advertising__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-audiovisual_and_multimedia_data__recipient_role-data_subject__subject_role-other",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.25,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__information_type-other__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.5,
+     "confidence": 1.0,
+     "risk": 0.5,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    }
+   ],
+   "stats": {
+    "n_rules": 22,
+    "reject_leakage": null,
+    "keep_composition": 0.8636363636363636,
+    "delta_ruletier": 0.9497631578947369,
+    "jev_agreement_frac": 0.18181818181818182
+   }
+  },
+  {
+   "artifact": "e17_admission_google__gemini-3.8-flash_s0_max.json",
+   "slug": "google/gemini-3.8-flash",
+   "seed": 0,
+   "rules": [
+    {
+     "name": "mined_art6__purpose-dispute_resolution_and_litigation",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__recipient_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "middle",
+     "val_precision": 0.75,
+     "confidence": 1.0,
+     "risk": 0.25,
+     "e17_admitted": false,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 0.8333,
+     "confidence": 1.0,
+     "risk": 0.166667,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__information_type-financial_and_transaction_data",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__recipient_role-general_public__sender_role-media_and_creative_professional",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__information_type-health_and_medical_data__information_type-identity_and_contact_information",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-media_and_creative_professional",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art6__information_type-health_and_medical_data__subject_role-employee_or_worker",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art6__purpose-public_interest_and_journalism__sender_role-media_and_creative_professional",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__subject_role-employee_or_worker",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_permit__consent_form-consent__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.7778,
+     "confidence": 0.9091,
+     "risk": 0.363636,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-data_subject__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.25,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-general_commercial_entity__subject_role-customer_or_client",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__information_type-other__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.6667,
+     "confidence": 1.0,
+     "risk": 0.5,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    }
+   ],
+   "stats": {
+    "n_rules": 15,
+    "reject_leakage": null,
+    "keep_composition": 0.7857142857142857,
+    "delta_ruletier": 0.9343454545454545,
+    "jev_agreement_frac": 0.26666666666666666
+   }
+  },
+  {
+   "artifact": "e17_admission_openai__gpt-5.6-luna_s0_high.json",
+   "slug": "openai/gpt-5.6-luna",
+   "seed": 0,
+   "rules": [
+    {
+     "name": "mined_art6__purpose-public_interest_and_journalism",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__recipient_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "middle",
+     "val_precision": 0.75,
+     "confidence": 1.0,
+     "risk": 0.25,
+     "e17_admitted": false,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 0.8333,
+     "confidence": 1.0,
+     "risk": 0.166667,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__recipient_role-general_public__subject_role-other",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__information_type-health_and_medical_data__information_type-identity_and_contact_information",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__information_type-identity_and_contact_information__purpose-healthcare_and_medical_services",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art5__information_type-health_and_medical_data__information_type-identity_and_contact_information",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-identity_and_contact_information__purpose-healthcare_and_medical_services",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art6__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__subject_role-employee_or_worker",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__recipient_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9167,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.6364,
+     "confidence": 0.9091,
+     "risk": 0.363636,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art21__information_type-identity_and_contact_information__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art21__purpose-marketing_and_advertising__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-other__recipient_role-data_processor__subject_role-other",
+     "target": "art5",
+     "class": "leakage",
+     "val_precision": 0.6667,
+     "confidence": 1.0,
+     "risk": 0.333333,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-general_commercial_entity__subject_role-customer_or_client",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__information_type-other__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.5,
+     "confidence": 1.0,
+     "risk": 0.5,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    }
+   ],
+   "stats": {
+    "n_rules": 18,
+    "reject_leakage": 0.0,
+    "keep_composition": 0.625,
+    "delta_ruletier": 0.23026999999999997,
+    "jev_agreement_frac": 0.3888888888888889
+   }
+  },
+  {
+   "artifact": "e17_admission_qwen__qwen3.8-flash_s0.json",
+   "slug": "qwen/qwen3.8-flash",
+   "seed": 0,
+   "rules": [
+    {
+     "name": "mined_permit__consent_form-consent__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.6,
+     "confidence": 1.0,
+     "risk": 0.727273,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__subject_role-employee_or_worker",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art21__information_type-identity_and_contact_information__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    }
+   ],
+   "stats": {
+    "n_rules": 4,
+    "reject_leakage": null,
+    "keep_composition": 0.0,
+    "delta_ruletier": null,
+    "jev_agreement_frac": 1.0
+   }
+  },
+  {
+   "artifact": "e17_admission_z-ai__glm-5.3-flash_s0_max.json",
+   "slug": "z-ai/glm-5.3-flash",
+   "seed": 0,
+   "rules": [
+    {
+     "name": "mined_art6__sender_role-real_estate_and_housing_entity",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__subject_role-resident_tenant_or_owner",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__purpose-marketing_and_advertising",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-identity_and_contact_information__purpose-marketing_and_advertising",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-general_commercial_entity",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__purpose-analytics_and_service_improvement",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.9,
+     "confidence": 1.0,
+     "risk": 0.1,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__recipient_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "middle",
+     "val_precision": 0.75,
+     "confidence": 1.0,
+     "risk": 0.25,
+     "e17_admitted": false,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 0.8333,
+     "confidence": 1.0,
+     "risk": 0.166667,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__purpose-analytics_and_service_improvement__subject_role-digital_user_or_subscriber",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-general_public",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-audiovisual_and_multimedia_data__recipient_role-general_public",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art6__information_type-health_and_medical_data__subject_role-employee_or_worker",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__recipient_role-employee_or_internal_staff",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art9__information_type-health_and_medical_data__subject_role-employee_or_worker",
+     "target": "art9",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_permit__information_type-device_and_technical_information__subject_role-other",
+     "target": "permit",
+     "class": "leakage",
+     "val_precision": 0.5,
+     "confidence": 1.0,
+     "risk": 0.5,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__subject_role-employee_or_worker",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__subject_role-employee_or_worker",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__information_type-identity_and_contact_information__recipient_role-customer_or_client",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art21__consent_form-authorization__purpose-marketing_and_advertising__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art21__information_type-identity_and_contact_information__purpose-marketing_and_advertising__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art21__purpose-marketing_and_advertising__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art21",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__purpose-marketing_and_advertising__recipient_role-customer_or_client__subject_role-customer_or_client",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__information_type-other__sender_role-general_commercial_entity",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.5,
+     "confidence": 1.0,
+     "risk": 0.5,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    }
+   ],
+   "stats": {
+    "n_rules": 24,
+    "reject_leakage": 0.0,
+    "keep_composition": 0.7272727272727273,
+    "delta_ruletier": 0.45208125,
+    "jev_agreement_frac": 0.2916666666666667
+   }
+  },
+  {
+   "artifact": "e17_admission_z-ai__glm-5.3-flash_s1_max.json",
+   "slug": "z-ai/glm-5.3-flash",
+   "seed": 1,
+   "rules": [
+    {
+     "name": "mined_art5__sender_role-employee_or_internal_staff",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 0.9231,
+     "confidence": 1.0,
+     "risk": 0.076923,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__subject_role-employee_or_worker",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__purpose-employment_and_hr_management",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__recipient_role-malicious_actor",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__purpose-healthcare_and_medical_services",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__recipient_role-technical_system_or_device",
+     "target": "art5",
+     "class": "leakage",
+     "val_precision": 0.8,
+     "confidence": 1.0,
+     "risk": 0.2,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__sender_role-public_authority_or_government",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__purpose-public_interest_and_journalism",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__recipient_role-technical_system_or_device",
+     "target": "art6",
+     "class": "leakage",
+     "val_precision": 0.8,
+     "confidence": 1.0,
+     "risk": 0.2,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__purpose-security_and_fraud_prevention",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 0.9375,
+     "confidence": 1.0,
+     "risk": 0.0625,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__recipient_role-data_processor",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__recipient_role-general_public__sender_role-data_controller_or_processor",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__recipient_role-external_service_provider",
+     "target": "permit",
+     "class": "composition",
+     "val_precision": 0.8333,
+     "confidence": 1.0,
+     "risk": 0.166667,
+     "e17_admitted": false,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-data_subject",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-identity_and_contact_information__recipient_role-general_public",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__purpose-security_and_fraud_prevention__recipient_role-data_subject",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__information_type-online_activity_and_interaction_data__recipient_role-data_subject",
+     "target": "permit",
+     "class": "leakage",
+     "val_precision": 0.0,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_permit__purpose-analytics_and_service_improvement__subject_role-other",
+     "target": "permit",
+     "class": "middle",
+     "val_precision": 0.8,
+     "confidence": 1.0,
+     "risk": 0.2,
+     "e17_admitted": false,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__purpose-security_and_fraud_prevention",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9412,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9412,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9333,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__sender_role-data_controller_or_processor",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9286,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-none__information_type-audiovisual_and_multimedia_data",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data__sender_role-data_controller_or_processor",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__recipient_role-data_processor__sender_role-data_controller_or_processor",
+     "target": "permit",
+     "class": "middle",
+     "val_precision": 0.8571,
+     "confidence": 1.0,
+     "risk": 0.142857,
+     "e17_admitted": false,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-audiovisual_and_multimedia_data__recipient_role-general_public__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_permit__consent_form-consent__information_type-online_activity_and_interaction_data__subject_role-other",
+     "target": "permit",
+     "class": "middle",
+     "val_precision": 0.6667,
+     "confidence": 1.0,
+     "risk": 0.333333,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-audiovisual_and_multimedia_data__sender_role-data_controller_or_processor__subject_role-other",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    }
+   ],
+   "stats": {
+    "n_rules": 29,
+    "reject_leakage": 0.3333333333333333,
+    "keep_composition": 1.0,
+    "delta_ruletier": 0.186691304347826,
+    "jev_agreement_frac": 0.27586206896551724
+   }
+  },
+  {
+   "artifact": "e17_admission_z-ai__glm-5.3-flash_s2_max.json",
+   "slug": "z-ai/glm-5.3-flash",
+   "seed": 2,
+   "rules": [
+    {
+     "name": "mined_art32__recipient_role-malicious_actor",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__purpose-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": null,
+     "confidence": 1.0,
+     "risk": 1.0,
+     "e17_admitted": null,
+     "jev_admitted": false,
+     "ruletier_admitted": false
+    },
+    {
+     "name": "mined_art5__recipient_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9333,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__purpose-security_and_fraud_prevention",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__sender_role-general_commercial_entity",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__purpose-marketing_and_advertising",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 0.9231,
+     "confidence": 1.0,
+     "risk": 0.076923,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__information_type-identity_and_contact_information__purpose-marketing_and_advertising",
+     "target": "art6",
+     "class": "middle",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__recipient_role-other__sender_role-data_controller_or_processor",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__purpose-marketing_and_advertising__recipient_role-customer_or_client",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art13__purpose-security_and_fraud_prevention__recipient_role-data_subject",
+     "target": "art13",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__purpose-security_and_fraud_prevention__recipient_role-data_subject",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__recipient_role-other__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art6__consent_form-authorization__recipient_role-general_public",
+     "target": "art6",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__consent_form-none__information_type-identity_and_contact_information",
+     "target": "art32",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art32__information_type-identity_and_contact_information__subject_role-other",
+     "target": "art32",
+     "class": "middle",
+     "val_precision": 0.9,
+     "confidence": 1.0,
+     "risk": 0.1,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-identity_and_contact_information__purpose-customer_service_and_communication",
+     "target": "art5",
+     "class": "leakage",
+     "val_precision": 0.8333,
+     "confidence": 1.0,
+     "risk": 0.166667,
+     "e17_admitted": false,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__information_type-identity_and_contact_information__subject_role-citizen_or_public_member",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data__recipient_role-data_controller",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 1.0,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": false,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__information_type-other__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 0.9091,
+     "confidence": 0.9286,
+     "risk": 0.090909,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    },
+    {
+     "name": "mined_art5__consent_form-authorization__information_type-audiovisual_and_multimedia_data__subject_role-other",
+     "target": "art5",
+     "class": "composition",
+     "val_precision": 1.0,
+     "confidence": 0.9167,
+     "risk": 0.0,
+     "e17_admitted": true,
+     "jev_admitted": true,
+     "ruletier_admitted": true
+    }
+   ],
+   "stats": {
+    "n_rules": 20,
+    "reject_leakage": 0.0,
+    "keep_composition": 0.9411764705882353,
+    "delta_ruletier": 0.15621249999999998,
+    "jev_agreement_frac": 0.35
+   }
+  }
+ ],
+ "aggregate": {
+  "cells": 7,
+  "rules": 132,
+  "delta_ruletier_mean": 0.48489394446466955,
+  "reject_leakage_mean": 0.08333333333333333,
+  "keep_composition_mean": 0.7061142638873731,
+  "jev_agreement_mean": 0.393557496143703
+ }
+}
