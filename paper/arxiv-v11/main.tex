@@ -1224,7 +1224,8 @@ should be read as illustrative, not as findings.
 \begin{table}[t]
 \centering
 \caption{Gate arms on the same admission workload: capability ($\Delta$
-separation), per-call price, reject-leakage, and composition keep-rate. The
+separation), per-call price, reject-leakage, and composition keep-rate
+(reject-leakage is the mean over leakage-bearing cells). The
 decision-tier router separates near-oracle at three orders of magnitude below
 teacher cost; cheap chat-tier models match its separation at $53$--$102\times$
 its price; the zero-cost deterministic rule-tier gate does not separate.}
@@ -1251,7 +1252,8 @@ the mean validation precision of its admitted compositional rules. A decision-ti
 achieves $\Delta=0.9707$ at $\$2.5\times10^{-5}$/call; cheap chat-tier models
 match the separation ($\Delta$ $0.97$--$1.0$) at $53$--$102\times$ that price;
 a zero-cost deterministic rule-tier gate built on teacher-agreement risk does
-not separate ($\Delta=0.4849$) and admits $11$ of $12$ leaky candidates. The
+not separate ($\Delta=0.4849$) and admits five of the six leaky candidates
+--- in only one of the four leakage-bearing cells does it reject any. The
 honest reading: the advantage of a decision-tier router at admission is its
 \emph{price tier}, not a unique gating capability --- and no capability- or
 price-tier substitute exists at \$0. Note also that the router's separation
@@ -2071,7 +2073,7 @@ The same release ships two substrate extensions used by the evaluation
 harness. None changes the cascade's results but each broadens the data the
 cascade can operate on. (Standalone modules that are \emph{not} invoked by the
 cascade --- temporal, causal, episodic, planner, federation, world-model ---
-are described separately in Appendix~\ref{sec:implementation}.)
+are described in the next subsections.)
 
 \paragraph{Auto-ingestion from text.}
 \texttt{tacet.core.ingest} provides an \texttt{Extractor} protocol with a
@@ -2370,7 +2372,7 @@ expected cost trajectory once distillation cycles run; the MetaQA
 slice ships here as the baseline.  Raw report at
 \texttt{experiments/results/metaqa\_local\_grok.json}.
 
-\subsection{Real-LLM Cost Amortisation on a Real-Entity KG}
+\subsubsection{Real-LLM Cost Amortisation on a Real-Entity KG}
 \label{sec:realcost}
 The main grid (Section~\ref{sec:results}) reports a $\sim$\costFactor$\times$
 cost reduction under a \emph{simulated} per-tier cost model. The part of the
@@ -2530,7 +2532,7 @@ mining (Section~\ref{sec:limitations}). The controlled runner is
 \texttt{experiments/results/real\_kg\_controlled\_\{1hop,2hop\}\_seed\{0,1,2\}.json}
 and the oracle run at \texttt{oracle\_2hop\_300.json}.
 
-\subsection{Cross-Domain Validation: Compliance Checking}
+\subsubsection{Cross-Domain Validation: Compliance Checking}
 \label{sec:compliance}
 The MetaQA real-LLM study (Section~\ref{sec:realcost}) answers question~(i) ---
 the cascade amortises measured dollars --- but leaves question~(ii) neutral:
