@@ -1484,8 +1484,7 @@ benchmark.
 \subsection{Substrate Extensions: Ingestion and Dataset Loaders}
 \label{sec:tier_a}
 
-The same release ships two substrate extensions used by the evaluation
-harness. None changes the cascade's results but each broadens the data the
+The evaluation harness ships with two substrate extensions. None changes the cascade's results but each broadens the data the
 cascade can operate on. (Standalone modules that are \emph{not} invoked by the
 cascade --- temporal, causal, episodic, planner, federation, world-model ---
 are described in the next subsections.)
@@ -1528,7 +1527,7 @@ teacher need GPU / API access and are out of scope of an offline release.
 \subsection{Extension Modules (Shipped, Not in the Evaluated Pipeline)}
 \label{sec:extmodules}
 
-The release ships several standalone package modules that are \emph{not}
+The package includes several standalone modules that are \emph{not}
 part of the cascade evaluated in this paper: the cascade router
 (\texttt{tacet.cascade.router}) imports \emph{none} of them. We document them
 here for completeness and as future-work seams; no result in
@@ -1612,8 +1611,8 @@ federation trust.
 \subsection{From PoC to MVP}
 \label{sec:mvp}
 
-The same release moves TACET from research artefact to deployable
-service. Three concerns matter for that transition; each is addressed by
+Beyond the evaluated cascade, the engineering effort moves TACET from
+research artefact to deployable service. Three concerns matter for that transition; each is addressed by
 one optional dependency extra so the library stays NumPy-only by default.
 
 \paragraph{Configuration.}
