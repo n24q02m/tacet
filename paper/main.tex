@@ -1123,7 +1123,10 @@ honest reading: the advantage of a decision-tier router at admission is its
 \emph{price tier}, not a unique gating capability --- and no capability- or
 price-tier substitute exists at \$0. Note also that the router's separation
 comes with strong over-rejection (keep-rate $0.071$): it is a near-total
-leakage barrier, not a calibrated admit/reject boundary. Scripts and per-cell
+leakage barrier, not a calibrated admit/reject boundary. Gate-arm
+keep-composition rates fold the \emph{middle} and \emph{never-fires} rule
+classes into the compositional denominator, whereas the admission table's
+keep-composition column counts the composition class only. Scripts and per-cell
 artifacts ship under \texttt{experiments/} (runners \texttt{run\_e17\_admission.py},
 \texttt{run\_e19\_jev\_gate.py}, \texttt{run\_e21\_ruletier\_gate.py},
 \texttt{run\_e22\_cheap\_gate.py}).
