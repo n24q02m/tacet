@@ -30,9 +30,9 @@ keywords:
 license: Apache-2.0
 repository-code: "https://github.com/n24q02m/tacet"
 date-released: 2026-09-26
-version: "1.8.0"
+version: "1.8.2"
 # The concept DOI below always points at the latest deposited version
-# (currently v10: 10.5281/zenodo.22716031).
+# (latest deposited paper version: v10 = 10.5281/zenodo.22716031; v11 in preparation).
 identifiers:
   - type: doi
     value: 10.5281/zenodo.20621240
