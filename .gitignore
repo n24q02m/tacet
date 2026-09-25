@@ -41,3 +41,12 @@ site/.astro/
 site/public/paper/
 paper/figures/*.png
 paper-html/
+
+# arXiv bundle build artifacts (tracked only under build/)
+paper/arxiv-v11/*.pdf
+paper/arxiv-v11/*.aux
+paper/arxiv-v11/*.log
+paper/arxiv-v11/*.out
+paper/arxiv-v11/*.bbl
+paper/arxiv-v11/*.blg
+paper/arxiv-v11/*.xdv
