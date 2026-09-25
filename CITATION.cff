@@ -30,7 +30,7 @@ keywords:
 license: Apache-2.0
 repository-code: "https://github.com/n24q02m/tacet"
 date-released: 2026-09-26
-version: "1.8.12"
+version: "1.8.13"
 # The version field tracks the latest Zenodo-bound release, not every git tag;
 # re-stamp at each Zenodo deposit. The concept DOI below always points at the latest deposited version
 # (latest deposited paper version: v11 = 10.5281/zenodo.22967233).
