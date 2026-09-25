@@ -1,0 +1,15 @@
+\begin{tabular}{llcccccc}
+\toprule
+Model & Seed & Verdict & Rej.\ leak & Keep.\ comp & Hybrid & Cache & Cost (USD)\\
+\midrule
+gpt-5.6-luna & 0 & NEG & 1.00 & 0.700 & 0.954 & 0.931 & 0.35\\
+deepseek-v4.1-flash & 0 & IND & -- & 0.895 & 0.924 & 0.878 & 1.52\\
+gemini-3.8-flash & 0 & IND & -- & 0.727 & 0.931 & 0.893 & 8.25\\
+qwen3.8-flash & 0 & IND & -- & 0.000 & 0.702 & 0.641 & 0.65\\
+qwen3.8-flash & 1 & NEG & 1.00 & 0.833 & 0.931 & 0.910 & 0.60\\
+qwen3.8-flash & 2 & NEU & 1.00 & 1.000 & 0.881 & 0.894 & 0.68\\
+glm-5.3-flash & 0 & NEG & 1.00 & 0.875 & 0.947 & 0.931 & 0.20\\
+glm-5.3-flash & 1 & NEU & 1.00 & 0.957 & 0.931 & 0.972 & 0.20\\
+glm-5.3-flash & 2 & NEU & 1.00 & 1.000 & 0.927 & 0.940 & 0.22\\
+\bottomrule
+\end{tabular}

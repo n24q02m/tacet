@@ -905,7 +905,11 @@ carry the leaky rules to the end. The natural guard, and concrete future work, i
 to gate rule \emph{installation} on a held-out precision estimate (a fresh slice
 of heads the confidence statistic never saw) rather than on answered-head
 confidence alone, turning the offline world-precision check of this section into
-an online admission test. This is the operational face of the soundness caveat in
+an online admission test. \textbf{Update (v11):} this guard is now
+\emph{realized and measured} --- Section~\ref{sec:admission} gates held-out
+candidates at admission: every leaky candidate is rejected in all cells with a
+populated leakage class, at the price of teacher- and seed-dependent
+composition keep-rates. This is the operational face of the soundness caveat in
 Section~\ref{sec:distill}: Proposition~\ref{prop:sound} guarantees soundness
 \emph{relative to the rule set}, not that an installed rule is correct about the
 world, and a near-functional relation is precisely where that distinction bites.
@@ -1052,6 +1056,66 @@ voting/agreement check is the natural mitigation.
 \caption{End-to-end accuracy versus teacher error rate $\varepsilon$.}
 \label{fig:noise}
 \end{figure}
+
+\subsection{Online admission: held-out gating and decision-tier routers}
+\label{sec:admission}
+The leaky-rule caveat of Section~\ref{sec:rule_precision} asked for exactly one
+instrument: gate rule \emph{installation} on a held-out estimate rather than on
+answered-head confidence. We ran that test for real. In each cell, every held-out
+minimal \textsc{Action} candidate is gated at $\gamma=0.9$ under a cached
+prompt-admission rule mined from a disjoint replay slice; the gate faces two
+classes of candidates --- \emph{leaky} rules that must be rejected, and
+\emph{compositional} rules whose admission feeds the downstream accuracy
+comparison. Table~\ref{tab:admission} reports the nine valid cells (five
+teachers; three cells with truncated budgets and two declared infeasible in the
+pre-registered cost envelope are excluded, and two teachers contributed three
+seeds each for a seed-robustness probe).
+
+\begin{table}[t]
+\centering
+\caption{Held-out admission gating per cell. \emph{Verdict}: NEG = gate is
+discriminative but over-restrictive, NEU = gate admits nearly everything,
+IND = no leakage class present (empty class), so the preregistered verdict is
+undefined. Costs are per-cell teacher spend.}
+\label{tab:admission}
+\input{results/tab_admission.tex}
+\end{table}
+
+Three findings. (i)~\emph{The gate catches every installed leak.} Wherever a
+leakage class exists, reject-leakage is $1.0$: no leaky candidate is admitted.
+(ii)~\emph{Composition keep-rate is teacher- and seed-dependent} ($0.0$--$1.0$);
+three cells mine no leakage class at all, and the preregistration treats their
+verdict as indeterminate rather than forcing a label. (iii)~\emph{Per-cell
+verdicts are seed-unstable}: the two teachers probed with three seeds each
+switch verdict across seeds (IND $\to$ NEG $\to$ NEU for one, NEG $\to$ NEU
+$\to$ NEU for the other), following the class composition of the mined rules
+rather than any property of the gate --- so single-seed verdicts in this grid
+should be read as illustrative, not as findings.
+
+\begin{table}[t]
+\centering
+\caption{Gate arms on the same admission workload: capability ($\Delta$
+separation), per-call price, reject-leakage, and composition keep-rate. The
+decision-tier router separates near-oracle at three orders of magnitude below
+teacher cost; cheap chat-tier models match its separation at $53$--$102\times$
+its price; the zero-cost deterministic rule-tier gate does not separate.}
+\label{tab:gate-arms}
+\input{results/tab_gate_arms.tex}
+\end{table}
+
+Table~\ref{tab:gate-arms} compares gate \emph{arms}. A decision-tier routing API
+achieves $\Delta=0.9707$ at $\$2.5\times10^{-5}$/call; cheap chat-tier models
+match the separation ($\Delta$ $0.97$--$1.0$) at $53$--$102\times$ that price;
+a zero-cost deterministic rule-tier gate built on teacher-agreement risk does
+not separate ($\Delta=0.4849$) and admits $11$ of $12$ leaky candidates. The
+honest reading: the advantage of a decision-tier router at admission is its
+\emph{price tier}, not a unique gating capability --- and no capability- or
+price-tier substitute exists at \$0. Note also that the router's separation
+comes with strong over-rejection (keep-rate $0.071$): it is a near-total
+leakage barrier, not a calibrated admit/reject boundary. Scripts and per-cell
+artifacts ship under \texttt{experiments/} (runners \texttt{run\_e17\_admission.py},
+\texttt{run\_e19\_jev\_gate.py}, \texttt{run\_e21\_ruletier\_gate.py},
+\texttt{run\_e22\_cheap\_gate.py}).
 
 \section{Discussion and Limitations}
 \label{sec:limitations}
