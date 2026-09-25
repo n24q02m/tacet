@@ -2193,7 +2193,7 @@ wheels = [
 
 [[package]]
 name = "tacet"
-version = "1.8.4"
+version = "1.8.14"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },

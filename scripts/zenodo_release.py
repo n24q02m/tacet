@@ -201,7 +201,17 @@ def main() -> int:
 
     published_id = latest_published_id(token)
     published = _call("GET", f"{API}/deposit/depositions/{published_id}", token)
-    print(f"latest published version: {published_id} ({published['metadata'].get('version')})")
+    published_version = published["metadata"].get("version")
+    print(f"latest published version: {published_id} ({published_version})")
+
+    # Preflight: refuse to mint a second record carrying a version label that is
+    # already published. Zenodo versions are permanent, so a label collision is
+    # an error, not a warning.
+    if published_version == args.version:
+        raise ZenodoError(
+            f"version '{args.version}' is already published (record {published_id}). "
+            "Bump the --version label instead of re-publishing the same one."
+        )
 
     draft, reused = new_version_draft(token, published_id)
     draft_id = str(draft["id"])
