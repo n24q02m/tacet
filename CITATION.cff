@@ -33,7 +33,7 @@ date-released: 2026-09-26
 version: "1.8.12"
 # The version field tracks the latest Zenodo-bound release, not every git tag;
 # re-stamp at each Zenodo deposit. The concept DOI below always points at the latest deposited version
-# (latest deposited paper version: v10 = 10.5281/zenodo.22716031; v11 in preparation).
+# (latest deposited paper version: v11 = 10.5281/zenodo.22967233).
 identifiers:
   - type: doi
     value: 10.5281/zenodo.20621240
