@@ -905,11 +905,10 @@ carry the leaky rules to the end. The natural guard, and concrete future work, i
 to gate rule \emph{installation} on a held-out precision estimate (a fresh slice
 of heads the confidence statistic never saw) rather than on answered-head
 confidence alone, turning the offline world-precision check of this section into
-an online admission test. \textbf{Update (v11):} this guard is now
-\emph{realized and measured} --- Section~\ref{sec:admission} gates held-out
-candidates at admission: every leaky candidate is rejected in all cells with a
-populated leakage class, at the price of teacher- and seed-dependent
-composition keep-rates. This is the operational face of the soundness caveat in
+an online admission test. This guard is now realized and measured:
+Section~\ref{sec:admission} gates held-out candidates at admission --- every
+leaky candidate is rejected in all cells with a populated leakage class, at
+the price of teacher- and seed-dependent composition keep-rates. This is the operational face of the soundness caveat in
 Section~\ref{sec:distill}: Proposition~\ref{prop:sound} guarantees soundness
 \emph{relative to the rule set}, not that an installed rule is correct about the
 world, and a near-functional relation is precisely where that distinction bites.
@@ -1103,7 +1102,10 @@ its price; the zero-cost deterministic rule-tier gate does not separate.}
 \input{results/tab_gate_arms.tex}
 \end{table}
 
-Table~\ref{tab:gate-arms} compares gate \emph{arms}. A decision-tier routing API
+Table~\ref{tab:gate-arms} compares gate \emph{arms}. Throughout, $\Delta$ is
+the held-out validation-precision gap between admitted compositional and
+admitted leaky rules; when a gate admits no leakage, this reduces to
+the mean validation precision of its admitted compositional rules. A decision-tier routing API
 achieves $\Delta=0.9707$ at $\$2.5\times10^{-5}$/call; cheap chat-tier models
 match the separation ($\Delta$ $0.97$--$1.0$) at $53$--$102\times$ that price;
 a zero-cost deterministic rule-tier gate built on teacher-agreement risk does
