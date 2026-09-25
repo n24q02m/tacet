@@ -284,9 +284,5 @@ tectonic paper/main.tex
 This writes `paper/main.pdf`; build artifacts are git-ignored.
 
 `paper/arxiv-v11/` is the self-contained arXiv submission source (inlined
-`.bbl` and tables, results guards stripped); its verified build output is
-`paper/arxiv-v11/build/main.pdf` (46 pp).
-
-A self-contained submission bundle for arXiv is built the same way in
-`paper/arxiv-v11/` (`main.tex` with the bibliography inlined; run
-`tectonic main.tex` from inside that directory).
+`.bbl` and tables); build it the same way — `tectonic main.tex` from inside
+that directory — producing `paper/arxiv-v11/build/main.pdf` (46 pp).
