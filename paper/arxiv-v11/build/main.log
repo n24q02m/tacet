@@ -625,33 +625,43 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
  [39] [40]
-Overfull \hbox (18.0872pt too wide) in paragraph at lines 2959--2972
+Underfull \hbox (badness 10000) in paragraph at lines 2960--2974
  []\T1/lmr/bx/sc/10.95 Causal queries un-der un-ob-served con-found-ing.[] \T1/
-lmr/m/n/10.95 The causal util-ity mod-ule (\T1/lmtt/m/n/10.95 tacet.core.causal
-\T1/lmr/m/n/10.95 ,
+lmr/m/n/10.95 The causal util-ity mod-ule
  []
 
-[41] [42] [43]
-Overfull \hbox (104.96208pt too wide) in paragraph at lines 3176--3189
-\T1/lmr/m/n/10.95 cells with a recorded con-trol, no new API calls; per-cell re
--sults in \T1/lmtt/m/n/10.95 experiments/results/e16_forbid_target_hop2.json\T1
-/lmr/m/n/10.95 ,
+
+Underfull \hbox (badness 1005) in paragraph at lines 2960--2974
+\T1/lmtt/m/n/10.95 tacet.core.causal \T1/lmr/m/n/10.95 (Ap-pendix []B[]) only i
+den-ti-fies treat-ment ef-fects whose graph ad-mits a
  []
 
-[44] (appendix_recursive_boundary [45])
-Underfull \hbox (badness 4048) in paragraph at lines 71--3267
+
+Underfull \hbox (badness 1067) in paragraph at lines 2960--2974
+\T1/lmr/m/n/10.95 back-door, front-door, or instrumental-variable ad-just-ment.
+ Mod-els with un-ob-served con-
+ []
+
+[41] [42] [43] [44] (appendix_recursive_boundary [45]
+Underfull \hbox (badness 1342) in paragraph at lines 31--44
+\T1/lmr/bx/sc/10.95 SUBSUMES \T1/lmr/m/n/10.95 --- the re-fined guard keeps the
+ pub-lished junk-rejection be-haviour on the
+ []
+
+)
+Underfull \hbox (badness 4048) in paragraph at lines 71--3270
  []\T1/lmr/bx/sc/10.95 Reproducibility.[] \T1/lmr/m/n/10.95 All three re-sults
 are de-ter-min-is-tic and re-playable at zero provider
  []
 
 
-Underfull \hbox (badness 2293) in paragraph at lines 71--3267
+Underfull \hbox (badness 2293) in paragraph at lines 71--3270
 \T1/lmr/m/n/10.95 cost from the seeds and the com-mit-ted ar-ti-facts: \T1/lmtt
 /m/n/10.95 experiments/run_e18_recursive.py\T1/lmr/m/n/10.95 ,
  []
 
 
-Overfull \hbox (2.37033pt too wide) in paragraph at lines 71--3267
+Overfull \hbox (2.37033pt too wide) in paragraph at lines 71--3270
 \T1/lmr/m/n/10.95 mode), with con-tract tests \T1/lmtt/m/n/10.95 tests/test_e18
 _recursive.py\T1/lmr/m/n/10.95 , \T1/lmtt/m/n/10.95 tests/test_e16_replay_refin
 ed.py\T1/lmr/m/n/10.95 ,

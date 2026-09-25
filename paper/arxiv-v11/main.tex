@@ -2956,19 +2956,22 @@ loss: the wrong answer is served for the first $k$ uncorrected
 repeats.
 
 \paragraph{Causal queries under unobserved confounding.}
-The causal utility module (\texttt{tacet.core.causal},
-Appendix~\ref{sec:implementation}) only identifies treatment effects whose
+\begin{sloppypar}
+The causal
+utility module \texttt{tacet.core.causal}
+(Appendix~\ref{sec:implementation}) only identifies treatment effects whose
 graph admits a back-door, front-door, or instrumental-variable
 adjustment.  Models with
 unobserved confounders that violate all three conditions return
-``no adjustment set'' from the \texttt{backdoor\_set} /
-\texttt{front\_door\_set} / \texttt{instrumental\_variables} helpers (there is
+``no adjustment set'' from the \texttt{backdoor\_set},
+\texttt{front\_door\_set}, and \texttt{instrumental\_}\allowbreak\texttt{vari}\allowbreak\texttt{ables} helpers (there is
 no \texttt{identify()} entry point); the
 standard Tian-Pearl ID algorithm for the general semi-Markovian case is
 documented as future work.  Mitigation: the helper returns a
 diagnostic explanation so the caller knows which condition failed.
 Residual loss: queries against complex semi-Markovian SCMs are not
 served.
+\end{sloppypar}
 
 The pattern that emerges from these failure modes is the same one
 the cascade was designed around: errors that the symbolic /
@@ -3174,10 +3177,10 @@ rule. Excluding the target from length-$2$ bodies, which merely makes the two
 branches agree, removes it structurally, with no gold and no runtime signal.
 
 Replaying the recorded ladder at $\gamma{=}0.50$ under both settings
-(\texttt{--forbid-target-in-body}; $22$ cells with a recorded control, no new API
-calls; per-cell results in
-\texttt{experiments/results/e16\_forbid\_target\_hop2.json}, rebuilt by
-\texttt{experiments/aggregate\_e16\_forbid.py}) is unambiguous. The true
+{\emergencystretch=2em (\texttt{--forbid-target-in-body};
+$22$ cells with a recorded control, no new API calls; per-cell results in
+\texttt{e16\_forbid\_}\allowbreak\texttt{target\_hop2.json} under
+\texttt{experiments/results/}, rebuilt by \texttt{aggregate\_e16\_forbid.py})} is unambiguous. The true
 composition installs in the same $10$ cells, at
 \emph{identical} savings in $10$ of $10$ --- including the anchor teacher, Grok
 4.3 seed $0$, at $81.13\%$ and world precision $1.0$. All $14$ junk rules across
