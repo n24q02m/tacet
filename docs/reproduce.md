@@ -229,6 +229,33 @@ uv run python experiments/analyze_privaci.py \
 
 **API keys:** the selected teacher's key (`TACET_GEMINI_API_KEY` / `TACET_XAI_API_KEY` / `TACET_OPENROUTER_API_KEY`), supplied via your environment or secret manager.
 
+## Online admission gating (paper Sec. "Online admission")
+
+The held-out admission experiments behind the paper's online-admission section
+reuse the replay-mined rule sets from the previous sections:
+
+```bash
+# per-cell admission gate (teacher = any OpenRouter chat model; gamma 0.9)
+uv run python experiments/run_e17_admission.py --slug z-ai/glm-5.3-flash \
+    --seed 0 --n 300 --budget-usd 0.70 --privaci data/PrivaCI-bench \
+    --out experiments/results
+
+# decision-tier router arm over the same cells
+uv run python experiments/run_e19_jev_gate.py --results-dir experiments/results \
+    --budget-usd 0.70 --out experiments/results
+
+# zero-cost rule-tier arm (teacher-agreement risk gate)
+uv run python experiments/run_e21_ruletier_gate.py --out experiments/results
+
+# cheap chat-tier arm replay (no API spend)
+uv run python experiments/run_e22_cheap_gate.py --results-dir experiments/results \
+    --arm deepseek/deepseek-v4.1-flash --out experiments/results
+```
+
+Per-cell verdicts (NEG / NEU / IND) and the gate-arm table regenerate from the
+`e17_admission_*.json`, `e19_jev_gate.json`, `e21_ruletier_gate.json`, and
+`e22_cheap_gate_*.json` artifacts.
+
 ## Where outputs land
 
 Raw experiment data (per-run rows and `summary.json`, plus the `*.json` result
