@@ -232,24 +232,25 @@ uv run python experiments/analyze_privaci.py \
 ## Online admission gating (paper Sec. "Online admission")
 
 The held-out admission experiments behind the paper's online-admission section
-reuse the replay-mined rule sets from the previous sections:
+reuse the replay-mined rule sets from the previous sections. The E17 runner
+expects a clone of [PrivaCI-Bench](https://github.com/JHU-SAI-LAB/PrivaCI-Bench)
+as a sibling directory of this checkout (`../PrivaCI-Bench` by default).
 
 ```bash
 # per-cell admission gate (teacher = any OpenRouter chat model; gamma 0.9)
 uv run python experiments/run_e17_admission.py --slug z-ai/glm-5.3-flash \
-    --seed 0 --n 300 --budget-usd 0.70 --privaci data/PrivaCI-bench \
-    --out experiments/results
+    --seed 0 --n 300 --budget-usd 0.70 --out experiments/results
 
-# decision-tier router arm over the same cells
+# decision-tier router arm over the same cells (budget is the upper bound; 0.70 was used in the paper runs)
 uv run python experiments/run_e19_jev_gate.py --results-dir experiments/results \
-    --budget-usd 0.70 --out experiments/results
+    --budget-usd 0.70 --out experiments/results/e19_jev_gate.json
 
-# zero-cost rule-tier arm (teacher-agreement risk gate)
-uv run python experiments/run_e21_ruletier_gate.py --out experiments/results
+# zero-cost rule-tier arm (teacher-agreement risk gate; writes results/e21_ruletier_gate.json)
+uv run python experiments/run_e21_ruletier_gate.py
 
 # cheap chat-tier arm replay (no API spend)
 uv run python experiments/run_e22_cheap_gate.py --results-dir experiments/results \
-    --arm deepseek/deepseek-v4.1-flash --out experiments/results
+    --arm deepseek/deepseek-v4.1-flash
 ```
 
 Per-cell verdicts (NEG / NEU / IND) and the gate-arm table regenerate from the
@@ -281,3 +282,7 @@ tectonic paper/main.tex
 ```
 
 This writes `paper/main.pdf`; build artifacts are git-ignored.
+
+A self-contained submission bundle for arXiv is built the same way in
+`paper/arxiv-v11/` (`main.tex` with the bibliography inlined; run
+`tectonic main.tex` from inside that directory).
