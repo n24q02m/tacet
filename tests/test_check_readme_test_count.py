@@ -26,6 +26,7 @@ def test_collected_count_uses_the_canonical_all_extras_environment(monkeypatch) 
     assert seen_command == [
         "uv",
         "run",
+        "--frozen",
         "--all-extras",
         "pytest",
         "--collect-only",

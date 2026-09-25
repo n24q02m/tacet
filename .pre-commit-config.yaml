@@ -46,7 +46,7 @@ repos:
 
       - id: readme-test-count
         name: README test count matches pytest collection
-        entry: uv run python scripts/check_readme_test_count.py
+        entry: uv run --frozen python scripts/check_readme_test_count.py
         language: system
         pass_filenames: false
         always_run: true

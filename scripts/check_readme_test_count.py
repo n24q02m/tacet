@@ -32,7 +32,7 @@ def readme_count() -> int:
 
 def collected_count() -> int:
     result = subprocess.run(
-        ["uv", "run", "--all-extras", "pytest", "--collect-only", "-q"],
+        ["uv", "run", "--frozen", "--all-extras", "pytest", "--collect-only", "-q"],
         capture_output=True,
         text=True,
     )
