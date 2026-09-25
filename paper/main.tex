@@ -882,7 +882,8 @@ occasional near-functional rule.
 \caption{Confidence-threshold ($\gamma$) sensitivity on the synthetic benchmark
 (oracle teacher, mean over five seeds). As $\gamma$ rises, fewer rules install
 (left axis) but the mean world-precision of the survivors rises (right axis) ---
-the homophily relations are the last to be filtered out.}
+nothing is filtered above $\gamma=0.9$ --- the leaky homophily rules
+exceed even $\gamma=0.99$ and so are never removed within the sweep.}
 \label{fig:gamma}
 \end{figure}
 
@@ -894,8 +895,9 @@ now answers ${\sim}25\%$ \emph{wrong} while \emph{simultaneously} carrying
 proof-validity $1.0$ --- the answers are soundly derived from the installed rule
 (Proposition~\ref{prop:sound}) and yet wrong about the world. The danger is that
 this gap is invisible at runtime: the miner's confidence estimate for these rules
-is ${\sim}0.95$ (measured on the answered heads it saw), but their world-precision
-is ${\sim}0.75$, and that ${\sim}20$-point gap cannot be detected online because
+exceeds even $\gamma{=}0.99$ (measured on the answered heads it saw --- the
+sweep installs them unchanged at every threshold up to $0.99$), but their
+world-precision is ${\sim}0.75$, and that ${\sim}18$--$24$-point gap cannot be detected online because
 world-precision requires ground truth the system does not have. The cascade does
 ship an instrument that could retire such rules ---
 \texttt{tacet.experimental.episodic.FeedbackCurator} demotes a rule's trust on
@@ -1067,7 +1069,7 @@ classes of candidates --- \emph{leaky} rules that must be rejected, and
 \emph{compositional} rules whose admission feeds the downstream accuracy
 comparison. Table~\ref{tab:admission} reports the nine valid cells (five
 teachers; three cells with truncated budgets and two declared infeasible in the
-pre-registered cost envelope are excluded, and two teachers contributed three
+pre-registered cost envelope are excluded from the replay, and two teachers contributed three
 seeds each for a seed-robustness probe).
 
 \begin{table}[t]
@@ -1105,13 +1107,18 @@ its price; the zero-cost deterministic rule-tier gate does not separate.}
 
 Table~\ref{tab:gate-arms} compares gate \emph{arms}. Throughout, $\Delta$ is
 the held-out validation-precision gap between admitted compositional and
-admitted leaky rules; when a gate admits no leakage, this reduces to
-the mean validation precision of its admitted compositional rules. A decision-tier routing API
+admitted leaky rules, computed per cell and averaged over the cells in
+which it is defined; when a gate admits no leakage, this reduces to the
+mean validation precision of its admitted compositional rules. (The
+composition keep-rate pools the \texttt{middle} and \texttt{never\_fires}
+replay classes into the compositional denominator for E19--E22; the per-cell
+table uses the \texttt{composition} class alone.) A decision-tier routing API
 achieves $\Delta=0.9707$ at $\$2.5\times10^{-5}$/call; cheap chat-tier models
 match the separation ($\Delta$ $0.97$--$1.0$) at $53$--$102\times$ that price;
 a zero-cost deterministic rule-tier gate built on teacher-agreement risk does
-not separate ($\Delta=0.4849$) and admits five of the six leaky candidates
---- in only one of the four leakage-bearing cells does it reject any. The
+not separate ($\Delta=0.4849$) and admits five of the six leaky candidates it was replayed on
+--- in only one of the four leakage-bearing cells among the replayed seven
+does it reject any. The
 honest reading: the advantage of a decision-tier router at admission is its
 \emph{price tier}, not a unique gating capability --- and no capability- or
 price-tier substitute exists at \$0. Note also that the router's separation
@@ -1435,8 +1442,9 @@ The same Tier-2 model runs unchanged on the standard FB15k-237,
 WN18RR, and ICEWS14 splits via the loader at
 \texttt{tacet.data.load\_kg\_dataset} (see
 Section~\ref{sec:tier_a}).  Reference runs on a T4 spot GPU
-(batch 4{,}096, 8 typed negatives, full filtered test set,
-\texttt{score\_fn=complex\_n3} with the Lacroix N3 regulariser
+--- batch 4{,}096 and 8 typed negatives on FB15k-237 and ICEWS14;
+batch 2{,}048 and 4 typed negatives on WN18RR --- over the full filtered
+test set, \texttt{score\_fn=complex\_n3} with the Lacroix N3 regulariser
 \cite{lacroix2018complex_n3}) attain:
 
 \begin{center}\small
