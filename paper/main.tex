@@ -270,7 +270,7 @@ study --- the dynamics of routing and distillation --- from the orthogonal
 question of LLM answer quality. The real-LLM, real-data result that closes
 this gap is reported in Section~\ref{sec:realcost}; the extension modules
 shipped but not invoked by the cascade are described in
-Appendix~\ref{sec:extmodules}. We use MetaQA and ProofWriter as
+Appendix~\ref{sec:implementation}. We use MetaQA and ProofWriter as
 \emph{mechanism testbeds}: both have long been saturated by specialised
 systems~\citep{saxena2020embedkgqa,tafjord2021proofwriter}, so we make no
 state-of-the-art accuracy claim on either; they are small enough to meter a
@@ -429,7 +429,7 @@ checks the correctness of LLM-produced causal chains \emph{after the fact}
 with symbolic verification~\citep{doverifier2026}. TACET ships standalone
 Pearl-style utility functions (back-door / front-door / instrumental-variable
 adjustment and counterfactual evaluation) as an extension module
-(Appendix~\ref{sec:extmodules}); they are not invoked by the cascade and we
+(Appendix~\ref{sec:implementation}); they are not invoked by the cascade and we
 make no claim of a causal contribution here.
 
 \paragraph{Knowledge distillation and world models.} Classic
@@ -1476,14 +1476,17 @@ beat to justify the additional machinery; our atemporal cascade is
 a baseline for that comparison, not a competitor for the temporal
 benchmark.
 
-\section{Substrate Extensions: Ingestion and Dataset Loaders}
+\section{Implementation and productionization}
+\label{sec:implementation}
+
+\subsection{Substrate Extensions: Ingestion and Dataset Loaders}
 \label{sec:tier_a}
 
 The same release ships two substrate extensions used by the evaluation
 harness. None changes the cascade's results but each broadens the data the
 cascade can operate on. (Standalone modules that are \emph{not} invoked by the
 cascade --- temporal, causal, episodic, planner, federation, world-model ---
-are described separately in Appendix~\ref{sec:extmodules}.)
+are described separately in Appendix~\ref{sec:implementation}.)
 
 \paragraph{Auto-ingestion from text.}
 \texttt{tacet.core.ingest} provides an \texttt{Extractor} protocol with a
@@ -1520,7 +1523,7 @@ Multi-modal entity embeddings (image / audio encoders feeding the KGE) and
 evaluation on natural-language KGQA benchmarks with a frontier LLM
 teacher need GPU / API access and are out of scope of an offline release.
 
-\section{Extension Modules (Shipped, Not in the Evaluated Pipeline)}
+\subsection{Extension Modules (Shipped, Not in the Evaluated Pipeline)}
 \label{sec:extmodules}
 
 The release ships several standalone package modules that are \emph{not}
@@ -1604,7 +1607,7 @@ entry point the current release does not have) --- is left to future work, as
 is a real continuous world model, multi-modal perception, and learnt
 federation trust.
 
-\section{From PoC to MVP --- production engineering}
+\subsection{From PoC to MVP}
 \label{sec:mvp}
 
 The same release moves TACET from research artefact to deployable
@@ -1664,7 +1667,7 @@ Kaggle T4 or Modal H100 once a Gemini / Grok key is set; the runner
 falls back to an oracle teacher when no key is configured so the cost
 trajectory remains comparable offline.
 
-\section{Integration Smoke-Test with Real LLM Teachers}
+\subsection{Integration Smoke-Test with Real LLM Teachers}
 \label{sec:smoketest}
 
 The main grid (Section~\ref{sec:results}) uses an oracle Tier-3 teacher and a
@@ -2268,7 +2271,7 @@ repeats.
 
 \paragraph{Causal queries under unobserved confounding.}
 The causal utility module (\texttt{tacet.core.causal},
-Appendix~\ref{sec:extmodules}) only identifies treatment effects whose
+Appendix~\ref{sec:implementation}) only identifies treatment effects whose
 graph admits a back-door, front-door, or instrumental-variable
 adjustment.  Models with
 unobserved confounders that violate all three conditions return
