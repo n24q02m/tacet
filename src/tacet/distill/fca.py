@@ -233,18 +233,19 @@ class FormalContext:
         # sits strictly between them.
         by_size = sorted(concepts, key=lambda c: len(c[0]))
         for i, child in enumerate(by_size):
+            covered_by: list[ExtentIntent] = []
             for j in range(i + 1, len(by_size)):
                 parent = by_size[j]
                 if not child[0].issubset(parent[0]) or parent[0] == child[0]:
                     continue
                 # Direct cover iff no intermediate concept exists.
-                cover = True
-                for k in range(i + 1, j):
-                    mid = by_size[k]
-                    if child[0] < mid[0] < parent[0]:
-                        cover = False
+                is_direct_cover = True
+                for c in covered_by:
+                    if c[0].issubset(parent[0]):
+                        is_direct_cover = False
                         break
-                if cover:
+                if is_direct_cover:
+                    covered_by.append(parent)
                     edges.append((parent, child))
         return edges
 
