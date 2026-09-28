@@ -35,3 +35,7 @@
 **Vulnerability:** The FastAPI application was missing the `Referrer-Policy` security header, which could leak sensitive path information or query parameters via the `Referer` header to external sites when navigating away from the application.
 **Learning:** Even when setting strict `Content-Security-Policy` and `X-Frame-Options`, `Referrer-Policy` is needed to prevent cross-origin information leakage on outbound requests.
 **Prevention:** Always include `Referrer-Policy: no-referrer` in the global security headers middleware to strictly drop referrer information on all outbound requests.
+## 2024-05-24 - Unhandled Exception Swallowing
+**Vulnerability:** FastAPIs `app.exception_handler(Exception)` caught unhandled exceptions and returned an error response but did not log the exception.
+**Learning:** Overriding the default global Exception handler in FastAPI bypasses Starlette's built-in ServerErrorMiddleware logging. This silently swallows server-side tracebacks, making debugging impossible and potentially hiding ongoing attacks or critical failures.
+**Prevention:** Always explicitly log exceptions (`logging.error("...", exc_info=_exc)`) within custom global exception handlers.
