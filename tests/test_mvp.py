@@ -613,6 +613,7 @@ class TestServerEndpoints(unittest.TestCase):
             "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
         }
         with (
+            self.assertLogs(level="ERROR") as logs,
             patch.object(
                 TACETService,
                 "stats",
@@ -629,6 +630,9 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(
             {name: resp.headers.get(name) for name in expected_headers},
             expected_headers,
+        )
+        self.assertTrue(
+            any("private backend failure" in r.getMessage() or r.exc_info for r in logs.records)
         )
 
     def test_graph_edges_ingest_and_query(self) -> None:
