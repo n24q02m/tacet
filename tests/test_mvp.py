@@ -596,6 +596,29 @@ class TestServerEndpoints(unittest.TestCase):
             any("teacher exploded" in r.getMessage() or r.exc_info for r in logs.records)
         )
 
+    def test_unhandled_route_exception_logs_and_returns_hardened_generic_500(self) -> None:
+        """Unhandled route failures must log the traceback server-side and keep Starlette's generic 500 plus security headers."""
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+
+        from tacet.serve.server import TACETService
+
+        with (
+            patch.object(TACETService, "distill", side_effect=RuntimeError("unexpected distillation failure")),
+            self.assertLogs(level="ERROR") as logs,
+            TestClient(self.app, raise_server_exceptions=False) as client,
+        ):
+            resp = client.post("/distill", json={"head": "H", "relation": "R", "answers": [], "correct": False})
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.text, "Internal Server Error")
+        self.assertEqual(resp.headers["content-type"].split(";")[0], "text/plain")
+        self.assertNotIn("unexpected distillation failure", resp.text)
+        self.assertIn("max-age", resp.headers.get("strict-transport-security", ""))
+        self.assertTrue(
+            any("unexpected distillation failure" in r.getMessage() or r.exc_info for r in logs.records)
+        )
+
     def test_unhandled_route_exception_returns_hardened_generic_500(self) -> None:
         """Unhandled route failures keep Starlette's generic 500 plus security headers."""
         from unittest.mock import patch
