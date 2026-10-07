@@ -332,9 +332,17 @@ class RuleEngine:
                 idx_subj.setdefault((r, h), []).append(fact)
                 idx_obj.setdefault((r, t), []).append(fact)
             for rule in all_rules:
+                rule_distinct = rule.distinct
+                has_distinct = bool(rule_distinct)
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
-                    if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
-                        continue
+                    if has_distinct:
+                        violation = False
+                        for a, b in rule_distinct:
+                            if binding.get(a) == binding.get(b):
+                                violation = True
+                                break
+                        if violation:
+                            continue
                     derived = _ground(rule.head, binding)
                     if derived in facts:
                         continue
