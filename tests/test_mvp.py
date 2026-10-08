@@ -618,11 +618,14 @@ class TestServerEndpoints(unittest.TestCase):
                 "stats",
                 side_effect=RuntimeError("private backend failure"),
             ),
+            patch("tacet.serve.server.log.error") as mock_log,
             TestClient(self.app, raise_server_exceptions=False) as client,
         ):
             resp = client.get("/stats")
 
         self.assertEqual(resp.status_code, 500)
+        mock_log.assert_called_once()
+        self.assertIn("Unhandled server exception", mock_log.call_args[0][0])
         self.assertEqual(resp.headers["content-type"].split(";")[0], "text/plain")
         self.assertEqual(resp.text, "Internal Server Error")
         self.assertNotIn("private backend failure", resp.text)
