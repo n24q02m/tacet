@@ -30,6 +30,7 @@ API::
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -58,16 +59,16 @@ def _edge_index(
     dict[tuple[str, str], int],  # (relation, head) -> count
     dict[str, int],  # relation -> count
 ]:
-    head_tails: dict[tuple[str, str], list[str]] = {}
-    relation_pairs: dict[str, list[tuple[str, str]]] = {}
-    head_counts: dict[tuple[str, str], int] = {}
-    relation_counts: dict[str, int] = {}
+    head_tails: dict[tuple[str, str], list[str]] = defaultdict(list)
+    relation_pairs: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    head_counts: dict[tuple[str, str], int] = defaultdict(int)
+    relation_counts: dict[str, int] = defaultdict(int)
     for edge in graph.edges:
         key = (edge.relation, edge.source)
-        head_tails.setdefault(key, []).append(edge.target)
-        relation_pairs.setdefault(edge.relation, []).append((edge.source, edge.target))
-        head_counts[key] = head_counts.get(key, 0) + 1
-        relation_counts[edge.relation] = relation_counts.get(edge.relation, 0) + 1
+        head_tails[key].append(edge.target)
+        relation_pairs[edge.relation].append((edge.source, edge.target))
+        head_counts[key] += 1
+        relation_counts[edge.relation] += 1
     return head_tails, relation_pairs, head_counts, relation_counts
 
 
@@ -95,9 +96,9 @@ def mine_amie_plus_rules(
     for r1 in relations:
         pairs1 = relation_pairs[r1]
         # Index r1 by z to chain with r2 quickly: z -> {x with (x, r1, z)}.
-        z_to_xs: dict[str, set[str]] = {}
+        z_to_xs: dict[str, set[str]] = defaultdict(set)
         for x, z in pairs1:
-            z_to_xs.setdefault(z, set()).add(x)
+            z_to_xs[z].add(x)
         for r2 in relations:
             # Skip identity body1 == body2 chains that degenerate to
             # paths-through-self when x == y; the TACET rule miner

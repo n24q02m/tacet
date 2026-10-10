@@ -260,7 +260,7 @@ def _directed_paths(model: CausalModel, src: str, dst: str) -> list[list[str]]:
     children: dict[str, list[str]] = {n: [] for n in model.variables}
     for n, v in model.variables.items():
         for p in v.parents:
-            children.setdefault(p, []).append(n)
+            children[p].append(n)
 
     def dfs(node: str, path: list[str]) -> None:
         if node == dst:
