@@ -15,6 +15,7 @@ the framework runs on any knowledge graph without a hand-written schema.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tacet.core.graph import WorldGraph
@@ -139,9 +140,9 @@ class Ontology:
         for t in graph.types():
             onto.add_node_type(NodeType(t))
 
-        by_relation: dict[str, list[tuple[str, str]]] = {}
+        by_relation: dict[str, list[tuple[str, str]]] = defaultdict(list)
         for e in graph.edges:
-            by_relation.setdefault(e.relation, []).append((e.source, e.target))
+            by_relation[e.relation].append((e.source, e.target))
 
         for relation, pairs in by_relation.items():
             domain = {graph.node(s).type for s, _ in pairs if graph.node(s)}
