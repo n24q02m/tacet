@@ -618,11 +618,15 @@ class TestServerEndpoints(unittest.TestCase):
                 "stats",
                 side_effect=RuntimeError("private backend failure"),
             ),
+            self.assertLogs(level="ERROR") as logs,
             TestClient(self.app, raise_server_exceptions=False) as client,
         ):
             resp = client.get("/stats")
 
         self.assertEqual(resp.status_code, 500)
+        self.assertTrue(
+            any("private backend failure" in r.getMessage() or r.exc_info for r in logs.records)
+        )
         self.assertEqual(resp.headers["content-type"].split(";")[0], "text/plain")
         self.assertEqual(resp.text, "Internal Server Error")
         self.assertNotIn("private backend failure", resp.text)
