@@ -1,0 +1,3 @@
+## 2024-10-14 - Keyboard Navigation and Focus States
+**Learning:** This design system lacked clear visual focus states for interactive elements and a skip-to-content link, which are critical for keyboard and screen reader users. Simply adding `:focus-visible` with `outline-offset` provides excellent clarity without cluttering mouse interactions. Adding smooth transitions to `.nav a`, `.theme-toggle`, and `.btn` also significantly improved perceived polish.
+**Action:** Always include a `.skip-link` pointing to `id="main-content" tabindex="-1"` and a global `:focus-visible` style when implementing or updating Astro layouts. Ensure basic interactive elements have `transition: all 0.2s ease` for a smoother feel.
