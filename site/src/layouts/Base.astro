@@ -29,6 +29,7 @@ const base = import.meta.env.BASE_URL;
     </script>
   </head>
   <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
     <header class="site-header">
       <div class="wrap">
         <a class="brand" href={base}>TACET</a>
@@ -43,7 +44,7 @@ const base = import.meta.env.BASE_URL;
       </div>
     </header>
 
-    <main class="wrap">
+    <main id="main" class="wrap" tabindex="-1">
       <slot />
     </main>
 
