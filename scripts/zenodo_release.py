@@ -233,6 +233,17 @@ def main() -> int:
         print(f"  https://zenodo.org/uploads/{draft_id}")
         return 0
 
+    # Two-phase gate: publish may only finalize a draft opened by an earlier
+    # draft-mode run, so every published version has passed a review step.
+    # A --publish run with no open draft degrades to a prepared, reviewable
+    # draft and refuses (non-zero exit) instead of minting a DOI.
+    if not reused:
+        print("\n--publish requires a draft that already exists (opened by a draft-mode")
+        print("run and reviewed at the link below). This run created the draft; it is")
+        print("ready for review, but nothing was published:")
+        print(f"  https://zenodo.org/uploads/{draft_id}")
+        return 2
+
     result = _call("POST", f"{API}/deposit/depositions/{draft_id}/actions/publish", token)
     print(f"published: DOI {result.get('doi')} (concept {result.get('conceptdoi')})")
 

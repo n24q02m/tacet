@@ -12,7 +12,9 @@ on:
       publish:
         description: >-
           Leave as draft to review on Zenodo first. Choosing publish is
-          IRREVERSIBLE: it mints a permanent DOI.
+          IRREVERSIBLE: it mints a permanent DOI. Publish only finalizes a
+          draft opened by an earlier draft run; with no open draft it
+          refuses, so nothing can skip the review step.
         required: true
         default: draft
         type: choice
