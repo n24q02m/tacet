@@ -63,11 +63,6 @@ From Knowledge-Graph QA to Regulatory-Compliance Checking."*  The paper source i
 [`paper/`](paper) (build with `tectonic paper/main.tex`), and the preprint
 is published on Zenodo: [doi:10.5281/zenodo.20621240](https://doi.org/10.5281/zenodo.20621240).
 
-> **Status:** the preprint is published on Zenodo and pending arXiv
-> endorsement for cs.LG. If you have published in cs.LG and find the work
-> sound, an endorsement would be warmly appreciated — please reach out at
-> quangminh2402.dev@gmail.com.
-
 ```
             query
               │
