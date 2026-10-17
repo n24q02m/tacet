@@ -45,6 +45,7 @@ KG contexts with a few thousand entities, filtering attributes
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
@@ -106,11 +107,11 @@ class FormalContext:
         ents = sorted({e.source for e in graph.edges})
         # collect (relation, tail) frequencies
         counts: dict[Attribute, int] = {}
-        memberships: dict[str, set[Attribute]] = {e: set() for e in ents}
+        memberships: dict[str, set[Attribute]] = defaultdict(set, {e: set() for e in ents})
         for edge in graph.edges:
             attr = (edge.relation, edge.target)
             counts[attr] = counts.get(attr, 0) + 1
-            memberships.setdefault(edge.source, set()).add(attr)
+            memberships[edge.source].add(attr)
         kept = sorted(
             [a for a, c in counts.items() if c >= min_support], key=lambda a: (-counts[a], a)
         )
@@ -133,10 +134,10 @@ class FormalContext:
         cached = getattr(self, "_extents_cache", None)
         if cached is not None and cached[0] is self.incidence:
             return cached[1]
-        extents: dict[int, set[str]] = {}
+        extents: dict[int, set[str]] = defaultdict(set)
         for g, idxs in self.incidence.items():
             for i in idxs:
-                extents.setdefault(i, set()).add(g)
+                extents[i].add(g)
         index = {i: frozenset(s) for i, s in extents.items()}
         object.__setattr__(self, "_extents_cache", (self.incidence, index))
         return index
