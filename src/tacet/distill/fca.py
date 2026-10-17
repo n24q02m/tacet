@@ -103,14 +103,14 @@ class FormalContext:
         # (companies / languages / locations referenced but not
         # described) are attribute *values*, not objects in the FCA
         # sense.
-        ents = sorted({e.source for e in graph.edges})
         # collect (relation, tail) frequencies
         counts: dict[Attribute, int] = {}
-        memberships: dict[str, set[Attribute]] = {e: set() for e in ents}
+        memberships: dict[str, set[Attribute]] = {}
         for edge in graph.edges:
             attr = (edge.relation, edge.target)
             counts[attr] = counts.get(attr, 0) + 1
             memberships.setdefault(edge.source, set()).add(attr)
+        ents = sorted(memberships.keys())
         kept = sorted(
             [a for a, c in counts.items() if c >= min_support], key=lambda a: (-counts[a], a)
         )
@@ -233,18 +233,21 @@ class FormalContext:
         # sits strictly between them.
         by_size = sorted(concepts, key=lambda c: len(c[0]))
         for i, child in enumerate(by_size):
+            child_extent = child[0]
+            covered_by: list[frozenset[str]] = []
             for j in range(i + 1, len(by_size)):
                 parent = by_size[j]
-                if not child[0].issubset(parent[0]) or parent[0] == child[0]:
+                parent_extent = parent[0]
+                if not child_extent.issubset(parent_extent) or parent_extent == child_extent:
                     continue
                 # Direct cover iff no intermediate concept exists.
                 cover = True
-                for k in range(i + 1, j):
-                    mid = by_size[k]
-                    if child[0] < mid[0] < parent[0]:
+                for mid_extent in covered_by:
+                    if mid_extent.issubset(parent_extent):
                         cover = False
                         break
                 if cover:
+                    covered_by.append(parent_extent)
                     edges.append((parent, child))
         return edges
 
