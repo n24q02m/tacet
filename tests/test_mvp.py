@@ -597,7 +597,7 @@ class TestServerEndpoints(unittest.TestCase):
         )
 
     def test_unhandled_route_exception_returns_hardened_generic_500(self) -> None:
-        """Unhandled route failures keep Starlette's generic 500 plus security headers."""
+        """Unhandled route failures keep generic 500s plus security headers and log tracebacks."""
         from unittest.mock import patch
 
         from fastapi.testclient import TestClient
@@ -618,6 +618,7 @@ class TestServerEndpoints(unittest.TestCase):
                 "stats",
                 side_effect=RuntimeError("private backend failure"),
             ),
+            self.assertLogs(level="ERROR") as logs,
             TestClient(self.app, raise_server_exceptions=False) as client,
         ):
             resp = client.get("/stats")
@@ -629,6 +630,13 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(
             {name: resp.headers.get(name) for name in expected_headers},
             expected_headers,
+        )
+        self.assertTrue(
+            any(
+                "private backend failure" in r.getMessage()
+                or (r.exc_info and "private backend failure" in str(r.exc_info[1]))
+                for r in logs.records
+            )
         )
 
     def test_graph_edges_ingest_and_query(self) -> None:
