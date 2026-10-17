@@ -18,6 +18,7 @@ consequences the cascade relies on:
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
@@ -323,25 +324,50 @@ class RuleEngine:
         converged = False
         for _ in range(self.max_iterations):
             added = False
-            idx_all: dict[str, list[Triple]] = {}
-            idx_subj: dict[tuple[str, str], list[Triple]] = {}
-            idx_obj: dict[tuple[str, str], list[Triple]] = {}
+
+            # Optimization 1: Use defaultdict instead of dict.setdefault in hot loop.
+            # Avoids method call overhead and repeated list instantiation per loop.
+            idx_all: dict[str, list[Triple]] = defaultdict(list)
+            idx_subj: dict[tuple[str, str], list[Triple]] = defaultdict(list)
+            idx_obj: dict[tuple[str, str], list[Triple]] = defaultdict(list)
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                idx_all[r].append(fact)
+                idx_subj[(r, h)].append(fact)
+                idx_obj[(r, t)].append(fact)
+
             for rule in all_rules:
-                for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
-                    if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
-                        continue
-                    derived = _ground(rule.head, binding)
+                # Optimization 2: Hoist invariants
+                distinct = rule.distinct
+                head = rule.head
+                body = rule.body
+                name = rule.name
+
+                for binding in self._join(body, idx_all, idx_subj, idx_obj):
+                    # Optimization 3: Unroll distinct checks instead of genexp `any(...)`
+                    if distinct:
+                        distinct_ok = True
+                        for a, b in distinct:
+                            if binding.get(a) == binding.get(b):
+                                distinct_ok = False
+                                break
+                        if not distinct_ok:
+                            continue
+
+                    # Optimization 4: Inline `_ground` instead of function call / genexp
+                    h0, h1, h2 = head
+                    derived = (binding.get(h0, h0), binding.get(h1, h1), binding.get(h2, h2))
                     if derived in facts:
                         continue
                     facts.add(derived)
-                    self._derivations[derived] = Derivation(
-                        derived, rule.name, tuple(_ground(p, binding) for p in rule.body)
-                    )
+
+                    premises = []
+                    for p0, p1, p2 in body:
+                        premises.append(
+                            (binding.get(p0, p0), binding.get(p1, p1), binding.get(p2, p2))
+                        )
+
+                    self._derivations[derived] = Derivation(derived, name, tuple(premises))
                     added = True
             if not added:
                 converged = True
@@ -362,10 +388,10 @@ class RuleEngine:
             )
 
         self._closure = facts
-        index: dict[tuple[str, str], set[str]] = {}
+        index: dict[tuple[str, str], set[str]] = defaultdict(set)
         for h, r, t in facts:
-            index.setdefault((h, r), set()).add(t)
-        self._by_head = index
+            index[(h, r)].add(t)
+        self._by_head = dict(index)
         return facts
 
     # ---------------------------------------------------------- query
