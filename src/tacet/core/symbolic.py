@@ -18,6 +18,7 @@ consequences the cascade relies on:
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
@@ -323,17 +324,22 @@ class RuleEngine:
         converged = False
         for _ in range(self.max_iterations):
             added = False
-            idx_all: dict[str, list[Triple]] = {}
-            idx_subj: dict[tuple[str, str], list[Triple]] = {}
-            idx_obj: dict[tuple[str, str], list[Triple]] = {}
+            idx_all: dict[str, list[Triple]] = defaultdict(list)
+            idx_subj: dict[tuple[str, str], list[Triple]] = defaultdict(list)
+            idx_obj: dict[tuple[str, str], list[Triple]] = defaultdict(list)
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                idx_all[r].append(fact)
+                idx_subj[(r, h)].append(fact)
+                idx_obj[(r, t)].append(fact)
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
-                    if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
+                    skip = False
+                    for a, b in rule.distinct:
+                        if binding.get(a) == binding.get(b):
+                            skip = True
+                            break
+                    if skip:
                         continue
                     derived = _ground(rule.head, binding)
                     if derived in facts:
