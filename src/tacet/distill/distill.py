@@ -34,10 +34,12 @@ class MinedRule:
 
 
 def _pairs_index(facts: set[Triple]) -> dict[str, set[Pair]]:
-    idx: dict[str, set[Pair]] = {}
+    from collections import defaultdict
+
+    idx: dict[str, set[Pair]] = defaultdict(set)
     for h, r, t in facts:
-        idx.setdefault(r, set()).add((h, t))
-    return idx
+        idx[r].add((h, t))
+    return dict(idx)
 
 
 def _directed(pairs: set[Pair], inverse: bool) -> set[Pair]:
@@ -45,10 +47,12 @@ def _directed(pairs: set[Pair], inverse: bool) -> set[Pair]:
 
 
 def _adj(pairs: set[Pair]) -> dict[str, set[str]]:
-    adj: dict[str, set[str]] = {}
+    from collections import defaultdict
+
+    adj: dict[str, set[str]] = defaultdict(set)
     for h, t in pairs:
-        adj.setdefault(h, set()).add(t)
-    return adj
+        adj[h].add(t)
+    return dict(adj)
 
 
 def mine_rules(

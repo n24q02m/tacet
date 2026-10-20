@@ -58,17 +58,19 @@ def _edge_index(
     dict[tuple[str, str], int],  # (relation, head) -> count
     dict[str, int],  # relation -> count
 ]:
-    head_tails: dict[tuple[str, str], list[str]] = {}
-    relation_pairs: dict[str, list[tuple[str, str]]] = {}
+    from collections import defaultdict
+
+    head_tails: dict[tuple[str, str], list[str]] = defaultdict(list)
+    relation_pairs: dict[str, list[tuple[str, str]]] = defaultdict(list)
     head_counts: dict[tuple[str, str], int] = {}
     relation_counts: dict[str, int] = {}
     for edge in graph.edges:
         key = (edge.relation, edge.source)
-        head_tails.setdefault(key, []).append(edge.target)
-        relation_pairs.setdefault(edge.relation, []).append((edge.source, edge.target))
+        head_tails[key].append(edge.target)
+        relation_pairs[edge.relation].append((edge.source, edge.target))
         head_counts[key] = head_counts.get(key, 0) + 1
         relation_counts[edge.relation] = relation_counts.get(edge.relation, 0) + 1
-    return head_tails, relation_pairs, head_counts, relation_counts
+    return dict(head_tails), dict(relation_pairs), head_counts, relation_counts
 
 
 def mine_amie_plus_rules(
@@ -92,12 +94,14 @@ def mine_amie_plus_rules(
 
     # Materialise body1(x,z) ∧ body2(z,y) → derived (x, y) pairs and
     # check membership in head relation r3.
+    from collections import defaultdict
+
     for r1 in relations:
         pairs1 = relation_pairs[r1]
         # Index r1 by z to chain with r2 quickly: z -> {x with (x, r1, z)}.
-        z_to_xs: dict[str, set[str]] = {}
+        z_to_xs: dict[str, set[str]] = defaultdict(set)
         for x, z in pairs1:
-            z_to_xs.setdefault(z, set()).add(x)
+            z_to_xs[z].add(x)
         for r2 in relations:
             # Skip identity body1 == body2 chains that degenerate to
             # paths-through-self when x == y; the TACET rule miner

@@ -69,9 +69,11 @@ class BenchmarkConfig:
 
 def _closure(pairs: list[tuple[str, str]]) -> dict[str, set[str]]:
     """Transitive closure of a relation given as (parent, child) pairs."""
-    direct: dict[str, set[str]] = {}
+    from collections import defaultdict
+
+    direct: dict[str, set[str]] = defaultdict(set)
     for a, b in pairs:
-        direct.setdefault(a, set()).add(b)
+        direct[a].add(b)
     closure: dict[str, set[str]] = {}
     for start in direct:
         seen: set[str] = set()
