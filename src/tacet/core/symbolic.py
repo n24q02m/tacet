@@ -18,6 +18,7 @@ consequences the cascade relies on:
 
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
@@ -323,14 +324,17 @@ class RuleEngine:
         converged = False
         for _ in range(self.max_iterations):
             added = False
-            idx_all: dict[str, list[Triple]] = {}
-            idx_subj: dict[tuple[str, str], list[Triple]] = {}
-            idx_obj: dict[tuple[str, str], list[Triple]] = {}
+            idx_all_dd: defaultdict[str, list[Triple]] = defaultdict(list)
+            idx_subj_dd: defaultdict[tuple[str, str], list[Triple]] = defaultdict(list)
+            idx_obj_dd: defaultdict[tuple[str, str], list[Triple]] = defaultdict(list)
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                idx_all_dd[r].append(fact)
+                idx_subj_dd[(r, h)].append(fact)
+                idx_obj_dd[(r, t)].append(fact)
+            idx_all: dict[str, list[Triple]] = dict(idx_all_dd)
+            idx_subj: dict[tuple[str, str], list[Triple]] = dict(idx_subj_dd)
+            idx_obj: dict[tuple[str, str], list[Triple]] = dict(idx_obj_dd)
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
                     if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
@@ -362,10 +366,10 @@ class RuleEngine:
             )
 
         self._closure = facts
-        index: dict[tuple[str, str], set[str]] = {}
+        index_dd: defaultdict[tuple[str, str], set[str]] = defaultdict(set)
         for h, r, t in facts:
-            index.setdefault((h, r), set()).add(t)
-        self._by_head = index
+            index_dd[(h, r)].add(t)
+        self._by_head = dict(index_dd)
         return facts
 
     # ---------------------------------------------------------- query
@@ -389,7 +393,9 @@ class RuleEngine:
             return False
         self._closure.add(triple)
         h, r, t = triple
-        self._by_head.setdefault((h, r), set()).add(t)
+        if (h, r) not in self._by_head:
+            self._by_head[(h, r)] = set()
+        self._by_head[(h, r)].add(t)
         return True
 
     def known_rule_names(self) -> set[str]:
