@@ -114,7 +114,8 @@ body {
   cursor: pointer;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   color: var(--accent);
   border-color: var(--accent);
 }
