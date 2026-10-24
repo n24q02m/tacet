@@ -22,6 +22,8 @@ exactly the pairs the rule would fire on, including inverse atoms and the
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 from tacet.core.graph import WorldGraph
 from tacet.core.symbolic import Rule, RuleEngine
 
@@ -35,14 +37,14 @@ def _body_pairs(rule: Rule, facts: set[Triple]) -> set[tuple[str, str]]:
     semantics match what the Tier-1 engine would derive, then applies the
     rule's ``distinct`` inequality guards (e.g. ``?x != ?y``).
     """
-    idx_all: dict[str, list[Triple]] = {}
-    idx_subj: dict[tuple[str, str], list[Triple]] = {}
-    idx_obj: dict[tuple[str, str], list[Triple]] = {}
+    idx_all: dict[str, list[Triple]] = defaultdict(list)  # type: ignore[assignment]
+    idx_subj: dict[tuple[str, str], list[Triple]] = defaultdict(list)  # type: ignore[assignment]
+    idx_obj: dict[tuple[str, str], list[Triple]] = defaultdict(list)  # type: ignore[assignment]
     for fact in facts:
         h, r, t = fact
-        idx_all.setdefault(r, []).append(fact)
-        idx_subj.setdefault((r, h), []).append(fact)
-        idx_obj.setdefault((r, t), []).append(fact)
+        idx_all[r].append(fact)
+        idx_subj[(r, h)].append(fact)
+        idx_obj[(r, t)].append(fact)
 
     head_x, _rel, head_y = rule.head
     pairs: set[tuple[str, str]] = set()
