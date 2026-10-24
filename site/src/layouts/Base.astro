@@ -36,7 +36,7 @@ const base = import.meta.env.BASE_URL;
           <a href={`${base}paper/`}>Paper</a>
           <a href="https://doi.org/10.5281/zenodo.20621240">Zenodo</a>
           <a href="https://github.com/n24q02m/tacet">Code</a>
-          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
             Theme
           </button>
         </nav>
@@ -61,14 +61,19 @@ const base = import.meta.env.BASE_URL;
       (() => {
         const btn = document.getElementById("theme-toggle");
         if (!btn) return;
+
+        const root = document.documentElement;
+        const currentTheme = root.getAttribute("data-theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        btn.setAttribute("aria-pressed", currentTheme === "dark" ? "true" : "false");
+
         btn.addEventListener("click", () => {
-          const root = document.documentElement;
           const current =
             root.getAttribute("data-theme") ||
             (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
           const next = current === "dark" ? "light" : "dark";
           root.setAttribute("data-theme", next);
           localStorage.setItem("theme", next);
+          btn.setAttribute("aria-pressed", next === "dark" ? "true" : "false");
         });
       })();
     </script>
