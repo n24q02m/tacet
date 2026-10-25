@@ -1,0 +1,3 @@
+## 2025-01-29 - Accessible Scrollable Regions
+**Learning:** Elements with `overflow-x: auto` (like responsive tables) trap keyboard users unless explicitly made focusable with `tabindex="0"`. Without this, users cannot scroll the content horizontally via keyboard. Providing a semantic `role="region"` and `aria-labelledby` linking it to its heading provides critical context for screen readers.
+**Action:** Always wrap responsive tables or overflow containers in a div with `tabindex="0"`, `role="region"`, and an appropriate `aria-label` or `aria-labelledby`. Ensure `focus-visible` styles are provided so the active state is visually apparent to keyboard users.
