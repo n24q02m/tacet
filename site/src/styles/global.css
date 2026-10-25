@@ -103,6 +103,10 @@ body {
   color: var(--accent);
 }
 
+.nav a:active {
+  opacity: 0.8;
+}
+
 .theme-toggle {
   font: inherit;
   font-size: 0.82rem;
@@ -114,9 +118,16 @@ body {
   cursor: pointer;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   color: var(--accent);
   border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.theme-toggle:active {
+  transform: translateY(1px);
 }
 
 main {
@@ -203,12 +214,26 @@ li {
   filter: brightness(1.08);
 }
 
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
 .scroller {
   overflow-x: auto;
   border: 1px solid var(--rule);
   border-radius: 4px;
   background: var(--panel);
   margin: 0 0 1.1rem;
+}
+
+.scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 table {
