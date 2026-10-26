@@ -251,6 +251,30 @@ footer.site-footer {
   color: var(--muted);
 }
 
+.skip-link {
+  position: absolute;
+  top: auto;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 999;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.skip-link:focus {
+  top: 1rem;
+  left: 1rem;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
