@@ -17,6 +17,7 @@ answers *unseen* heads, whereas a cache only answers exact repeats.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 from tacet.core.graph import WorldGraph
@@ -34,10 +35,10 @@ class MinedRule:
 
 
 def _pairs_index(facts: set[Triple]) -> dict[str, set[Pair]]:
-    idx: dict[str, set[Pair]] = {}
+    idx: dict[str, set[Pair]] = defaultdict(set)
     for h, r, t in facts:
-        idx.setdefault(r, set()).add((h, t))
-    return idx
+        idx[r].add((h, t))
+    return dict(idx)
 
 
 def _directed(pairs: set[Pair], inverse: bool) -> set[Pair]:
@@ -45,10 +46,10 @@ def _directed(pairs: set[Pair], inverse: bool) -> set[Pair]:
 
 
 def _adj(pairs: set[Pair]) -> dict[str, set[str]]:
-    adj: dict[str, set[str]] = {}
+    adj: dict[str, set[str]] = defaultdict(set)
     for h, t in pairs:
-        adj.setdefault(h, set()).add(t)
-    return adj
+        adj[h].add(t)
+    return dict(adj)
 
 
 def mine_rules(
@@ -262,7 +263,9 @@ class Distiller:
             self.teacher_facts.add(f)
         # the teacher returns the complete answer set for `head`, so `head` now
         # has fully-known ground truth for `relation`.
-        self._complete_heads.setdefault(relation, set()).add(head)
+        if relation not in self._complete_heads:
+            self._complete_heads[relation] = set()
+        self._complete_heads[relation].add(head)
         return facts
 
     def ready_to_synthesise(self, relation: str) -> bool:
