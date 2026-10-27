@@ -35,3 +35,7 @@
 **Vulnerability:** The FastAPI application was missing the `Referrer-Policy` security header, which could leak sensitive path information or query parameters via the `Referer` header to external sites when navigating away from the application.
 **Learning:** Even when setting strict `Content-Security-Policy` and `X-Frame-Options`, `Referrer-Policy` is needed to prevent cross-origin information leakage on outbound requests.
 **Prevention:** Always include `Referrer-Policy: no-referrer` in the global security headers middleware to strictly drop referrer information on all outbound requests.
+## 2026-07-28 - Secure Logging in Global Exception Handlers
+**Vulnerability:** The global generic exception handler (`unhandled_exception_handler`) caught all exceptions and returned a 500 error to the client, but failed to log the exception context server-side.
+**Learning:** Silently catching and discarding generic unhandled exceptions hides critical operational issues. To adhere to secure failure principles, underlying exceptions must always be logged server-side (e.g., using `logging.error(..., exc_info=_exc)`) even when returning an opaque 500 status to the client.
+**Prevention:** When modifying global exception handlers to return generic 500 errors, always ensure the underlying exception is logged server-side to prevent silent failures and preserve tracebacks for debugging.
