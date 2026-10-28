@@ -114,13 +114,35 @@ body {
   cursor: pointer;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   color: var(--accent);
   border-color: var(--accent);
 }
 
 main {
   padding: 2.6rem 0 4rem;
+}
+
+main:focus {
+  outline: none;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 0.5rem 1rem;
+  z-index: 100;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus-visible {
+  top: 0;
 }
 
 h1 {
@@ -209,6 +231,11 @@ li {
   border-radius: 4px;
   background: var(--panel);
   margin: 0 0 1.1rem;
+}
+
+.scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 table {
