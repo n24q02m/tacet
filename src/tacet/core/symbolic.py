@@ -18,6 +18,7 @@ consequences the cascade relies on:
 
 from __future__ import annotations
 
+import collections
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
@@ -323,25 +324,48 @@ class RuleEngine:
         converged = False
         for _ in range(self.max_iterations):
             added = False
-            idx_all: dict[str, list[Triple]] = {}
-            idx_subj: dict[tuple[str, str], list[Triple]] = {}
-            idx_obj: dict[tuple[str, str], list[Triple]] = {}
+
+            idx_all = collections.defaultdict(list)
+            idx_subj = collections.defaultdict(list)
+            idx_obj = collections.defaultdict(list)
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                idx_all[r].append(fact)
+                idx_subj[(r, h)].append(fact)
+                idx_obj[(r, t)].append(fact)
+
+            idx_all_d = dict(idx_all)
+            idx_subj_d = dict(idx_subj)
+            idx_obj_d = dict(idx_obj)
+
             for rule in all_rules:
-                for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
-                    if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
+                head_0, head_1, head_2 = rule.head
+                body_pats = rule.body
+                rule_distinct = rule.distinct
+                rule_name = rule.name
+
+                for binding in self._join(rule.body, idx_all_d, idx_subj_d, idx_obj_d):
+                    if rule_distinct and any(
+                        binding.get(a) == binding.get(b) for a, b in rule_distinct
+                    ):
                         continue
-                    derived = _ground(rule.head, binding)
+
+                    derived = (
+                        binding.get(head_0, head_0),
+                        binding.get(head_1, head_1),
+                        binding.get(head_2, head_2),
+                    )
+
                     if derived in facts:
                         continue
                     facts.add(derived)
-                    self._derivations[derived] = Derivation(
-                        derived, rule.name, tuple(_ground(p, binding) for p in rule.body)
-                    )
+
+                    premises = []
+                    for p0, p1, p2 in body_pats:
+                        premises.append(
+                            (binding.get(p0, p0), binding.get(p1, p1), binding.get(p2, p2))
+                        )
+                    self._derivations[derived] = Derivation(derived, rule_name, tuple(premises))
                     added = True
             if not added:
                 converged = True
@@ -362,10 +386,10 @@ class RuleEngine:
             )
 
         self._closure = facts
-        index: dict[tuple[str, str], set[str]] = {}
+        index = collections.defaultdict(set)
         for h, r, t in facts:
-            index.setdefault((h, r), set()).add(t)
-        self._by_head = index
+            index[(h, r)].add(t)
+        self._by_head = dict(index)
         return facts
 
     # ---------------------------------------------------------- query
