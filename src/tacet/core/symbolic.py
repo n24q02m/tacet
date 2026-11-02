@@ -29,7 +29,7 @@ Pattern = tuple[str, str, str]  # tokens beginning with '?' are variables
 
 
 def _is_var(token: str) -> bool:
-    return token.startswith("?")
+    return token[0] == "?" if token else False
 
 
 def save_rules_json(rules: list[Rule], path) -> None:  # noqa: ANN001
@@ -105,13 +105,17 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
     p0, p1, p2 = pattern
     t0, t1, t2 = triple
 
-    if not p0.startswith("?"):
+    is_p0_var = p0[0] == "?" if p0 else False
+    is_p1_var = p1[0] == "?" if p1 else False
+    is_p2_var = p2[0] == "?" if p2 else False
+
+    if not is_p0_var:
         if p0 != t0:
             return None
     elif p0 in binding and binding[p0] != t0:
         return None
 
-    if not p1.startswith("?"):
+    if not is_p1_var:
         if p1 != t1:
             return None
     elif p1 == p0:
@@ -120,7 +124,7 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
     elif p1 in binding and binding[p1] != t1:
         return None
 
-    if not p2.startswith("?"):
+    if not is_p2_var:
         if p2 != t2:
             return None
     elif p2 == p0:
@@ -133,11 +137,11 @@ def _unify(pattern: Pattern, triple: Triple, binding: dict[str, str]) -> dict[st
         return None
 
     out = binding.copy()
-    if p0.startswith("?"):
+    if is_p0_var:
         out[p0] = t0
-    if p1.startswith("?"):
+    if is_p1_var:
         out[p1] = t1
-    if p2.startswith("?"):
+    if is_p2_var:
         out[p2] = t2
     return out
 
