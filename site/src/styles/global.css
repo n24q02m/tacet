@@ -48,6 +48,23 @@
   box-sizing: border-box;
 }
 
+.skip-link {
+  position: absolute;
+  top: -1000px;
+  left: 1rem;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 0.5rem 1rem;
+  z-index: 100;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+  font-size: 0.9rem;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 body {
   margin: 0;
   background: var(--paper);
@@ -114,7 +131,8 @@ body {
   cursor: pointer;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   color: var(--accent);
   border-color: var(--accent);
 }
