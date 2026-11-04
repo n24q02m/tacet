@@ -64,6 +64,22 @@ body {
   padding: 0 1.1rem;
 }
 
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
 .site-header {
   border-bottom: 1px solid var(--rule);
 }
