@@ -18,6 +18,7 @@ consequences the cascade relies on:
 
 from __future__ import annotations
 
+import collections
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
@@ -321,16 +322,24 @@ class RuleEngine:
         all_rules = self._axiom_rules() + self.rules
 
         converged = False
+
         for _ in range(self.max_iterations):
             added = False
-            idx_all: dict[str, list[Triple]] = {}
-            idx_subj: dict[tuple[str, str], list[Triple]] = {}
-            idx_obj: dict[tuple[str, str], list[Triple]] = {}
+            # ⚡ Bolt Optimization: Use defaultdict instead of setdefault to avoid
+            # creating temporary empty lists for every fact in the loop
+            idx_all: dict[str, list[Triple]] = collections.defaultdict(list)  # type: ignore[assignment]
+            idx_subj: dict[tuple[str, str], list[Triple]] = collections.defaultdict(list)  # type: ignore[assignment]
+            idx_obj: dict[tuple[str, str], list[Triple]] = collections.defaultdict(list)  # type: ignore[assignment]
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                idx_all[r].append(fact)
+                idx_subj[(r, h)].append(fact)
+                idx_obj[(r, t)].append(fact)
+
+            idx_all = dict(idx_all)
+            idx_subj = dict(idx_subj)
+            idx_obj = dict(idx_obj)
+
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
                     if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
