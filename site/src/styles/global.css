@@ -211,6 +211,11 @@ li {
   margin: 0 0 1.1rem;
 }
 
+.scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
