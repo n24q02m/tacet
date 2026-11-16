@@ -15,4 +15,5 @@ sync:
       repo: n24q02m/tacet
       sources:
         - keys:
+            - CI_APP_KEY
             - TACET_ZENODO_TOKEN
