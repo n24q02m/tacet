@@ -13,3 +13,6 @@ sync:
   targets:
     - type: github
       repo: n24q02m/tacet
+      sources:
+        - keys:
+            - TACET_ZENODO_TOKEN
