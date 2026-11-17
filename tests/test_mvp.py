@@ -613,6 +613,7 @@ class TestServerEndpoints(unittest.TestCase):
             "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
         }
         with (
+            patch("tacet.serve.server.logging.error") as mock_log,
             patch.object(
                 TACETService,
                 "stats",
@@ -623,6 +624,8 @@ class TestServerEndpoints(unittest.TestCase):
             resp = client.get("/stats")
 
         self.assertEqual(resp.status_code, 500)
+        mock_log.assert_called_once()
+        self.assertIn("Unhandled server exception", mock_log.call_args[0][0])
         self.assertEqual(resp.headers["content-type"].split(";")[0], "text/plain")
         self.assertEqual(resp.text, "Internal Server Error")
         self.assertNotIn("private backend failure", resp.text)
