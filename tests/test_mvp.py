@@ -619,6 +619,7 @@ class TestServerEndpoints(unittest.TestCase):
                 side_effect=RuntimeError("private backend failure"),
             ),
             TestClient(self.app, raise_server_exceptions=False) as client,
+            self.assertLogs("tacet.serve.server", level="ERROR") as logs,
         ):
             resp = client.get("/stats")
 
@@ -629,6 +630,9 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(
             {name: resp.headers.get(name) for name in expected_headers},
             expected_headers,
+        )
+        self.assertTrue(
+            any("private backend failure" in r.getMessage() or r.exc_info for r in logs.records)
         )
 
     def test_graph_edges_ingest_and_query(self) -> None:
