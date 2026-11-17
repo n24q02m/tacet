@@ -48,6 +48,26 @@
   box-sizing: border-box;
 }
 
+.skip-link {
+  position: absolute;
+  top: -1000px;
+  left: 1.1rem;
+  background: var(--accent);
+  color: var(--paper);
+  padding: 0.45rem 1rem;
+  border-radius: 0 0 4px 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 100;
+}
+
+.skip-link:focus-visible {
+  top: 0;
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   background: var(--paper);
@@ -114,7 +134,8 @@ body {
   cursor: pointer;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   color: var(--accent);
   border-color: var(--accent);
 }
