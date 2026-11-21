@@ -356,7 +356,8 @@ def build_app(
         return _apply_security_headers(response, request.url.path)
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(request: Request, _exc: Exception) -> Response:
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> Response:
+        log.error("Unhandled exception", exc_info=exc)
         response = PlainTextResponse("Internal Server Error", status_code=500)
         return _apply_security_headers(response, request.url.path)
 
