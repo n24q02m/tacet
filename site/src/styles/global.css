@@ -96,11 +96,17 @@ body {
 .nav a {
   color: var(--muted);
   text-decoration: none;
+  transition: color 0.15s ease-out;
 }
 
 .nav a:hover,
 .nav a:focus-visible {
   color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .theme-toggle {
@@ -112,6 +118,7 @@ body {
   border-radius: 3px;
   padding: 0.15rem 0.55rem;
   cursor: pointer;
+  transition: color 0.15s ease-out, border-color 0.15s ease-out;
 }
 
 .theme-toggle:hover {
@@ -190,6 +197,7 @@ li {
   background: var(--accent);
   padding: 0.45rem 1rem;
   border-radius: 4px;
+  transition: filter 0.15s ease-out, background-color 0.15s ease-out, border-color 0.15s ease-out;
 }
 
 .btn.secondary {
@@ -201,6 +209,13 @@ li {
 .btn:hover,
 .btn:focus-visible {
   filter: brightness(1.08);
+}
+
+.btn.secondary:hover,
+.btn.secondary:focus-visible {
+  filter: none;
+  background-color: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .scroller {

@@ -1,0 +1,3 @@
+## 2024-10-04 - Fix invisible secondary button hover states and missing focus rings
+**Learning:** Using `filter: brightness()` for button hover states fails on buttons with transparent backgrounds (`background: none`), rendering their hover/focus states completely invisible. Additionally, relying solely on color changes for focus states makes keyboard navigation hard to track.
+**Action:** Always provide concrete `background-color` or `border-color` changes for transparent "secondary" buttons. Implement a global `:focus-visible` outline for all interactive elements to ensure robust keyboard accessibility.
