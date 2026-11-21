@@ -328,9 +328,20 @@ class RuleEngine:
             idx_obj: dict[tuple[str, str], list[Triple]] = {}
             for fact in facts:
                 h, r, t = fact
-                idx_all.setdefault(r, []).append(fact)
-                idx_subj.setdefault((r, h), []).append(fact)
-                idx_obj.setdefault((r, t), []).append(fact)
+                if r in idx_all:
+                    idx_all[r].append(fact)
+                else:
+                    idx_all[r] = [fact]
+                rh = (r, h)
+                if rh in idx_subj:
+                    idx_subj[rh].append(fact)
+                else:
+                    idx_subj[rh] = [fact]
+                rt = (r, t)
+                if rt in idx_obj:
+                    idx_obj[rt].append(fact)
+                else:
+                    idx_obj[rt] = [fact]
             for rule in all_rules:
                 for binding in self._join(rule.body, idx_all, idx_subj, idx_obj):
                     if any(binding.get(a) == binding.get(b) for a, b in rule.distinct):
