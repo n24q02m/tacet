@@ -232,20 +232,23 @@ class FormalContext:
         # parent c1 covers c2 iff extent(c2) ⊂ extent(c1) and no concept
         # sits strictly between them.
         by_size = sorted(concepts, key=lambda c: len(c[0]))
+        covered_by: list[list[frozenset[str]]] = [[] for _ in range(len(by_size))]
         for i, child in enumerate(by_size):
             for j in range(i + 1, len(by_size)):
                 parent = by_size[j]
-                if not child[0].issubset(parent[0]) or parent[0] == child[0]:
+                if child[0] == parent[0] or not child[0].issubset(parent[0]):
                     continue
-                # Direct cover iff no intermediate concept exists.
-                cover = True
-                for k in range(i + 1, j):
-                    mid = by_size[k]
-                    if child[0] < mid[0] < parent[0]:
-                        cover = False
+
+                # Check if parent is a superset of any concept that already covers child
+                is_covered = False
+                for mid_ext in covered_by[i]:
+                    if mid_ext.issubset(parent[0]):
+                        is_covered = True
                         break
-                if cover:
+
+                if not is_covered:
                     edges.append((parent, child))
+                    covered_by[i].append(parent[0])
         return edges
 
 
