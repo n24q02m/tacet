@@ -103,6 +103,12 @@ body {
   color: var(--accent);
 }
 
+.nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
 .theme-toggle {
   font: inherit;
   font-size: 0.82rem;
@@ -117,6 +123,11 @@ body {
 .theme-toggle:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 main {
@@ -201,6 +212,11 @@ li {
 .btn:hover,
 .btn:focus-visible {
   filter: brightness(1.08);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .scroller {
