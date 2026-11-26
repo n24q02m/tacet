@@ -1,12 +1,12 @@
 import unittest
 from unittest.mock import MagicMock
 
+from tacet.cascade.config import CascadeConfig
 from tacet.cascade.router import TACET, Answer
 from tacet.core.graph import WorldGraph
 from tacet.core.ontology import Ontology, RelationType
 from tacet.kge.kge import KGEConfig
 from tacet.llm.teacher import OracleTeacher
-from tacet.serve.config import CascadeConfig
 
 
 class TestAnswer(unittest.TestCase):

@@ -1,1 +1,1 @@
-"""Rule distillation: online distiller, AMIE+, FCA, concept induction."""
+"""Rule distillation: online distiller, AMIE+, compliance mining."""

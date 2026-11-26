@@ -22,13 +22,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from tacet.cascade.config import CascadeConfig
 from tacet.core.graph import WorldGraph
 from tacet.core.ontology import Ontology
 from tacet.core.symbolic import Rule, RuleEngine
 from tacet.distill.distill import Distiller
 from tacet.kge.kge import ComplEx
 from tacet.llm.teacher import Narrator, Teacher
-from tacet.serve.config import CascadeConfig
 
 Triple = tuple[str, str, str]
 

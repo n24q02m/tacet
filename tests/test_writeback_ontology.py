@@ -17,12 +17,12 @@ from __future__ import annotations
 
 import unittest
 
+from tacet.cascade.config import CascadeConfig, KGEConfig
 from tacet.cascade.router import TACET
 from tacet.core.graph import WorldGraph
 from tacet.core.ontology import NodeType, Ontology, RelationType
 from tacet.core.symbolic import Rule
 from tacet.llm.teacher import CallableTeacher
-from tacet.serve.config import CascadeConfig, KGEConfig
 
 
 class TestWriteBackOntologyPreservation(unittest.TestCase):

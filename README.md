@@ -211,10 +211,10 @@ the single integration point for a real LLM (Gemini, Grok, GPT, …).
 ## Try it
 
 ```bash
-python -m tacet.serve.cli demo      # 5 systems on a synthetic benchmark
+python -m tacet.cli demo            # 5 systems on a synthetic benchmark
 python examples/real_kg_demo.py    # the cascade on a real geography KG
 python examples/quickstart.py      # the API in 20 lines
-uv run --all-extras pytest -q      # 541 tests
+uv run --all-extras pytest -q      # 240 tests
 ```
 
 ## Reproduce the paper

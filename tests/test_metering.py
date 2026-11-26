@@ -14,10 +14,10 @@ import unittest
 
 import pytest
 
+from tacet.cascade.config import TIER_COST
 from tacet.core.graph import WorldGraph
 from tacet.llm.metering import MeteredTeacher, PriceTable, _read_usage
 from tacet.llm.teacher import Teacher, TeacherResponse
-from tacet.serve.config import TIER_COST
 
 
 class _FakeTeacher(Teacher):

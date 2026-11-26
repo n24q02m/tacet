@@ -26,10 +26,10 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from tacet.cascade.config import CascadeConfig, KGEConfig
 from tacet.eval import baselines
 from tacet.eval.benchmark import BenchmarkConfig, generate
 from tacet.llm.teacher import OracleTeacher
-from tacet.serve.config import CascadeConfig, KGEConfig
 
 
 @dataclass

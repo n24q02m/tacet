@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import unittest
 
+import pytest
+
+from tacet.cascade.config import CascadeConfig, KGEConfig
 from tacet.cascade.router import TACET
 from tacet.core.graph import WorldGraph
 from tacet.distill.distill import Distiller, mine_rules
 from tacet.eval import baselines
 from tacet.eval.benchmark import BenchmarkConfig, generate
 from tacet.llm.teacher import OracleTeacher
-from tacet.serve.config import CascadeConfig, KGEConfig
 
 _FAST = KGEConfig(epochs=60, seed=0)
 
@@ -69,6 +71,7 @@ class TestBenchmark(unittest.TestCase):
         )
 
 
+@pytest.mark.slow
 class TestCascadeRouting(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -115,6 +118,7 @@ class TestCascadeRouting(unittest.TestCase):
         self.assertTrue(all(t == 3 for t in tiers))  # never learns
 
 
+@pytest.mark.slow
 class TestBaselines(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

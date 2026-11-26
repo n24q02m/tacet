@@ -13,18 +13,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-experiments = ["matplotlib>=3.10.9", "scipy>=1.17.1", "pyarrow>=21.0.0"]
-service = ["fastapi>=0.136.3", "uvicorn[standard]>=0.48.0", "pydantic>=2.13.4", "pydantic-settings>=2.14.2", "httpx>=0.28.1", "prometheus_client>=0.25.0"]
+experiments = ["matplotlib>=3.10.9", "polars>=1.0.0", "scipy>=1.17.1", "pyarrow>=21.0.0"]
 torch = ["torch>=2.13.0"]
-llm = ["google-genai>=1.75.0", "openai>=1.109.1"]
-# all-MiniLM-L6-v2 retrieval for the Inter-Cascade-style nl_strategy baseline
-# (experiments/run_privaci_controlled.py); pulled in only for that experiment.
+llm = ["google-genai>=1.75.0", "httpx>=0.28.1", "openai>=1.109.1"]
+# all-MiniLM-L6-v2 retrieval for NL strategy baselines; pulled in only for that experiment.
 nlbaseline = ["sentence-transformers>=3.0.0"]
-all = ["tacet[experiments,service,torch,llm,nlbaseline]"]
-dev = ["pytest>=9.0.3", "ruff>=0.15.14"]
+all = ["tacet[experiments,torch,llm,nlbaseline]"]
+dev = ["pytest>=9.0.3", "pytest-cov>=6.0.0", "ruff>=0.15.14"]
 
 [project.scripts]
-tacet = "tacet.serve.cli:main"
+tacet = "tacet.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -43,23 +41,19 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # experiment runners pin BLAS threads via os.environ before importing numpy.
 "src/tacet/eval/experiment.py" = ["E402"]
-"experiments/kge_real_eval.py" = ["E402"]
-"experiments/run_layer4_eval.py" = ["E402"]
 # kge.py uses upper-case names for batched index arrays (H, T, R), matching
-# the mathematical notation in the ComplEx derivation. Same convention in
-# concepts.py for the design matrix X.  fca.py uses A/B for extent/
-# intent (canonical FCA notation, Wille / Ganter).
+# the mathematical notation in the ComplEx derivation.
 "src/tacet/kge/kge.py" = ["N806"]
 "src/tacet/kge/kge_torch.py" = ["N806", "E402"]
 "src/tacet/eval/benchmark.py" = ["N806"]
-"src/tacet/distill/concepts.py" = ["N803", "N806"]
-"src/tacet/distill/fca.py" = ["N803", "N806"]
-"experiments/run_metaqa.py" = ["E402"]
-"tests/test_tier_a.py" = ["E702"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "slow: marks tests that load heavy ML models or take >2s",
+    "gpu: marks tests that require CUDA GPU hardware",
+]
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]

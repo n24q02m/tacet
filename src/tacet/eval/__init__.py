@@ -1,1 +1,1 @@
-"""Evaluation, benchmarking and experiment harness: audit, baselines, metrics."""
+"""Evaluation and benchmarking harness: audit, baselines, benchmark."""
