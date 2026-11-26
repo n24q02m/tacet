@@ -20,11 +20,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from tacet.cascade.config import TIER_COST, TIER_LATENCY_MS, CascadeConfig
 from tacet.cascade.router import TACET
 from tacet.core.symbolic import RuleEngine
 from tacet.eval.benchmark import Benchmark
 from tacet.llm.teacher import Teacher
-from tacet.serve.config import TIER_COST, TIER_LATENCY_MS, CascadeConfig
 
 
 def answer_correct(answers: list[str], truth: list[str]) -> bool:

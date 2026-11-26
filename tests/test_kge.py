@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import unittest
 
+import pytest
+
 from tacet.eval.benchmark import BenchmarkConfig, generate
 from tacet.kge.kge import ComplEx, KGEConfig
+
+pytestmark = pytest.mark.slow
 
 
 class TestComplEx(unittest.TestCase):

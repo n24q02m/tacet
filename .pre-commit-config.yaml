@@ -8,9 +8,6 @@ repos:
       - id: trailing-whitespace
         name: trim trailing whitespace
         exclude_types: [image]
-        # Tectonic build logs contain trailing whitespace by nature; a
-        # hook-fix here conflicts with the unstaged-stash and aborts commits.
-        exclude: ^paper/arxiv-v11/build/main\.log$
       - id: check-merge-conflict
         name: check for merge conflicts
       - id: check-json
@@ -25,7 +22,6 @@ repos:
       - id: end-of-file-fixer
         name: fix end of files
         exclude_types: [image]
-        exclude: ^paper/arxiv-v11/build/main\.log$
 
   # ============================================================================
   # Python
@@ -42,8 +38,8 @@ repos:
   - repo: local
     hooks:
       - id: pytest
-        name: pytest
-        entry: uv run --all-extras pytest --tb=short -q
+        name: pytest (fast suite)
+        entry: uv run --all-extras pytest --tb=short -q -m "not slow and not gpu"
         language: system
         types: [python]
         pass_filenames: false

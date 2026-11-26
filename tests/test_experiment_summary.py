@@ -20,6 +20,8 @@ pytest.importorskip("scipy")
 
 from tacet.eval.experiment import _summary, _t_critical, aggregate, build_jobs  # noqa: E402
 
+pytestmark = pytest.mark.slow
+
 
 class TestSummary(unittest.TestCase):
     def test_empty(self) -> None:

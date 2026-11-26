@@ -5,6 +5,11 @@ from __future__ import annotations
 import unittest
 
 import numpy as np
+import pytest
+
+from tacet.kge.kge_textual import hash_encoder, seed_kge_from_descriptions
+
+pytestmark = pytest.mark.slow
 
 try:
     import torch  # noqa: F401
@@ -12,8 +17,6 @@ try:
     HAS_TORCH = True
 except (ImportError, OSError):  # pragma: no cover
     HAS_TORCH = False
-
-from tacet.kge.kge_textual import hash_encoder, seed_kge_from_descriptions
 
 if HAS_TORCH:
     from tacet.kge.kge_torch import TorchComplEx, TorchKGEConfig
