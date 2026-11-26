@@ -145,6 +145,7 @@ class Narrator:
             1: "verified rules",
             2: "structural inference",
             3: "expert reasoning",
+            4: "distilled LoRA",
         }
     )
 
@@ -159,7 +160,8 @@ class Narrator:
         verb = relation.replace("_", " ")
         if not answers:
             return f"No answer found for ({head}, {verb})."
-        text = f"{head} — {verb} → {', '.join(answers)}  [via {self.tier_label[tier]}]"
-        if proof and tier == 1:
+        label = self.tier_label.get(tier, f"tier {tier}")
+        text = f"{head} — {verb} → {', '.join(answers)}  [via {label}]"
+        if proof:
             text += "\n  proof:\n" + "\n".join("    " + ln for ln in proof)
         return text
