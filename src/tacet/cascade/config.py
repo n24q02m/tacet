@@ -14,9 +14,9 @@ from dataclasses import dataclass, field
 from tacet.kge.kge import KGEConfig
 
 # USD per query, by tier.
-TIER_COST = {1: 0.0001, 2: 0.0010, 3: 0.0500}
+TIER_COST = {1: 0.0001, 2: 0.0010, 3: 0.0500, 4: 0.0005}
 # Milliseconds per query, by tier.
-TIER_LATENCY_MS = {1: 3.0, 2: 15.0, 3: 900.0}
+TIER_LATENCY_MS = {1: 3.0, 2: 15.0, 3: 900.0, 4: 40.0}
 
 
 @dataclass

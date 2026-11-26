@@ -29,6 +29,7 @@ from tacet.core.symbolic import Rule, RuleEngine
 from tacet.distill.distill import Distiller
 from tacet.kge.kge import ComplEx
 from tacet.llm.teacher import Narrator, Teacher
+from tacet.tiers.base import Tier
 
 Triple = tuple[str, str, str]
 
@@ -45,6 +46,7 @@ class Answer:
     latency_ms: float
     proof: list[str] = field(default_factory=list)
     note: str = ""
+    grounded: bool = False
 
 
 class TACET:
@@ -57,6 +59,7 @@ class TACET:
         teacher: Teacher,
         rules: list[Rule] | None = None,
         config: CascadeConfig | None = None,
+        tiers: list[Tier] | None = None,
     ) -> None:
         self.graph = graph
         self.ontology = ontology
@@ -70,6 +73,7 @@ class TACET:
             min_confidence=self.config.min_confidence,
             min_support=self.config.min_support,
         )
+        self.tiers: list[Tier] | None = list(tiers) if tiers is not None else None
         self.history: list[Answer] = []
         self._candidate_cache: dict[str, list[str]] = {}
         self._kge_ready = False
@@ -114,11 +118,41 @@ class TACET:
 
     # ----------------------------------------------------------- the router
     def ask(self, head: str, relation: str) -> Answer:
+        if self.tiers is not None:
+            for tier in self.tiers:
+                if not tier.can_handle(head, relation):
+                    continue
+                res = tier.answer(head, relation)
+                if res is not None:
+                    if res.tier == 3 and self.config.distillation:
+                        self._distil(head, relation, res.answers)
+                    return self._record(
+                        head,
+                        relation,
+                        res.tier,
+                        res.answers,
+                        res.confidence,
+                        proof=res.proof,
+                        note=res.note,
+                        grounded=res.grounded,
+                    )
+            fallback_tier = self.tiers[-1].tier_id if self.tiers else 3
+            return self._record(
+                head, relation, fallback_tier, [], 0.0, grounded=False, note="no tier answered"
+            )
+
         # ---- Tier 1: symbolic --------------------------------------------
         sym = self.engine.query(head, relation)
         if sym.answered:
             return self._record(
-                head, relation, 1, sym.answers, 1.0, proof=sym.proof, note="entailed by rules"
+                head,
+                relation,
+                1,
+                sym.answers,
+                1.0,
+                proof=sym.proof,
+                note="entailed by rules",
+                grounded=True,
             )
 
         # ---- Tier 2: KGE link prediction ---------------------------------
@@ -136,13 +170,16 @@ class TACET:
                     [pred.tail],
                     pred.confidence,
                     note=f"KGE prediction (conf={pred.confidence:.2f})",
+                    grounded=False,
                 )
 
         # ---- Tier 3: LLM teacher + distillation --------------------------
         resp = self.teacher.answer(self.graph, head, relation)
         if self.config.distillation:
             self._distil(head, relation, resp.answers)
-        return self._record(head, relation, 3, resp.answers, 1.0, note="answered by LLM teacher")
+        return self._record(
+            head, relation, 3, resp.answers, 1.0, note="answered by LLM teacher", grounded=False
+        )
 
     def _distil(self, head: str, relation: str, answers: list[str]) -> None:
         facts = self.distiller.record(head, relation, answers)
@@ -220,18 +257,21 @@ class TACET:
         confidence: float,
         proof: list[str] | None = None,
         note: str = "",
+        grounded: bool = False,
     ) -> Answer:
+        sorted_answers = sorted(answers)
         ans = Answer(
             head=head,
             relation=relation,
             tier=tier,
-            answers=sorted(answers),
-            text=self.narrator.render(head, relation, sorted(answers), tier, proof),
+            answers=sorted_answers,
+            text=self.narrator.render(head, relation, sorted_answers, tier, proof),
             confidence=confidence,
-            cost=self.config.tier_cost[tier],
-            latency_ms=self.config.tier_latency_ms[tier],
+            cost=self.config.tier_cost.get(tier, 0.0),
+            latency_ms=self.config.tier_latency_ms.get(tier, 0.0),
             proof=proof or [],
             note=note,
+            grounded=grounded,
         )
         self.history.append(ans)
         return ans
@@ -239,20 +279,27 @@ class TACET:
     # ----------------------------------------------------------- reporting
     def report(self) -> dict[str, object]:
         n = len(self.history)
-        by = {1: 0, 2: 0, 3: 0}
+        by: dict[int, int] = {1: 0, 2: 0, 3: 0}
         cost = latency = 0.0
         for a in self.history:
-            by[a.tier] += 1
+            by[a.tier] = by.get(a.tier, 0) + 1
             cost += a.cost
             latency += a.latency_ms
-        return {
+        no_llm = sum(c for t, c in by.items() if t != 3)
+        rep: dict[str, object] = {
             "queries": n,
             "tier1": by[1],
             "tier2": by[2],
             "tier3": by[3],
-            "pct_no_llm": (by[1] + by[2]) / n * 100 if n else 0.0,
+            "pct_no_llm": no_llm / n * 100 if n else 0.0,
             "total_cost": cost,
             "avg_cost": cost / n if n else 0.0,
             "avg_latency_ms": latency / n if n else 0.0,
             "synthesised_rules": list(self.synthesised_rules),
+            "tier_counts": dict(sorted(by.items())),
+            "tier_shares": {t: (c / n if n else 0.0) for t, c in sorted(by.items())},
         }
+        for t, c in sorted(by.items()):
+            rep[f"tier{t}"] = c
+            rep[f"tier{t}_share"] = c / n if n else 0.0
+        return rep

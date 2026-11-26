@@ -27,10 +27,18 @@ from tacet.cascade.config import CascadeConfig
 from tacet.cascade.router import TACET, Answer
 from tacet.core.graph import Edge, Node, WorldGraph
 from tacet.core.ontology import NodeType, Ontology, RelationType
-from tacet.core.symbolic import Rule, RuleEngine
+from tacet.core.symbolic import EntailmentCheck, Rule, RuleEngine
 from tacet.distill.distill import Distiller, mine_rules
 from tacet.kge.kge import ComplEx, KGEConfig
 from tacet.llm.teacher import CallableTeacher, Narrator, OracleTeacher, Teacher
+from tacet.tiers import (
+    EntailmentGate,
+    KGETier,
+    LLMTier,
+    SymbolicTier,
+    Tier,
+    TierResult,
+)
 
 __all__ = [
     "TACET",
@@ -40,7 +48,11 @@ __all__ = [
     "ComplEx",
     "Distiller",
     "Edge",
+    "EntailmentCheck",
+    "EntailmentGate",
     "KGEConfig",
+    "KGETier",
+    "LLMTier",
     "Narrator",
     "Node",
     "NodeType",
@@ -49,7 +61,10 @@ __all__ = [
     "RelationType",
     "Rule",
     "RuleEngine",
+    "SymbolicTier",
     "Teacher",
+    "Tier",
+    "TierResult",
     "WorldGraph",
     "__version__",
     "mine_rules",

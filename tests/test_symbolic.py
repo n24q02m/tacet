@@ -4,11 +4,19 @@ from __future__ import annotations
 
 import unittest
 import unittest.mock
+from dataclasses import FrozenInstanceError
 
 from tacet.core import symbolic
 from tacet.core.graph import WorldGraph
 from tacet.core.ontology import NodeType, Ontology, RelationType
-from tacet.core.symbolic import Derivation, Rule, RuleEngine
+from tacet.core.symbolic import (
+    Derivation,
+    EntailmentCheck,
+    Rule,
+    RuleEngine,
+    load_rules_json,
+    save_rules_json,
+)
 
 
 def _engine(
@@ -375,6 +383,161 @@ class TestRuleEngine(unittest.TestCase):
         engine = RuleEngine(Ontology())
         rule = Rule("anything", (("?x", "p", "?y"),), ("?x", "anc", "?y"))
         self.assertTrue(engine.add_rule(rule))
+
+    def test_derivation_and_entailment_check_are_frozen(self) -> None:
+        d = Derivation(("a", "p", "b"), "rule1", (("a", "p", "b"),))
+        with self.assertRaises(FrozenInstanceError):
+            d.rule = "other"  # type: ignore[misc]
+        chk = EntailmentCheck(entailed=True, rule="rule1", grounded=True, proof=("line1",))
+        with self.assertRaises(FrozenInstanceError):
+            chk.entailed = False  # type: ignore[misc]
+
+    def test_derivations_sorted_and_filtered_by_grounded(self) -> None:
+        rules = [
+            Rule("anc_base", (("?x", "p", "?y"),), ("?x", "anc", "?y")),
+            Rule("anc_step", (("?x", "anc", "?z"), ("?z", "p", "?y")), ("?x", "anc", "?y")),
+        ]
+        engine, g = _engine(rules)
+        for a, b in [("a", "b"), ("b", "c")]:
+            g.add_node(a, "T")
+            g.add_node(b, "T")
+            g.add_edge(a, "p", b)
+        engine.materialise(g)
+
+        grounded = engine.derivations()
+        self.assertTrue(grounded)
+        keys = [(d.triple, d.rule) for d in grounded]
+        self.assertEqual(keys, sorted(keys))
+
+        # Inject a dangling derivation referencing an unknown rule.
+        bad_triple = ("a", "anc", "z_bad")
+        engine._closure.add(bad_triple)
+        engine._derivations[bad_triple] = Derivation(bad_triple, "unknown_rule", ())
+
+        only_grounded = engine.derivations(grounded_only=True)
+        self.assertNotIn(bad_triple, [d.triple for d in only_grounded])
+
+        all_derivs = engine.derivations(grounded_only=False)
+        self.assertIn(bad_triple, [d.triple for d in all_derivs])
+        self.assertEqual(
+            [(d.triple, d.rule) for d in all_derivs],
+            sorted([(d.triple, d.rule) for d in all_derivs]),
+        )
+
+    def test_entails_base_derived_axiom_ungrounded_and_missing(self) -> None:
+        rule = Rule("anc_base", (("?x", "p", "?y"),), ("?x", "anc", "?y"))
+        engine, g = _engine([rule], symmetric=True)
+        g.add_node("a", "T")
+        g.add_node("b", "T")
+        g.add_edge("a", "p", "b")
+        g.add_edge("a", "r", "b")
+        engine.materialise(g)
+
+        # Base fact
+        base_chk = engine.entails("a", "p", "b")
+        self.assertTrue(base_chk.entailed)
+        self.assertIsNone(base_chk.rule)
+        self.assertTrue(base_chk.grounded)
+        self.assertEqual(base_chk.proof, tuple(engine.explain(("a", "p", "b"))))
+        self.assertIn("FACT", base_chk.proof[0])
+
+        # Rule-derived fact
+        rule_chk = engine.entails("a", "anc", "b")
+        self.assertTrue(rule_chk.entailed)
+        self.assertEqual(rule_chk.rule, "anc_base")
+        self.assertTrue(rule_chk.grounded)
+        self.assertTrue(any("DERIVED" in line for line in rule_chk.proof))
+
+        # Axiom-derived fact
+        ax_chk = engine.entails("b", "r", "a")
+        self.assertTrue(ax_chk.entailed)
+        self.assertEqual(ax_chk.rule, "ax:sym:r")
+        self.assertTrue(ax_chk.grounded)
+
+        # Fact added directly via add_fact (stated)
+        engine.add_fact(("b", "anc", "a"))
+        added_chk = engine.entails("b", "anc", "a")
+        self.assertTrue(added_chk.entailed)
+        self.assertIsNone(added_chk.rule)
+        self.assertTrue(added_chk.grounded)
+
+        # Entailed in closure but ungrounded derivation
+        dangling = ("a", "anc", "ghost")
+        engine._closure.add(dangling)
+        engine._derivations[dangling] = Derivation(dangling, "dangling_rule", ())
+        ungrounded_chk = engine.entails("a", "anc", "ghost")
+        self.assertTrue(ungrounded_chk.entailed)
+        self.assertEqual(ungrounded_chk.rule, "dangling_rule")
+        self.assertFalse(ungrounded_chk.grounded)
+        self.assertEqual(ungrounded_chk.proof, tuple(engine.explain(dangling)))
+
+        # Not entailed
+        missing_chk = engine.entails("b", "p", "a")
+        self.assertEqual(
+            missing_chk,
+            EntailmentCheck(entailed=False, rule=None, grounded=False, proof=()),
+        )
+
+    def test_save_and_load_rules_json_roundtrip(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        rules = [
+            Rule("r1", (("?x", "p", "?y"),), ("?x", "anc", "?y")),
+            Rule(
+                "r2",
+                (("?x", "p", "?z"), ("?z", "p", "?y")),
+                ("?x", "anc", "?y"),
+                distinct=(("?x", "?y"),),
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rules.json"
+            save_rules_json(rules, path)
+            loaded = load_rules_json(path)
+        self.assertEqual(loaded, rules)
+
+    def test_unify_constants_repeated_vars_and_ontology_edge_cases(self) -> None:
+        # Exercise constant & repeated-variable unification branches
+        self.assertIsNone(symbolic._unify(("a", "r", "?y"), ("b", "r", "c"), {}))
+        self.assertIsNone(symbolic._unify(("?x", "r", "?y"), ("b", "r", "c"), {"?x": "a"}))
+        self.assertIsNone(symbolic._unify(("?x", "s", "?y"), ("a", "r", "c"), {}))
+        self.assertIsNone(symbolic._unify(("?x", "?x", "?y"), ("a", "r", "c"), {}))
+        self.assertIsNone(symbolic._unify(("?x", "?r", "?y"), ("a", "r", "c"), {"?r": "s"}))
+        self.assertIsNone(symbolic._unify(("?x", "r", "d"), ("a", "r", "c"), {}))
+        self.assertIsNone(symbolic._unify(("?x", "r", "?x"), ("a", "r", "c"), {}))
+        self.assertIsNone(symbolic._unify(("?x", "?r", "?r"), ("a", "r", "c"), {}))
+        self.assertIsNone(symbolic._unify(("?x", "r", "?y"), ("a", "r", "c"), {"?y": "d"}))
+        bound = symbolic._unify(("?x", "?r", "?y"), ("a", "r", "c"), {})
+        self.assertEqual(bound, {"?x": "a", "?r": "r", "?y": "c"})
+
+        # Duplicate rule name, wildcard relation, unknown head relation, inverse_of axiom,
+        # duplicate add_fact, and cyclic proof_is_grounded
+        onto = Ontology()
+        onto.add_node_type(NodeType("T"))
+        onto.add_relation_type(
+            RelationType("p", frozenset({"*"}), frozenset({"*"}), inverse_of="p_inv")
+        )
+        onto.add_relation_type(RelationType("p_inv", frozenset({"*"}), frozenset({"*"})))
+        r = Rule("dup", (("?x", "p", "?y"),), ("?x", "p_inv", "?y"))
+        engine = RuleEngine(onto, [r])
+        self.assertFalse(engine.add_rule(r))
+        bad_head = Rule("bad_head", (("?x", "p", "?y"),), ("?x", "unk", "?y"))
+        self.assertFalse(engine.add_rule(bad_head))
+
+        g = WorldGraph()
+        g.add_node("a", "T")
+        g.add_node("b", "T")
+        g.add_edge("a", "p", "b")
+        engine.materialise(g)
+        self.assertIn(("b", "p_inv", "a"), engine.closure)
+        self.assertFalse(engine.add_fact(("a", "p", "b")))
+
+        # Cyclic derivation guard in proof_is_grounded
+        t1, t2 = ("a", "p", "b"), ("b", "p_inv", "a")
+        engine._derivations[t1] = Derivation(t1, "ax:inv:p:p_inv", (t2,))
+        engine._derivations[t2] = Derivation(t2, "ax:inv:p:p_inv", (t1,))
+        self.assertTrue(engine.proof_is_grounded(t1))
 
 
 if __name__ == "__main__":

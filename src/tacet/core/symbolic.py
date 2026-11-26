@@ -86,11 +86,21 @@ class Rule:
             raise ValueError(f"rule {self.name!r} is not range-restricted")
 
 
-@dataclass
+@dataclass(frozen=True)
 class Derivation:
     triple: Triple
     rule: str
     premises: tuple[Triple, ...]
+
+
+@dataclass(frozen=True)
+class EntailmentCheck:
+    """Result of checking whether a triple is entailed by the RuleEngine."""
+
+    entailed: bool
+    rule: str | None
+    grounded: bool
+    proof: tuple[str, ...]
 
 
 @dataclass
@@ -425,6 +435,28 @@ class RuleEngine:
             return all(_walk(p) for p in deriv.premises)
 
         return _walk(triple)
+
+    def explain(self, triple: Triple) -> list[str]:
+        """Return the human-readable proof tree for `triple`."""
+        return self._explain(triple)
+
+    def derivations(self, grounded_only: bool = True) -> list[Derivation]:
+        """Return materialised derivations in deterministic sorted order."""
+        items = sorted(self._derivations.values(), key=lambda d: (d.triple, d.rule))
+        if grounded_only:
+            return [d for d in items if self.proof_is_grounded(d.triple)]
+        return items
+
+    def entails(self, head: str, relation: str, answer: str) -> EntailmentCheck:
+        """Check whether `(head, relation, answer)` is entailed by the closure."""
+        triple = (head, relation, answer)
+        if triple not in self._closure:
+            return EntailmentCheck(entailed=False, rule=None, grounded=False, proof=())
+        deriv = self._derivations.get(triple)
+        rule = deriv.rule if deriv is not None else None
+        grounded = self.proof_is_grounded(triple)
+        proof = tuple(self.explain(triple))
+        return EntailmentCheck(entailed=True, rule=rule, grounded=grounded, proof=proof)
 
     def _explain(
         self, triple: Triple, depth: int = 0, seen: frozenset[Triple] = frozenset()
