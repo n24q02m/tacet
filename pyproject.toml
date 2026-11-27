@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-experiments = ["matplotlib>=3.10.9", "polars>=1.0.0", "scipy>=1.17.1", "pyarrow>=21.0.0"]
+experiments = ["matplotlib>=3.10.9", "polars>=1.0.0", "scipy>=1.17.1", "pyarrow>=21.0.0", "structlog>=25.1.0"]
 torch = ["torch>=2.13.0"]
 llm = ["google-genai>=1.75.0", "httpx>=0.28.1", "openai>=1.109.1"]
 # all-MiniLM-L6-v2 retrieval for NL strategy baselines; pulled in only for that experiment.
