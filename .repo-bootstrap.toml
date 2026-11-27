@@ -1,0 +1,3 @@
+[[exempt]]
+path = ".github/workflows/zenodo.yml"
+reason = "Research paper Zenodo archival workflow mints permanent irreversible DOIs via a dedicated draft/publish dispatch flow and environment gate, intentionally separated from software release cd.yml."
