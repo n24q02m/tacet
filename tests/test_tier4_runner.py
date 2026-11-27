@@ -14,6 +14,7 @@ from tacet.distill.tier4_runner import (
     BASE_RELATIONS,
     DERIVED_RELATIONS,
     QLoRAConfig,
+    QLoRATrainerBackend,
     _f1_sets,
     build_engines_for_split,
     build_sft_prompt,
@@ -162,3 +163,85 @@ class TestEnginesAndDryRunPipeline:
         assert pred_b.stat().st_mtime_ns == mtime_before
         stored = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
         assert len(stored["runs"]) == 3
+
+    def test_predict_restores_kv_cache_and_batches_left_padded(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        torch = pytest.importorskip("torch")
+
+        class _FakeParam:
+            device = "cpu"
+
+        class _FakeConfig:
+            use_cache = False
+
+        class _FakeGenConfig:
+            use_cache = False
+
+        class _FakeModel:
+            def __init__(self) -> None:
+                self.config = _FakeConfig()
+                self.generation_config = _FakeGenConfig()
+                self.eval_called = False
+                self.grad_ckpt_disabled = False
+                self.generate_calls: list[dict[str, object]] = []
+
+            def eval(self) -> None:
+                self.eval_called = True
+
+            def gradient_checkpointing_disable(self) -> None:
+                self.grad_ckpt_disabled = True
+
+            def parameters(self):
+                return iter([_FakeParam()])
+
+            def generate(self, **kwargs):
+                self.generate_calls.append(kwargs)
+                ids = kwargs["input_ids"]
+                bsz, seq_len = ids.shape
+                suffix = torch.arange(100, 100 + bsz * 2, dtype=ids.dtype).reshape(bsz, 2)
+                return torch.cat([ids, suffix], dim=1)
+
+        class _FakeBatch(dict):
+            def to(self, device):
+                return self
+
+        class _FakeTokenizer:
+            padding_side = "right"
+            pad_token_id = 0
+
+            def __init__(self) -> None:
+                self.seen_padding_sides: list[str] = []
+                self.decoded: list[list[int]] = []
+
+            def apply_chat_template(self, messages, **_kwargs):
+                return str(messages[0]["content"])
+
+            def __call__(self, texts, **_kwargs):
+                self.seen_padding_sides.append(self.padding_side)
+                rows = [[idx + 1, idx + 2] for idx, _ in enumerate(texts)]
+                return _FakeBatch(input_ids=torch.tensor(rows, dtype=torch.long))
+
+            def decode(self, token_ids, **_kwargs) -> str:
+                vals = [int(x) for x in token_ids.tolist()]
+                self.decoded.append(vals)
+                return f"out:{vals}"
+
+        monkeypatch.setitem(sys.modules, "torch", torch)
+        backend = QLoRATrainerBackend(QLoRAConfig(eval_batch_size=2), arm="A", seed=0)
+        fake_model = _FakeModel()
+        fake_tok = _FakeTokenizer()
+        backend._model = fake_model
+        backend._tokenizer = fake_tok
+
+        outputs = backend.predict(["p1", "p2", "p3"])
+
+        assert fake_model.eval_called is True
+        assert fake_model.grad_ckpt_disabled is True
+        assert fake_model.config.use_cache is True
+        assert fake_model.generation_config.use_cache is True
+        assert fake_tok.padding_side == "right"
+        assert fake_tok.seen_padding_sides == ["left", "left"]
+        assert [c["input_ids"].shape[0] for c in fake_model.generate_calls] == [2, 1]
+        assert all(c["use_cache"] is True for c in fake_model.generate_calls)
+        assert outputs == ["out:[100, 101]", "out:[102, 103]", "out:[100, 101]"]
