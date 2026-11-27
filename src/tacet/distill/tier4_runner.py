@@ -66,6 +66,7 @@ class QLoRAConfig:
     grad_accum: int = 4
     max_seq_len: int = 1024
     max_new_tokens: int = 256
+    eval_batch_size: int = 16
     max_context_hops: int = 2
     max_context_facts: int = 60
 
@@ -467,7 +468,13 @@ class QLoRATrainerBackend:
             device_map="auto",
             torch_dtype=torch.bfloat16,
         )
-        model = prepare_model_for_kbit_training(model)
+        try:
+            model = prepare_model_for_kbit_training(
+                model,
+                gradient_checkpointing_kwargs={"use_reentrant": False},
+            )
+        except TypeError:
+            model = prepare_model_for_kbit_training(model)
         lora_cfg = LoraConfig(
             r=self.cfg.lora_r,
             lora_alpha=self.cfg.lora_alpha,
@@ -515,9 +522,11 @@ class QLoRATrainerBackend:
         optimizer.zero_grad(set_to_none=True)
         micro_step = 0
 
-        for _epoch in range(self.cfg.epochs):
+        for epoch in range(self.cfg.epochs):
             order = list(range(len(encoded)))
             rng.shuffle(order)
+            epoch_loss = 0.0
+            epoch_steps = 0
             for i in range(0, len(order), self.cfg.batch_size):
                 batch_idx = order[i : i + self.cfg.batch_size]
                 max_len = max(len(encoded[j][0]) for j in batch_idx)
@@ -536,8 +545,10 @@ class QLoRATrainerBackend:
                 label_t = torch.tensor(label_rows, dtype=torch.long, device=device)
 
                 with torch.amp.autocast("cuda", dtype=torch.bfloat16):
-                    loss = model(input_ids=input_t, attention_mask=attn_t, labels=label_t).loss
-                    loss = loss / self.cfg.grad_accum
+                    raw_loss = model(input_ids=input_t, attention_mask=attn_t, labels=label_t).loss
+                    loss = raw_loss / self.cfg.grad_accum
+                epoch_loss += float(raw_loss.detach().item())
+                epoch_steps += 1
                 loss.backward()
                 micro_step += 1
                 if micro_step % self.cfg.grad_accum == 0 or (i + self.cfg.batch_size) >= len(order):
@@ -545,6 +556,15 @@ class QLoRATrainerBackend:
                     optimizer.step()
                     scheduler.step()
                     optimizer.zero_grad(set_to_none=True)
+            log.info(
+                "wave_b.train_epoch",
+                arm=self.arm,
+                seed=self.seed,
+                epoch=epoch + 1,
+                epochs=self.cfg.epochs,
+                avg_loss=round(epoch_loss / max(1, epoch_steps), 4),
+                elapsed_s=round(time.perf_counter() - t0, 2),
+            )
 
         if adapter_dir is not None:
             adapter_dir.mkdir(parents=True, exist_ok=True)
@@ -553,26 +573,60 @@ class QLoRATrainerBackend:
         return time.perf_counter() - t0
 
     def predict(self, prompts: Sequence[str]) -> list[str]:
-        """Run deterministic greedy decoding for a list of prompts."""
+        """Run deterministic left-padded batched greedy decoding with KV cache."""
         import torch
 
         assert self._model is not None and self._tokenizer is not None
         self._model.eval()
+        if hasattr(self._model, "gradient_checkpointing_disable"):
+            self._model.gradient_checkpointing_disable()
+        if hasattr(self._model, "config"):
+            self._model.config.use_cache = True
+        if getattr(self._model, "generation_config", None) is not None:
+            self._model.generation_config.use_cache = True
+
         device = next(self._model.parameters()).device
+        bs = max(1, int(self.cfg.eval_batch_size))
         outputs: list[str] = []
-        with torch.no_grad():
-            for prompt in prompts:
-                chat_text = self._format_chat(prompt)
-                inputs = self._tokenizer(chat_text, return_tensors="pt").to(device)
-                in_len = inputs["input_ids"].shape[1]
-                gen = self._model.generate(
-                    **inputs,
-                    do_sample=False,
-                    max_new_tokens=self.cfg.max_new_tokens,
-                    pad_token_id=self._tokenizer.pad_token_id,
-                )
-                decoded = self._tokenizer.decode(gen[0, in_len:], skip_special_tokens=True)
-                outputs.append(decoded)
+        eval_t0 = time.perf_counter()
+        orig_padding_side = getattr(self._tokenizer, "padding_side", "right")
+        self._tokenizer.padding_side = "left"
+        try:
+            with torch.no_grad():
+                for batch_idx, start in enumerate(range(0, len(prompts), bs)):
+                    batch_texts = [self._format_chat(p) for p in prompts[start : start + bs]]
+                    inputs = self._tokenizer(
+                        batch_texts,
+                        return_tensors="pt",
+                        padding=True,
+                        truncation=True,
+                        max_length=self.cfg.max_seq_len,
+                    ).to(device)
+                    in_len = int(inputs["input_ids"].shape[1])
+                    gen = self._model.generate(
+                        **inputs,
+                        do_sample=False,
+                        use_cache=True,
+                        max_new_tokens=self.cfg.max_new_tokens,
+                        pad_token_id=self._tokenizer.pad_token_id,
+                    )
+                    for row_idx in range(len(batch_texts)):
+                        decoded = self._tokenizer.decode(
+                            gen[row_idx, in_len:],
+                            skip_special_tokens=True,
+                        )
+                        outputs.append(decoded)
+                    if (batch_idx + 1) % 4 == 0 or len(outputs) == len(prompts):
+                        log.info(
+                            "wave_b.eval_progress",
+                            arm=self.arm,
+                            seed=self.seed,
+                            done=len(outputs),
+                            total=len(prompts),
+                            elapsed_s=round(time.perf_counter() - eval_t0, 2),
+                        )
+        finally:
+            self._tokenizer.padding_side = orig_padding_side
         return outputs
 
     def cleanup(self) -> None:

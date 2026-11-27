@@ -42,6 +42,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--grad-accum", type=int, default=4)
     parser.add_argument("--max-seq-len", type=int, default=1024)
     parser.add_argument("--max-new-tokens", type=int, default=256)
+    parser.add_argument("--eval-batch-size", type=int, default=16)
     parser.add_argument("--max-train-samples", type=int, default=None)
     parser.add_argument("--max-eval-samples", type=int, default=None)
     parser.add_argument("--dry-run", action="store_true")
@@ -60,6 +61,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         grad_accum=args.grad_accum,
         max_seq_len=args.max_seq_len,
         max_new_tokens=args.max_new_tokens,
+        eval_batch_size=args.eval_batch_size,
     )
     manifest = run_wave_b_matrix(
         arms=arms,
