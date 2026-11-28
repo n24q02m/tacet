@@ -15,13 +15,16 @@ from tacet.distill.tier4_runner import (
     DERIVED_RELATIONS,
     QLoRAConfig,
     QLoRATrainerBackend,
+    _evaluate_run,
     _f1_sets,
     build_engines_for_split,
     build_sft_prompt,
     build_unanswerable_eval_queries,
+    compact_proof_lines,
     extract_local_context,
     format_sft_target,
     parse_model_output,
+    parse_model_output_detailed,
     run_wave_b_matrix,
     summarize_wave_b_jsonl,
 )
@@ -67,25 +70,82 @@ class TestContextAndFormatting:
         )
         assert t_a == '{"answers": ["p2"]}'
         assert parse_model_output(t_a) == (["p2"], [], False)
+        assert parse_model_output_detailed(t_a) == (["p2"], [], False, True)
 
         t_b = format_sft_target(
-            {"answers": ["p2"], "proof": ["DERIVED p1 -ancestor_of-> p2 [r]"]},
+            {
+                "answers": ["p2"],
+                "proof": [
+                    "  DERIVED   p1 -ancestor_of-> p2 [r]  ",
+                    "DERIVED p1 -ancestor_of-> p2 [r]",
+                ],
+            },
             "B",
         )
-        ans_b, proof_b, abst_b = parse_model_output("<think>noise</think>\n" + t_b)
+        ans_b, proof_b, abst_b, parsed_b = parse_model_output_detailed(
+            "<think>noise</think>\n" + t_b
+        )
         assert ans_b == ["p2"]
         assert proof_b == ["DERIVED p1 -ancestor_of-> p2 [r]"]
         assert abst_b is False
+        assert parsed_b is True
 
         t_c = format_sft_target({"answers": [], "proof": [], "abstain": True}, "C")
-        ans_c, proof_c, abst_c = parse_model_output(t_c)
+        ans_c, proof_c, abst_c, parsed_c = parse_model_output_detailed(t_c)
         assert ans_c == []
         assert proof_c == []
         assert abst_c is True
+        assert parsed_c is True
 
         # String answer / malformed JSON fallback
-        assert parse_model_output('{"answers": "p2"}') == (["p2"], [], False)
+        assert parse_model_output_detailed('{"answers": "p2"}') == (["p2"], [], False, True)
+        assert parse_model_output_detailed("{bad json} no answers") == ([], [], False, False)
         assert parse_model_output("{bad json} no answers") == ([], [], False)
+
+    def test_compact_proof_lines_and_config_defaults(self) -> None:
+        compacted = compact_proof_lines(
+            [
+                "FACT  p1  -parent_of->  p2",
+                "",
+                "FACT p1 -parent_of-> p2",
+                "  DERIVED p1 -ancestor_of-> p2 [r] ",
+            ]
+        )
+        assert compacted == ["FACT p1 -parent_of-> p2", "DERIVED p1 -ancestor_of-> p2 [r]"]
+
+        cfg = QLoRAConfig()
+        assert cfg.max_seq_len == 2560
+        assert cfg.max_new_tokens == 1536
+        cli_args = run_tier4_qlora.parse_args([])
+        assert cli_args.max_seq_len == 2560
+        assert cli_args.max_new_tokens == 1536
+
+    def test_truncated_output_is_not_counted_as_abstain(self) -> None:
+        split = generate_unseen_benchmark("unseen_entity", UnseenBenchmarkConfig(seed=0))
+        _, eval_engine = build_engines_for_split(split, seed=0)
+        pos_q = list(split.workload[:3])
+        neg_q = build_unanswerable_eval_queries(split, eval_engine, max_queries=3)
+
+        # Truncated proof lines with NO JSON must NOT score as genuine abstention.
+        raw_pos = ["FACT p1 -parent_of-> p2\nDERIVED p1 -ancestor_of-> p2 [r]"] * len(pos_q)
+        raw_neg = ["FACT p1 -parent_of-> p2\nDERIVED truncated mid-proof"] * len(neg_q)
+
+        pred_rows, summary = _evaluate_run(
+            arm="B",
+            seed=0,
+            split=split,
+            eval_engine=eval_engine,
+            positive_queries=pos_q,
+            unanswerable_queries=neg_q,
+            raw_pos_outputs=raw_pos,
+            raw_neg_outputs=raw_neg,
+        )
+        assert all(row["json_parsed"] is False for row in pred_rows)
+        assert all(row["abstain"] is False for row in pred_rows)
+        assert summary["abstain_f1"] == 0.0
+        assert summary["false_answer_rate"] == 1.0
+        assert summary["pos_parse_fail_rate"] == 1.0
+        assert summary["neg_parse_fail_rate"] == 1.0
 
     def test_f1_sets_edge_cases(self) -> None:
         assert _f1_sets([], []) == 1.0

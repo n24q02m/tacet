@@ -51,6 +51,9 @@ class Predictor(Protocol):
     def predict(self, prompts: Sequence[str]) -> list[str]: ...
 
 
+_WS_RE = re.compile(r"\s+")
+
+
 @dataclass(frozen=True)
 class QLoRAConfig:
     """Hyperparameters locked in Wave B preregistration."""
@@ -64,8 +67,8 @@ class QLoRAConfig:
     epochs: int = 3
     batch_size: int = 4
     grad_accum: int = 4
-    max_seq_len: int = 1024
-    max_new_tokens: int = 256
+    max_seq_len: int = 2560
+    max_new_tokens: int = 1536
     eval_batch_size: int = 16
     max_context_hops: int = 2
     max_context_facts: int = 60
@@ -127,6 +130,18 @@ def extract_local_context(
     return collected
 
 
+def compact_proof_lines(proof: Sequence[str]) -> list[str]:
+    """Deduplicate proof lines and collapse excess whitespace without losing steps."""
+    seen: set[str] = set()
+    compacted: list[str] = []
+    for raw_line in proof:
+        norm = _WS_RE.sub(" ", str(raw_line).strip())
+        if norm and norm not in seen:
+            seen.add(norm)
+            compacted.append(norm)
+    return compacted
+
+
 def build_sft_prompt(
     head: str,
     relation: str,
@@ -160,7 +175,7 @@ def format_sft_target(record: Mapping[str, Any], arm: Arm) -> str:
     """Format canonical training completion string for Arm A / B / C."""
     answers = [str(a) for a in record.get("answers", [])]
     abstain = bool(record.get("abstain", False))
-    proof = [str(line) for line in record.get("proof", []) if str(line).strip()]
+    proof = compact_proof_lines(record.get("proof", []))
 
     if arm == "A":
         return json.dumps({"answers": answers}, ensure_ascii=False)
@@ -175,8 +190,8 @@ def format_sft_target(record: Mapping[str, Any], arm: Arm) -> str:
     return payload
 
 
-def parse_model_output(text: str) -> tuple[list[str], list[str], bool]:
-    """Parse proof lines, answers list, and abstain flag from raw model text."""
+def parse_model_output_detailed(text: str) -> tuple[list[str], list[str], bool, bool]:
+    """Parse proof lines, answers, abstain flag, and whether valid JSON was parsed."""
     cleaned = _THINK_BLOCK_RE.sub("", text).strip()
     proof_lines = [line.strip() for line in cleaned.splitlines() if _PROOF_LINE_RE.match(line)]
 
@@ -195,9 +210,15 @@ def parse_model_output(text: str) -> tuple[list[str], list[str], bool]:
             elif isinstance(raw_ans, list):
                 answers = sorted({str(x).strip() for x in raw_ans if str(x).strip()})
             abstain = bool(obj.get("abstain", False)) or (len(answers) == 0 and "abstain" in obj)
-            return answers, proof_lines, abstain
+            return answers, proof_lines, abstain, True
 
-    return [], proof_lines, False
+    return [], proof_lines, False, False
+
+
+def parse_model_output(text: str) -> tuple[list[str], list[str], bool]:
+    """Parse proof lines, answers list, and abstain flag from raw model text."""
+    answers, proof_lines, abstain, _ = parse_model_output_detailed(text)
+    return answers, proof_lines, abstain
 
 
 def discover_train_rules(
@@ -417,6 +438,7 @@ class QLoRATrainerBackend:
         self.seed = seed
         self._model: Any = None
         self._tokenizer: Any = None
+        self.truncated_train_examples: int = 0
 
     def _format_chat(self, prompt: str) -> str:
         assert self._tokenizer is not None
@@ -447,11 +469,14 @@ class QLoRATrainerBackend:
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(self.seed)
 
+        use_bf16 = bool(torch.cuda.is_available() and torch.cuda.is_bf16_supported())
+        compute_dtype = torch.bfloat16 if use_bf16 else torch.float16
+
         bnb_cfg = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_compute_dtype=compute_dtype,
         )
         tokenizer = AutoTokenizer.from_pretrained(
             self.cfg.model_id,
@@ -466,7 +491,7 @@ class QLoRATrainerBackend:
             revision=self.cfg.model_revision,
             quantization_config=bnb_cfg,
             device_map="auto",
-            torch_dtype=torch.bfloat16,
+            torch_dtype=compute_dtype,
         )
         try:
             model = prepare_model_for_kbit_training(
@@ -496,6 +521,7 @@ class QLoRATrainerBackend:
         self._model = model
 
         encoded: list[tuple[list[int], list[int]]] = []
+        truncated_count = 0
         eos_id = tokenizer.eos_token_id
         for prompt, target in train_examples:
             prompt_text = self._format_chat(prompt)
@@ -503,18 +529,33 @@ class QLoRATrainerBackend:
             t_ids = tokenizer(target, add_special_tokens=False).input_ids + (
                 [eos_id] if eos_id is not None else []
             )
+            if len(p_ids) + len(t_ids) > self.cfg.max_seq_len:
+                truncated_count += 1
             full_ids = (p_ids + t_ids)[: self.cfg.max_seq_len]
             labels = ([-100] * min(len(p_ids), len(full_ids))) + full_ids[
                 min(len(p_ids), len(full_ids)) :
             ]
             if any(lbl != -100 for lbl in labels):
                 encoded.append((full_ids, labels))
+        self.truncated_train_examples = truncated_count
+        log.info(
+            "wave_b.train_tokenized",
+            arm=self.arm,
+            seed=self.seed,
+            n_examples=len(encoded),
+            truncated=truncated_count,
+            max_seq_len=self.cfg.max_seq_len,
+            compute_dtype=str(compute_dtype),
+        )
 
         rng = random.Random(self.seed)
         optimizer = torch.optim.AdamW(model.parameters(), lr=self.cfg.learning_rate)
         steps_per_epoch = max(1, (len(encoded) + self.cfg.batch_size - 1) // self.cfg.batch_size)
         total_opt_steps = max(1, (steps_per_epoch * self.cfg.epochs) // max(1, self.cfg.grad_accum))
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_opt_steps)
+        scaler = torch.amp.GradScaler(
+            "cuda", enabled=(torch.cuda.is_available() and compute_dtype == torch.float16)
+        )
 
         pad_id = tokenizer.pad_token_id
         device = next(model.parameters()).device
@@ -544,16 +585,27 @@ class QLoRATrainerBackend:
                 attn_t = torch.tensor(attn_rows, dtype=torch.long, device=device)
                 label_t = torch.tensor(label_rows, dtype=torch.long, device=device)
 
-                with torch.amp.autocast("cuda", dtype=torch.bfloat16):
+                with torch.amp.autocast(
+                    "cuda", dtype=compute_dtype, enabled=torch.cuda.is_available()
+                ):
                     raw_loss = model(input_ids=input_t, attention_mask=attn_t, labels=label_t).loss
                     loss = raw_loss / self.cfg.grad_accum
                 epoch_loss += float(raw_loss.detach().item())
                 epoch_steps += 1
-                loss.backward()
+                if scaler.is_enabled():
+                    scaler.scale(loss).backward()
+                else:
+                    loss.backward()
                 micro_step += 1
                 if micro_step % self.cfg.grad_accum == 0 or (i + self.cfg.batch_size) >= len(order):
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-                    optimizer.step()
+                    if scaler.is_enabled():
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                        scaler.step(optimizer)
+                        scaler.update()
+                    else:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                        optimizer.step()
                     scheduler.step()
                     optimizer.zero_grad(set_to_none=True)
             log.info(
@@ -654,11 +706,13 @@ def _evaluate_run(
     raw_neg_outputs: Sequence[str],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     parsed_map: dict[tuple[str, str], tuple[list[str], list[str], bool]] = {}
+    pos_json_parsed: dict[tuple[str, str], bool] = {}
     pred_rows: list[dict[str, Any]] = []
 
     for (h, r), raw_text in zip(positive_queries, raw_pos_outputs, strict=True):
-        answers, proof_lines, abstain = parse_model_output(raw_text)
+        answers, proof_lines, abstain, json_parsed = parse_model_output_detailed(raw_text)
         parsed_map[(h, r)] = (answers, proof_lines, abstain)
+        pos_json_parsed[(h, r)] = json_parsed
 
     gate_strict = EntailmentGate(_DictPredictorTier(parsed_map), eval_engine, strict=True)
     gate_soft = EntailmentGate(_DictPredictorTier(parsed_map), eval_engine, strict=False)
@@ -667,6 +721,8 @@ def _evaluate_run(
     f1_scores: list[float] = []
     ded_exact_hits = 0
     ded_total = 0
+    pos_parse_fails = 0
+    ded_parse_fails = 0
     raw_for_entail: list[dict[str, Any]] = []
     ded_raw_for_entail: list[dict[str, Any]] = []
     gated_records: list[dict[str, Any]] = []
@@ -674,13 +730,16 @@ def _evaluate_run(
 
     for (h, r), raw_text in zip(positive_queries, raw_pos_outputs, strict=True):
         pred_ans, pred_proof, abstain = parsed_map[(h, r)]
+        json_parsed = pos_json_parsed[(h, r)]
+        if not json_parsed:
+            pos_parse_fails += 1
         gold = split.truth.get((h, r), [])
         gated_res = gate_soft.answer(h, r)
         strict_res = gate_strict.answer(h, r)
         is_entailed = strict_res is not None
         is_grounded = bool(gated_res is not None and gated_res.grounded)
-        em = set(pred_ans) == set(gold)
-        f1 = _f1_sets(pred_ans, gold)
+        em = json_parsed and set(pred_ans) == set(gold)
+        f1 = _f1_sets(pred_ans, gold) if json_parsed else 0.0
         exact_hits += int(em)
         f1_scores.append(f1)
 
@@ -695,7 +754,8 @@ def _evaluate_run(
             "answers": pred_ans,
             "proof": pred_proof if pred_proof else (list(strict_res.proof) if strict_res else []),
             "model_proof_lines": len(pred_proof),
-            "abstain": abstain,
+            "json_parsed": json_parsed,
+            "abstain": json_parsed and abstain,
             "exact_match": em,
             "f1": f1,
             "entailed": is_entailed,
@@ -707,20 +767,25 @@ def _evaluate_run(
         gated_records.append(rec)
         if r in DEDUCTIVE_RELATIONS:
             ded_total += 1
+            if not json_parsed:
+                ded_parse_fails += 1
             ded_exact_hits += int(em)
             ded_raw_for_entail.append({"head": h, "relation": r, "answers": pred_ans})
             ded_gated_records.append(rec)
 
-    neg_tp = 0
-    neg_fp = 0
-    neg_fn = 0
+    true_abstain = 0
+    missed_abstain = 0
+    false_abstain = 0
+    neg_parse_fails = 0
     for (h, r), raw_text in zip(unanswerable_queries, raw_neg_outputs, strict=True):
-        pred_ans, pred_proof, abstain = parse_model_output(raw_text)
-        did_abstain = abstain or len(pred_ans) == 0
+        pred_ans, pred_proof, abstain, json_parsed = parse_model_output_detailed(raw_text)
+        if not json_parsed:
+            neg_parse_fails += 1
+        did_abstain = json_parsed and (abstain or len(pred_ans) == 0)
         if did_abstain:
-            neg_tp += 1
+            true_abstain += 1
         else:
-            neg_fp += 1
+            missed_abstain += 1
         pred_rows.append(
             {
                 "arm": arm,
@@ -733,6 +798,7 @@ def _evaluate_run(
                 "answers": pred_ans,
                 "proof": pred_proof,
                 "model_proof_lines": len(pred_proof),
+                "json_parsed": json_parsed,
                 "abstain": did_abstain,
                 "exact_match": did_abstain,
                 "f1": 1.0 if did_abstain else 0.0,
@@ -744,17 +810,22 @@ def _evaluate_run(
 
     for h, r in positive_queries:
         pred_ans, _, abstain = parsed_map[(h, r)]
-        if abstain or len(pred_ans) == 0:
-            neg_fn += 1
+        if pos_json_parsed[(h, r)] and (abstain or len(pred_ans) == 0):
+            false_abstain += 1
 
-    abstain_prec = neg_tp / (neg_tp + neg_fp) if (neg_tp + neg_fp) else 0.0
-    abstain_rec = neg_tp / (neg_tp + neg_fn) if (neg_tp + neg_fn) else 0.0
+    abstain_rec = (
+        true_abstain / (true_abstain + missed_abstain) if (true_abstain + missed_abstain) else 0.0
+    )
+    abstain_prec = (
+        true_abstain / (true_abstain + false_abstain) if (true_abstain + false_abstain) else 0.0
+    )
     abstain_f1 = (
         2.0 * abstain_prec * abstain_rec / (abstain_prec + abstain_rec)
         if (abstain_prec + abstain_rec)
         else 0.0
     )
-    false_answer_rate = neg_fp / len(unanswerable_queries) if unanswerable_queries else 0.0
+    n_neg = len(unanswerable_queries)
+    false_answer_rate = missed_abstain / n_neg if n_neg else 0.0
 
     n_pos = len(positive_queries)
     summary = {
@@ -762,7 +833,7 @@ def _evaluate_run(
         "seed": seed,
         "n_positive": n_pos,
         "n_deductive": ded_total,
-        "n_unanswerable": len(unanswerable_queries),
+        "n_unanswerable": n_neg,
         "overall_exact_match": exact_hits / n_pos if n_pos else 0.0,
         "overall_answer_f1": sum(f1_scores) / n_pos if n_pos else 0.0,
         "overall_entailment_rate": entailment_rate(raw_for_entail, eval_engine),
@@ -776,6 +847,9 @@ def _evaluate_run(
         ),
         "abstain_f1": abstain_f1,
         "false_answer_rate": false_answer_rate,
+        "pos_parse_fail_rate": pos_parse_fails / n_pos if n_pos else 0.0,
+        "ded_parse_fail_rate": ded_parse_fails / ded_total if ded_total else 0.0,
+        "neg_parse_fail_rate": neg_parse_fails / n_neg if n_neg else 0.0,
     }
     return pred_rows, summary
 
@@ -785,22 +859,25 @@ def summarize_wave_b_jsonl(summaries: Sequence[Mapping[str, Any]]) -> pl.DataFra
     if not summaries:
         return pl.DataFrame()
     df = pl.DataFrame(list(summaries))
-    return (
-        df.group_by("arm")
-        .agg(
-            pl.len().alias("n_seeds"),
-            pl.col("deductive_entailment_rate").mean().alias("mean_ded_entail"),
-            pl.col("deductive_grounded_fraction").mean().alias("mean_ded_grounded"),
-            pl.col("deductive_exact_match").mean().alias("mean_ded_em"),
-            pl.col("overall_exact_match").mean().alias("mean_overall_em"),
-            pl.col("overall_answer_f1").mean().alias("mean_overall_f1"),
-            pl.col("model_proof_coverage").mean().alias("mean_model_proof_cov"),
-            pl.col("abstain_f1").mean().alias("mean_abstain_f1"),
-            pl.col("false_answer_rate").mean().alias("mean_false_ans_rate"),
-            pl.col("train_wall_s").sum().alias("total_train_s"),
-        )
-        .sort("arm")
-    )
+    agg_exprs = [
+        pl.len().alias("n_seeds"),
+        pl.col("deductive_entailment_rate").mean().alias("mean_ded_entail"),
+        pl.col("deductive_grounded_fraction").mean().alias("mean_ded_grounded"),
+        pl.col("deductive_exact_match").mean().alias("mean_ded_em"),
+        pl.col("overall_exact_match").mean().alias("mean_overall_em"),
+        pl.col("overall_answer_f1").mean().alias("mean_overall_f1"),
+        pl.col("model_proof_coverage").mean().alias("mean_model_proof_cov"),
+        pl.col("abstain_f1").mean().alias("mean_abstain_f1"),
+        pl.col("false_answer_rate").mean().alias("mean_false_ans_rate"),
+        pl.col("train_wall_s").sum().alias("total_train_s"),
+    ]
+    if "pos_parse_fail_rate" in df.columns:
+        agg_exprs.append(pl.col("pos_parse_fail_rate").mean().alias("mean_pos_parse_fail"))
+    if "ded_parse_fail_rate" in df.columns:
+        agg_exprs.append(pl.col("ded_parse_fail_rate").mean().alias("mean_ded_parse_fail"))
+    if "neg_parse_fail_rate" in df.columns:
+        agg_exprs.append(pl.col("neg_parse_fail_rate").mean().alias("mean_neg_parse_fail"))
+    return df.group_by("arm").agg(agg_exprs).sort("arm")
 
 
 def run_wave_b_matrix(
@@ -910,6 +987,7 @@ def run_wave_b_matrix(
                 raw_pos = predictor.predict(pos_prompts)
                 raw_neg = predictor.predict(neg_prompts)
                 peak_vram_gib = 0.0
+                truncated_train_examples = 0
             else:
                 import torch
 
@@ -925,6 +1003,7 @@ def run_wave_b_matrix(
                     if torch.cuda.is_available()
                     else 0.0
                 )
+                truncated_train_examples = backend.truncated_train_examples
                 backend.cleanup()
             total_wall_s = time.perf_counter() - t0
 
@@ -939,6 +1018,7 @@ def run_wave_b_matrix(
                 raw_neg_outputs=raw_neg,
             )
             summary["train_examples"] = len(train_examples)
+            summary["truncated_train_examples"] = truncated_train_examples
             summary["train_wall_s"] = round(train_wall_s, 3)
             summary["total_wall_s"] = round(total_wall_s, 3)
             summary["peak_vram_gib"] = round(peak_vram_gib, 3)
@@ -957,6 +1037,8 @@ def run_wave_b_matrix(
                 ded_entail=round(summary["deductive_entailment_rate"], 4),
                 overall_em=round(summary["overall_exact_match"], 4),
                 abstain_f1=round(summary["abstain_f1"], 4),
+                pos_parse_fail=round(summary["pos_parse_fail_rate"], 4),
+                neg_parse_fail=round(summary["neg_parse_fail_rate"], 4),
                 wall_s=round(total_wall_s, 2),
             )
 
